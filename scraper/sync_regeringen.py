@@ -18,6 +18,8 @@ import time
 
 import requests
 
+from d1 import D1Client
+
 DEPARTMENT_NAMES = {
     "arbetsmarknadsdepartementet": "Arbetsmarknadsdepartementet",
     "finansdepartementet": "Finansdepartementet",
@@ -40,12 +42,7 @@ UPSERT_SQL = (
 
 
 def main():
-    account_id = os.environ["CLOUDFLARE_ACCOUNT_ID"]
-    token = os.environ["CLOUDFLARE_API_TOKEN_POLITIKER"]
-    db_uuid = os.environ["D1_DATABASE_UUID"]
-    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/d1/database/{db_uuid}/query"
-    session = requests.Session()
-    session.headers.update({"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    client = D1Client()
 
     path = os.path.join(os.path.dirname(__file__), "..", "..", "Regeringen.txt")
     path = os.path.expanduser("~/Regeringen.txt") if not os.path.exists(path) else path
@@ -57,13 +54,13 @@ def main():
     for email in emails:
         prefix = email.split(".registrator@")[0]
         name = DEPARTMENT_NAMES.get(prefix, prefix.capitalize())
-        resp = session.post(url, json={"sql": UPSERT_SQL, "params": [name, email, name, now_ms]}, timeout=30)
-        if resp.status_code == 200 and resp.json().get("success"):
+        try:
+            client.run(UPSERT_SQL, [name, email, name, now_ms])
             ok += 1
             print(f"OK: {name} <{email}>")
-        else:
+        except (requests.RequestException, RuntimeError) as err:
             fail += 1
-            print(f"FEL: {name} <{email}>: {resp.text}")
+            print(f"FEL: {name} <{email}>: {err}")
 
     print(f"Klart. {ok} synkade, {fail} misslyckades.")
 

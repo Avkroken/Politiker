@@ -2,6 +2,6 @@ FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-COPY scraper.py .
+COPY scraper.py politiker_common.py regioner.json ./
 COPY entrypoint.sh .
 ENTRYPOINT ["/app/entrypoint.sh"]

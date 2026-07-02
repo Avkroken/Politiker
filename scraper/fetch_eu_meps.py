@@ -18,12 +18,13 @@ Miljövariabler som krävs (samma .env som sync_to_d1.py):
   D1_DATABASE_UUID
 """
 
-import os
 import re
 import sys
 import time
 
 import requests
+
+from d1 import D1Client
 
 EP_API_BASE = "https://data.europarl.europa.eu/api/v2"
 
@@ -101,30 +102,25 @@ def fetch_email_and_role(mep_id: str) -> tuple[str | None, str | None]:
     return email, role
 
 
-def sync_one(session: requests.Session, url: str, name: str, email: str, area_name: str, party: str | None, role: str | None, now_ms: int) -> bool:
-    resp = session.post(url, json={"sql": UPSERT_SQL, "params": [name, email, area_name, party, role, now_ms]}, timeout=30)
-    if resp.status_code == 200 and resp.json().get("success"):
+def sync_one(client: D1Client, name: str, email: str, area_name: str, party: str | None, role: str | None, now_ms: int) -> bool:
+    try:
+        client.run(UPSERT_SQL, [name, email, area_name, party, role, now_ms])
         return True
-    print(f"FEL: {name} <{email}>: {resp.text}", file=sys.stderr)
-    return False
+    except (requests.RequestException, RuntimeError) as err:
+        print(f"FEL: {name} <{email}>: {err}", file=sys.stderr)
+        return False
 
 
 def main():
-    account_id = os.environ["CLOUDFLARE_ACCOUNT_ID"]
-    token = os.environ["CLOUDFLARE_API_TOKEN_POLITIKER"]
-    db_uuid = os.environ["D1_DATABASE_UUID"]
-    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/d1/database/{db_uuid}/query"
-    session = requests.Session()
-    session.headers.update({"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    client = D1Client()
 
     # Engångsstädning: tidigare körningar (innan per-land-uppdelning) skrev
     # area_name='Europaparlamentet' utan land. Ofarligt att köra om — bara en
     # no-op om raderna redan är borta.
-    session.post(
-        url,
-        json={"sql": "DELETE FROM politicians WHERE area_type = 'eu' AND area_name = 'Europaparlamentet'"},
-        timeout=30,
-    )
+    try:
+        client.run("DELETE FROM politicians WHERE area_type = 'eu' AND area_name = 'Europaparlamentet'")
+    except (requests.RequestException, RuntimeError) as err:
+        print(f"VARNING: engångsstädning misslyckades: {err}", file=sys.stderr, flush=True)
 
     meps = fetch_all_current_meps()
     print(f"Hittade {len(meps)} EU-parlamentariker totalt (alla 27 länder).", flush=True)
@@ -152,7 +148,7 @@ def main():
 
         # Synkar DIREKT, en i taget — om processen avbryts (rate limit, krasch)
         # är allt som redan körts sparat, inget arbete går förlorat.
-        if sync_one(session, url, name, email, area_name, party, role, now_ms):
+        if sync_one(client, name, email, area_name, party, role, now_ms):
             ok += 1
         else:
             fail += 1

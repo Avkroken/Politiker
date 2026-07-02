@@ -20,11 +20,12 @@ Miljövariabler som krävs (samma .env som sync_to_d1.py):
   D1_DATABASE_UUID
 """
 
-import os
 import sys
 import time
 
 import requests
+
+from d1 import D1Client
 
 RIKSDAGEN_API = "https://data.riksdagen.se/personlista/?utformat=json"
 AREA_NAME = "Sveriges riksdag"
@@ -64,12 +65,7 @@ def extract_email(person: dict) -> str | None:
 
 
 def main():
-    account_id = os.environ["CLOUDFLARE_ACCOUNT_ID"]
-    token = os.environ["CLOUDFLARE_API_TOKEN_POLITIKER"]
-    db_uuid = os.environ["D1_DATABASE_UUID"]
-    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/d1/database/{db_uuid}/query"
-    session = requests.Session()
-    session.headers.update({"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    client = D1Client()
 
     people = fetch_current_members()
     print(f"Hittade {len(people)} nuvarande riksdagsledamöter.", flush=True)
@@ -87,12 +83,12 @@ def main():
             continue
         fetched_emails.append(email)
 
-        resp = session.post(url, json={"sql": UPSERT_SQL, "params": [name, email, AREA_NAME, party, now_ms]}, timeout=30)
-        if resp.status_code == 200 and resp.json().get("success"):
+        try:
+            client.run(UPSERT_SQL, [name, email, AREA_NAME, party, now_ms])
             ok += 1
-        else:
+        except (requests.RequestException, RuntimeError) as err:
             fail += 1
-            print(f"FEL: {name} <{email}>: {resp.text}", file=sys.stderr, flush=True)
+            print(f"FEL: {name} <{email}>: {err}", file=sys.stderr, flush=True)
 
         if i % 50 == 0:
             print(f"{i}/{len(people)} klara ({ok} ok, {fail} fel, {skipped} utan email)...", flush=True)
@@ -105,12 +101,11 @@ def main():
     if fail == 0 and skipped == 0 and fetched_emails:
         placeholders = ",".join("?" for _ in fetched_emails)
         cleanup_sql = f"DELETE FROM politicians WHERE area_type = 'riksdag' AND area_name = ? AND email NOT IN ({placeholders})"
-        resp = session.post(url, json={"sql": cleanup_sql, "params": [AREA_NAME, *fetched_emails]}, timeout=30)
-        if resp.status_code == 200 and resp.json().get("success"):
-            removed = resp.json()["result"][0]["meta"]["changes"]
-            print(f"Städade bort {removed} ej längre aktuella ledamöter.", flush=True)
-        else:
-            print(f"VARNING: städning misslyckades: {resp.text}", file=sys.stderr, flush=True)
+        try:
+            result = client.run(cleanup_sql, [AREA_NAME, *fetched_emails])
+            print(f"Städade bort {result['meta']['changes']} ej längre aktuella ledamöter.", flush=True)
+        except (requests.RequestException, RuntimeError) as err:
+            print(f"VARNING: städning misslyckades: {err}", file=sys.stderr, flush=True)
 
     if fail > 0 or skipped > 0:
         sys.exit(1)

@@ -24,13 +24,17 @@ Miljövariabler som krävs (samma .env som sync_to_d1.py):
 """
 
 import html
-import os
+import json
 import re
 import sys
 import time
+from pathlib import Path
 from urllib.parse import urljoin
 
 import requests
+
+from d1 import D1Client
+from politiker_common import normalize_party, party_from_parens
 
 
 def extract_h1_text(page_html: str) -> str | None:
@@ -43,38 +47,13 @@ def extract_h1_text(page_html: str) -> str | None:
     text = re.sub(r"<[^>]+>", "", m.group(1))
     return html.unescape(re.sub(r"\s+", " ", text)).strip()
 
+
 def load_regioner() -> list[dict]:
-    """Plockar REGIONER-listan direkt ur scraper.py:s källkod, utan att
-    importera modulen (den kräver playwright, ett tungt beroende som inte
-    behövs här eftersom troman/netpublicator är vanlig server-renderad
-    HTML)."""
-    path = os.path.join(os.path.dirname(__file__), "scraper.py")
-    with open(path, encoding="utf-8") as f:
-        content = f.read()
-    start = content.index("REGIONER = [")
-    end = content.index("\n]", start) + 2
-    ns: dict = {}
-    exec(content[start:end], ns)  # noqa: S102 — trusted lokal fil, ingen extern indata
-    return ns["REGIONER"]
-
-PARTY_FULLNAME_TO_ABBR = {
-    "socialdemokraterna": "S", "moderaterna": "M", "moderata samlingspartiet": "M",
-    "sverigedemokraterna": "SD", "vänsterpartiet": "V", "centerpartiet": "C",
-    "liberalerna": "L", "kristdemokraterna": "KD", "miljöpartiet": "MP",
-    "miljöpartiet de gröna": "MP", "feministiskt initiativ": "FI",
-}
-
-
-def normalize_party(raw: str | None) -> str | None:
-    if not raw:
-        return None
-    raw = raw.strip()
-    return PARTY_FULLNAME_TO_ABBR.get(raw.lower(), raw) or None
-
-
-def party_from_parens(text: str) -> str | None:
-    m = re.search(r"\(([^)]{1,20})\)\s*$", text.strip())
-    return normalize_party(m.group(1)) if m else None
+    """Läser regionkonfigurationen ur regioner.json (samma datafil som
+    scraper.py använder). Ingen import av scraper-modulen — den kräver
+    playwright, ett tungt beroende som inte behövs här."""
+    path = Path(__file__).with_name("regioner.json")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def fetch(url: str, timeout: int = 30) -> str | None:
@@ -193,11 +172,7 @@ def netpublicator_rows(registry_id: str, board_id: str) -> list[tuple[str, str, 
 
 
 def main():
-    account_id = os.environ["CLOUDFLARE_ACCOUNT_ID"]
-    token = os.environ["CLOUDFLARE_API_TOKEN_POLITIKER"]
-    db_uuid = os.environ["D1_DATABASE_UUID"]
-    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/d1/database/{db_uuid}/query"
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    client = D1Client()
 
     targets = [r for r in load_regioner() if r["typ"] in ("troman", "netpublicator")]
     print(f"{len(targets)} troman/netpublicator-kommuner/regioner att bearbeta.", flush=True)
@@ -221,18 +196,13 @@ def main():
             if not party and not role:
                 skip += 1
                 continue
-            resp = requests.post(
-                url,
-                headers=headers,
-                json={
-                    "sql": "UPDATE politicians SET party = COALESCE(?, party), role = COALESCE(?, role), last_scraped_at = ? WHERE area_name = ? AND email = ?",
-                    "params": [party, role, now_ms, namn, email],
-                },
-                timeout=30,
-            )
-            if resp.status_code == 200 and resp.json().get("success"):
+            try:
+                client.run(
+                    "UPDATE politicians SET party = COALESCE(?, party), role = COALESCE(?, role), last_scraped_at = ? WHERE area_name = ? AND email = ?",
+                    [party, role, now_ms, namn, email],
+                )
                 ok += 1
-            else:
+            except (requests.RequestException, RuntimeError):
                 fail += 1
         print(f"  {len(rows)} personer, {ok} uppdaterade, {fail} fel, {skip} utan parti/roll", flush=True)
         total_ok += ok

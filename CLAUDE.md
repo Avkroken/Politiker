@@ -22,21 +22,33 @@ docker compose up
 ## Project Structure
 
 ```
-scraper/scraper.py      # Huvudlogik — alla scrape_*-funktioner + REGIONER-listan
+scraper/scraper.py       # Huvudlogik — alla scrape_*-funktioner
+scraper/regioner.json    # Regionkonfig (namn/typ/URL per kommun/region) — data, ej kod
+scraper/politiker_common.py # Delade parti-/namnhjälpare (scraper + backfill)
+scraper/d1.py            # Delad Cloudflare D1-klient för alla sync/export/verify-skript
 scraper/Dockerfile       # Bygger scrapern
 scraper/entrypoint.sh
 docker-compose.yml
 UNSUPPORTED_KOMMUNER.md # Kommuner som saknar stöd/känt register
 ```
 
+Alla skript som pratar med D1 (`sync_*`, `fetch_*`, `backfill_*`, `export_d1`,
+`verify_emails`) går via `scraper/d1.py` (`D1Client`). Miljövariabler läses där:
+`CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN_POLITIKER` (alias
+`CLOUDFLARE_API_TOKEN`), `D1_DATABASE_UUID` (alias `D1_DATABASE_ID`).
+
 ## Datamodell
 
-Varje `scrape_*`-funktion returnerar en `set()` av `(politiker-namn, email)`-
+Varje `scrape_*`-funktion returnerar en `set()` av `(namn, email, parti, roll)`-
 tupler (namn kan vara tom sträng om inget namn gick att extrahera). `main()`
-samlar detta per kommun/region i `alla_people`, sparar en `.vcf` per region
-samt en samlad, alfabetiskt sorterad `Alla_kommuner_och_regioner.txt`
-(`swedish_key()` ger svensk sorteringsordning utan att förlita sig på
-OS-locale).
+samlar detta per kommun/region i `alla_people` och skriver:
+- `.vcf` per region + `Alla_regioner.vcf` (mobilimport)
+- `Alla_kommuner_och_regioner.txt` — människoläsbar, svensk sortering (`swedish_key()`)
+- `Alla_kommuner_och_regioner.csv` — **maskinläsbar överföringsform** som
+  `sync_to_d1.py` läser i första hand (undviker sprött round-trip-parsande av
+  .txt:en). Kolumnen `source` är `pattern-guess` för adresser byggda från ett
+  namnmönster (typ `namnmonster`/`namnlista`), annars `scraped`.
+- `gissade_adresser.txt` — listar just de mönster-gissade adresserna för översyn.
 
 ## Publicerad data
 
@@ -48,10 +60,11 @@ committas inte längre — scrapern producerar dem fortfarande lokalt.
 
 ## Lägga till kommuner/regioner
 
-Lägg till en post i listan `REGIONER` i `scraper.py` med kommunens/regionens
+Lägg till en post i `scraper/regioner.json` med kommunens/regionens
 fullmäktigesida och rätt `"typ"` (`mailto`, `netpublicator`, `troman`,
 `w3d3`, `fmr`, `profilsidor`, `namnmonster`, `pdf`, `namnlista`) beroende på
-hur ledamotslistan är publicerad.
+hur ledamotslistan är publicerad. `scraper.py` och `backfill_kommun_role_party.py`
+läser båda samma JSON-fil.
 
 ## Conventions
 

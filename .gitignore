@@ -4,3 +4,6 @@ logs/
 .env
 __pycache__/
 *.pyc
+.claude/
+*.log
+.pytest_cache/

@@ -25,12 +25,13 @@ Miljövariabler som krävs (samma .env som sync_to_d1.py):
 """
 
 import csv
-import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
+
+from d1 import D1Client
 
 VAL_CSV_URL = "https://resultat.val.se/filer/val2022/info/nuvarande_ledamoter.csv"
 MAX_WORKERS = 10
@@ -133,11 +134,7 @@ def fuzzy_match(name: str, area_name: str, fuzzy_index: dict[str, list[tuple[fro
 
 
 def main():
-    account_id = os.environ["CLOUDFLARE_ACCOUNT_ID"]
-    token = os.environ["CLOUDFLARE_API_TOKEN_POLITIKER"]
-    db_uuid = os.environ["D1_DATABASE_UUID"]
-    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/d1/database/{db_uuid}/query"
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    client = D1Client()
 
     print("Hämtar Valmyndighetens ledamotsdata...", flush=True)
     rows = fetch_val_rows()
@@ -146,13 +143,10 @@ def main():
     print(f"{len(lookup)} unika (område, namn)-par i uppslagstabellen.", flush=True)
 
     print("Hämtar befintliga kommun-/regionpolitiker från D1...", flush=True)
-    resp = requests.post(
-        url,
-        headers=headers,
-        json={"sql": "SELECT id, name, area_name FROM politicians WHERE area_type IN ('kommun', 'region')"},
+    existing = client.query(
+        "SELECT id, name, area_name FROM politicians WHERE area_type IN ('kommun', 'region')",
         timeout=60,
     )
-    existing = resp.json()["result"][0]["results"]
     print(f"{len(existing)} befintliga rader att matcha mot.", flush=True)
 
     fuzzy_index = build_fuzzy_index(rows)
@@ -176,15 +170,14 @@ def main():
 
     def update_one(item: tuple[str, str, str]) -> tuple[bool, str]:
         politician_id, name, party = item
-        resp = requests.post(
-            url,
-            headers=headers,
-            json={"sql": "UPDATE politicians SET party = ?, last_scraped_at = ? WHERE id = ?", "params": [party, now_ms, politician_id]},
-            timeout=30,
-        )
-        if resp.status_code == 200 and resp.json().get("success"):
+        try:
+            client.run(
+                "UPDATE politicians SET party = ?, last_scraped_at = ? WHERE id = ?",
+                [party, now_ms, politician_id],
+            )
             return True, name
-        return False, f"{name}: {resp.text}"
+        except (requests.RequestException, RuntimeError) as err:
+            return False, f"{name}: {err}"
 
     matched = fail = 0
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:

@@ -21,52 +21,45 @@ import hashlib
 import json
 import os
 import sys
-import urllib.request
+
+# d1.py ligger i scraper/ bredvid export/ — lägg till den på importvägen.
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scraper"))
+from d1 import D1Client  # noqa: E402
 
 # Fält som publiceras (stabila — utelämnar last_scraped_at/verification_status).
 FIELDS = ["name", "email", "area_name", "area_type", "party", "role"]
 PAGE = 5000
 
-API = "https://api.cloudflare.com/client/v4/accounts/{acct}/d1/database/{db}/query"
 
+def fetch_all(client: D1Client) -> list[dict]:
+    """Hämtar alla rader med keyset-paginering (WHERE-tuple > senaste raden)
+    istället för LIMIT/OFFSET, så att en samtidig skrivning under exporten
+    inte kan få rader att hoppas över eller dubbleras mellan sidorna.
 
-def _require(name: str) -> str:
-    val = os.environ.get(name)
-    if not val:
-        sys.exit(f"FEL: miljövariabeln {name} saknas")
-    return val
-
-
-def query(sql: str, token: str, url: str) -> list[dict]:
-    req = urllib.request.Request(
-        url,
-        data=json.dumps({"sql": sql}).encode(),
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        body = json.load(resp)
-    if not body.get("success"):
-        sys.exit(f"FEL: D1-fråga misslyckades: {body.get('errors')}")
-    return body["result"][0]["results"]
-
-
-def fetch_all(token: str, url: str) -> list[dict]:
+    Keyset-nyckeln är (email, area_name) — tabellens UNIQUE-nyckel, alltså
+    garanterat unik och NOT NULL (till skillnad från name, som kan vara tom).
+    Utdatan sorteras sedan i Python på (area_type, area_name, name, email) för
+    stabila, brusfria diffar."""
     rows: list[dict] = []
-    offset = 0
     cols = ", ".join(FIELDS)
+    last: tuple | None = None
     while True:
-        page = query(
-            f"SELECT {cols} FROM politicians "
-            f"ORDER BY area_type, area_name, name, email "
-            f"LIMIT {PAGE} OFFSET {offset}",
-            token,
-            url,
-        )
+        if last is None:
+            sql = f"SELECT {cols} FROM politicians ORDER BY email, area_name LIMIT {PAGE}"
+            params: list = []
+        else:
+            sql = (
+                f"SELECT {cols} FROM politicians "
+                f"WHERE (email, area_name) > (?, ?) ORDER BY email, area_name LIMIT {PAGE}"
+            )
+            params = list(last)
+        page = client.query(sql, params, timeout=60)
         rows.extend(page)
         if len(page) < PAGE:
             break
-        offset += PAGE
+        tail = page[-1]
+        last = (tail["email"], tail["area_name"])
+    rows.sort(key=lambda r: (r["area_type"] or "", r["area_name"] or "", r["name"] or "", r["email"] or ""))
     return rows
 
 
@@ -110,10 +103,9 @@ def write_outputs(rows: list[dict], outdir: str) -> None:
 
 
 def main() -> None:
-    token = _require("CLOUDFLARE_API_TOKEN")
-    url = API.format(acct=_require("CLOUDFLARE_ACCOUNT_ID"), db=_require("D1_DATABASE_ID"))
+    client = D1Client()
     outdir = os.path.join(os.path.dirname(__file__), "..", "data")
-    rows = fetch_all(token, url)
+    rows = fetch_all(client)
     write_outputs(rows, outdir)
     print(f"Skrev {len(rows)} politiker till data/ (csv, json, sql)")
 
