@@ -50,12 +50,23 @@ cp .env.example .env
 docker compose up
 ```
 
-Scrapern skriver VCF-filer (en per region + en samlad) till `OUTPUT_DIR`
-lokalt och kan synka till D1 via `scraper/sync_to_d1.py`.
+Scrapern skriver till `OUTPUT_DIR`:
+
+- VCF-filer (en per region + en samlad)
+- `Alla_kommuner_och_regioner.txt` — människoläsbar lista
+- `Alla_kommuner_och_regioner.csv` — maskinläsbar; det format `sync_to_d1.py`
+  läser vid synk till D1. Kolumnen `source` är `pattern-guess` för adresser som
+  byggts från ett namnmönster (kan vara felaktiga), annars `scraped`
+- `gissade_adresser.txt` — just de mönster-gissade adresserna, för översyn
 
 ## Struktur
 
 - `scraper/scraper.py` – huvudlogik, Playwright-baserad
+- `scraper/regioner.json` – regionkonfigurationen (namn/typ/URL per kommun och
+  region) — ren data, läses av både scrapern och backfill-skriptet
+- `scraper/d1.py` – delad Cloudflare D1-klient som alla sync-/export-/verify-
+  skript går via
+- `scraper/politiker_common.py` – delade parti-/namnhjälpare
 - `scraper/fetch_eu_meps.py` – EU-parlamentariker (namn, parti, utskottsbefattning)
 - `scraper/fetch_riksdagen_members.py` – riksdagsledamöter
 - `scraper/sync_regeringen.py` – departementens registratorsadresser
@@ -66,11 +77,12 @@ lokalt och kan synka till D1 via `scraper/sync_to_d1.py`.
 - `scraper/backfill_riksdagen_role.py` – motsvarande bakfyllning för riksdagen
 - `scraper/sync_party_from_val.py` – matchar parti mot Valmyndighetens öppna data
   där det inte går att fastställa direkt vid skrapning
-- `scraper/sync_to_d1.py` – upsert av hela `alla_people`-datastrukturen till
+- `scraper/sync_to_d1.py` – upsert av scraperns CSV-resultat till
   politiker-webapps D1-databas (`politicians`-tabellen)
 - `scraper/Dockerfile` – bygger scrapern
 - `docker-compose.yml` – kör allt
 
 ## Lägga till kommuner
 
-Lägg till poster i listan `REGIONER` i `scraper.py` med kommunens fullmäktigesida.
+Lägg till en post i `scraper/regioner.json` med kommunens fullmäktigesida och
+rätt `"typ"` (se CLAUDE.md för fälten per typ).
