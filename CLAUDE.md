@@ -44,10 +44,10 @@ tupler (namn kan vara tom sträng om inget namn gick att extrahera). `main()`
 samlar detta per kommun/region i `alla_people` och skriver:
 - `.vcf` per region + `Alla_regioner.vcf` (mobilimport)
 - `Alla_kommuner_och_regioner.txt` — människoläsbar, svensk sortering (`swedish_key()`)
-- `Alla_kommuner_och_regioner.csv` — **maskinläsbar överföringsform** som
-  `sync_to_d1.py` läser i första hand (undviker sprött round-trip-parsande av
-  .txt:en). Kolumnen `source` är `pattern-guess` för adresser byggda från ett
-  namnmönster (typ `namnmonster`/`namnlista`), annars `scraped`.
+- `Alla_kommuner_och_regioner.csv` — **maskinläsbar överföringsform**, det enda
+  format `sync_to_d1.py` läser (.txt:en parsas inte längre). Kolumnen `source`
+  är `pattern-guess` för adresser byggda från ett namnmönster (typ
+  `namnmonster`/`namnlista`), annars `scraped`.
 - `gissade_adresser.txt` — listar just de mönster-gissade adresserna för översyn.
 
 ## Publicerad data

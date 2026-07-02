@@ -165,6 +165,43 @@ async def expand_collapsibles(page, only_text=None):
         await asyncio.sleep(0.3)
 
 
+async def mailto_people(page, person_name="", party=None, role=None):
+    """Samlar alla giltiga mailto-adresser på sidan som person-tupler."""
+    hrefs = await page.eval_on_selector_all(
+        "a[href^='mailto:']",
+        "els => els.map(e => e.href)"
+    )
+    people = set()
+    for href in hrefs:
+        email = email_from_mailto_href(href)
+        if is_valid_email(email):
+            people.add((person_name, email, party, role))
+    return people
+
+
+async def visit_profiles(context, urls, extract, *, wait_until="domcontentloaded", settle=0.5, pause=0.3):
+    """Gemensamt skelett för alla profilside-skrapare: öppnar varje URL i en
+    egen flik, väntar in sidan, och samlar person-tuplerna som
+    extract(page, url) returnerar. En sida som felar hoppas över tyst —
+    en trasig profilsida ska inte stoppa resten av kommunen.
+
+    settle = extra sekunder efter sidladdning (JS-rendering), pause = paus
+    mellan sidorna (god nätgranne)."""
+    people = set()
+    for url in urls:
+        page = await context.new_page()
+        try:
+            await page.goto(url, timeout=30000, wait_until=wait_until)
+            await asyncio.sleep(settle)
+            people.update(await extract(page, url))
+        except PlaywrightError:
+            pass
+        finally:
+            await page.close()
+        await asyncio.sleep(pause)
+    return people
+
+
 async def scrape_netpublicator(context, namn, registry_id, board_id):
     """Hämtar ledamöternas profilsidor från Netpublicator och plockar e-post."""
     people = set()
@@ -182,15 +219,32 @@ async def scrape_netpublicator(context, namn, registry_id, board_id):
         # per rad) — slipper en extra sidvisning per person för det.
         rows = await page.eval_on_selector_all(
             "table tbody tr",
-            """els => els.map(tr => {
+            r"""els => els.map(tr => {
                 const link = tr.querySelector("a[href*='/politician/']");
                 if (!link) return null;
                 const tds = tr.querySelectorAll('td');
-                const role = tds.length >= 3 ? tds[2].textContent.trim() : null;
+                // Rollcellen är ett vanligt textfält utan nästlad länk (till
+                // skillnad från namn/parti-cellerna som har <a>-taggar), och
+                // kolumnordningen varierar mellan kommuner — ett fast index
+                // träffar fel (t.ex. efternamn) på vissa. Hoppa även över rent
+                // numeriska celler (platsnummer). Samma beprövade logik som i
+                // backfill_kommun_role_party.py.
+                let role = null;
+                for (const td of tds) {
+                    if (td.querySelector('a')) continue;
+                    const text = td.textContent.trim();
+                    if (text && !/^\d+$/.test(text)) { role = text; break; }
+                }
                 let party = null;
                 if (tds.length >= 4) {
                     const partyLink = tds[3].querySelector('a[title]');
                     party = partyLink ? partyLink.getAttribute('title') : (tds[3].getAttribute('data-sort-value') || null);
+                }
+                if (!party) {
+                    // Vissa kommuner (t.ex. Orsa) visar partiet enbart som en
+                    // logotyp-bild — namnet ligger då i img-taggens title.
+                    const img = tr.querySelector('img[title]');
+                    party = img ? img.getAttribute('title') : null;
                 }
                 return [link.href, role, party];
             }).filter(Boolean)""",
@@ -198,29 +252,14 @@ async def scrape_netpublicator(context, namn, registry_id, board_id):
         info_by_url: dict[str, tuple[str | None, str | None]] = {
             url: (role or None, normalize_party(party)) for url, role, party in rows
         }
-        politician_urls = list(info_by_url.keys())
-        log.info(f"{namn}: {len(politician_urls)} profilsidor hittade")
+        log.info(f"{namn}: {len(info_by_url)} profilsidor hittade")
 
-        for url in politician_urls:
+        async def extract(p2, url):
             role, party = info_by_url.get(url, (None, None))
-            p2 = await context.new_page()
-            try:
-                await p2.goto(url, timeout=30000, wait_until="domcontentloaded")
-                await asyncio.sleep(0.5)
-                person_name, party_from_page = await extract_person_name(p2)
-                mailto_hrefs = await p2.eval_on_selector_all(
-                    "a[href^='mailto:']",
-                    "els => els.map(e => e.href)"
-                )
-                for href in mailto_hrefs:
-                    email = email_from_mailto_href(href)
-                    if is_valid_email(email):
-                        people.add((person_name, email, party or party_from_page, role))
-            except PlaywrightError:
-                pass
-            finally:
-                await p2.close()
-            await asyncio.sleep(0.3)
+            person_name, party_from_page = await extract_person_name(p2)
+            return await mailto_people(p2, person_name, party or party_from_page, role)
+
+        people = await visit_profiles(context, list(info_by_url), extract)
 
     except PlaywrightError as e:
         log.error(f"{namn}: {e}")
@@ -270,26 +309,12 @@ async def scrape_troman(context, namn, org_url):
         person_urls = list(set(hrefs))
         log.info(f"{namn}: {len(person_urls)} profilsidor hittade")
 
-        for url in person_urls:
-            p2 = await context.new_page()
-            try:
-                await p2.goto(url, timeout=30000, wait_until="domcontentloaded")
-                await asyncio.sleep(0.5)
-                person_name, party = await extract_person_name(p2)
-                role = await extract_troman_role(p2)
-                mailto_hrefs = await p2.eval_on_selector_all(
-                    "a[href^='mailto:']",
-                    "els => els.map(e => e.href)"
-                )
-                for href in mailto_hrefs:
-                    email = email_from_mailto_href(href)
-                    if is_valid_email(email):
-                        people.add((person_name, email, party, role))
-            except PlaywrightError:
-                pass
-            finally:
-                await p2.close()
-            await asyncio.sleep(0.3)
+        async def extract(p2, url):
+            person_name, party = await extract_person_name(p2)
+            role = await extract_troman_role(p2)
+            return await mailto_people(p2, person_name, party, role)
+
+        people = await visit_profiles(context, person_urls, extract)
 
     except PlaywrightError as e:
         log.error(f"{namn}: {e}")
@@ -332,22 +357,17 @@ async def scrape_w3d3(context, namn, board_url):
 
         log.info(f"{namn}: {len(person_urls)} profilsidor hittade")
 
-        for url in person_urls:
-            p2 = await context.new_page()
-            try:
-                await p2.goto(url, timeout=30000, wait_until="domcontentloaded")
-                await asyncio.sleep(0.3)
-                email_el = await p2.query_selector("#MainPagePlaceholder_Email")
-                if email_el:
-                    email = (await email_el.inner_text()).strip().lower()
-                    if is_valid_email(email):
-                        person_name, party = await extract_person_name(p2)
-                        people.add((person_name, email, party, None))
-            except PlaywrightError:
-                pass
-            finally:
-                await p2.close()
-            await asyncio.sleep(0.3)
+        async def extract(p2, url):
+            email_el = await p2.query_selector("#MainPagePlaceholder_Email")
+            if not email_el:
+                return set()
+            email = (await email_el.inner_text()).strip().lower()
+            if not is_valid_email(email):
+                return set()
+            person_name, party = await extract_person_name(p2)
+            return {(person_name, email, party, None)}
+
+        people = await visit_profiles(context, person_urls, extract, settle=0.3)
 
     except PlaywrightError as e:
         log.error(f"{namn}: {e}")
@@ -376,25 +396,11 @@ async def scrape_fmr(context, namn, board_url):
         ))
         log.info(f"{namn}: {len(person_urls)} profilsidor hittade")
 
-        for url in person_urls:
-            p2 = await context.new_page()
-            try:
-                await p2.goto(url, timeout=30000, wait_until="networkidle")
-                await asyncio.sleep(0.3)
-                person_name, party = await extract_person_name(p2)
-                hrefs = await p2.eval_on_selector_all(
-                    "a[href^='mailto:']",
-                    "els => els.map(e => e.href)"
-                )
-                for href in hrefs:
-                    email = email_from_mailto_href(href)
-                    if is_valid_email(email):
-                        people.add((person_name, email, party, None))
-            except PlaywrightError:
-                pass
-            finally:
-                await p2.close()
-            await asyncio.sleep(0.3)
+        async def extract(p2, url):
+            person_name, party = await extract_person_name(p2)
+            return await mailto_people(p2, person_name, party)
+
+        people = await visit_profiles(context, person_urls, extract, wait_until="networkidle", settle=0.3)
 
     except PlaywrightError as e:
         log.error(f"{namn}: {e}")
@@ -414,17 +420,11 @@ async def scrape_profilsidor(context, namn, url, link_pattern, domain):
     people = set()
 
     async def collect(p, person_name="", party=None):
-        hrefs = await p.eval_on_selector_all(
-            "a[href^='mailto:']",
-            "els => els.map(e => e.href)"
-        )
-        for href in hrefs:
-            email = email_from_mailto_href(href)
-            if not is_valid_email(email) or not email.endswith(f"@{domain}"):
-                continue
-            if email.split("@")[0] in SKIP_LOCAL:
-                continue
-            people.add((person_name, email, party, None))
+        found = await mailto_people(p, person_name, party)
+        return {
+            (n, e, pa, r) for n, e, pa, r in found
+            if e.endswith(f"@{domain}") and e.split("@")[0] not in SKIP_LOCAL
+        }
 
     page = await context.new_page()
     try:
@@ -439,20 +439,13 @@ async def scrape_profilsidor(context, namn, url, link_pattern, domain):
         ))
         log.info(f"{namn}: {len(person_urls)} profilsidor hittade")
 
-        await collect(page)
+        people.update(await collect(page))
 
-        for purl in person_urls:
-            p2 = await context.new_page()
-            try:
-                await p2.goto(purl, timeout=30000, wait_until="domcontentloaded")
-                await asyncio.sleep(0.2)
-                person_name, party = await extract_person_name(p2)
-                await collect(p2, person_name, party)
-            except PlaywrightError:
-                pass
-            finally:
-                await p2.close()
-            await asyncio.sleep(0.2)
+        async def extract(p2, purl):
+            person_name, party = await extract_person_name(p2)
+            return await collect(p2, person_name, party)
+
+        people.update(await visit_profiles(context, person_urls, extract, settle=0.2, pause=0.2))
 
     except PlaywrightError as e:
         log.error(f"{namn}: {e}")

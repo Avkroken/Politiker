@@ -1,5 +1,4 @@
-import os
-import textwrap
+import pytest
 
 import sync_to_d1 as s
 
@@ -28,31 +27,15 @@ def test_parse_csv(tmp_path):
     assert ("Bo Vik", "bo@skane.se", "Region Skåne", "region", None, None) in rows
 
 
-def test_parse_txt_roundtrip():
-    """.txt-fallbacken ska plocka namn, email, parti och roll ur radformatet."""
-    content = textwrap.dedent("""\
-        ## Lysekils kommun
-        Anna Ek <anna@lysekil.se> (S) [Ordförande]
-        info@lysekil.se
-        Bo Vik <bo@lysekil.se> (M)
-    """)
-    import tempfile
-    fd, path = tempfile.mkstemp(suffix=".txt")
-    os.write(fd, content.encode("utf-8"))
-    os.close(fd)
-    try:
-        rows = s.parse_txt(path)
-    finally:
-        os.unlink(path)
-    assert ("Anna Ek", "anna@lysekil.se", "Lysekils kommun", "kommun", "S", "Ordförande") in rows
-    assert ("", "info@lysekil.se", "Lysekils kommun", "kommun", None, None) in rows
-    assert ("Bo Vik", "bo@lysekil.se", "Lysekils kommun", "kommun", "M", None) in rows
-
-
-def test_load_rows_prefers_csv(tmp_path, monkeypatch):
+def test_load_rows_reads_csv(tmp_path, monkeypatch):
     csv_path = tmp_path / "r.csv"
     csv_path.write_text("area_name,name,email,party,role,source\nX kommun,A B,a@x.se,,,scraped\n", encoding="utf-8")
     monkeypatch.setattr(s, "RESULTAT_CSV", str(csv_path))
-    monkeypatch.setattr(s, "RESULTAT_FIL", str(tmp_path / "missing.txt"))
     rows = s.load_rows()
     assert rows == [("A B", "a@x.se", "X kommun", "kommun", None, None)]
+
+
+def test_load_rows_exits_when_csv_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(s, "RESULTAT_CSV", str(tmp_path / "missing.csv"))
+    with pytest.raises(SystemExit):
+        s.load_rows()
