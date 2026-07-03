@@ -30,6 +30,9 @@ python3 fetch_riksdagen_members.py
 echo "--- Synkar regeringens departement ---"
 python3 sync_regeringen.py
 
+echo "--- Hämtar Svenska kyrkans kyrkovalda (kyrkostyrelse + Uppsala stift) ---"
+python3 fetch_kyrka.py
+
 echo "--- Fyller i parti för kommun/region via Valmyndigheten ---"
 python3 sync_party_from_val.py
 
