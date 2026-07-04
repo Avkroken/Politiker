@@ -21,15 +21,15 @@ jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           # PAT krävs så att PR:en triggar required checks + auto-merge.yml
           # (PR:er öppnade med GITHUB_TOKEN startar inga andra workflows).
           token: ${{ secrets.GH_PAT }}
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: "3.12"
+          python-version: "3.14.6"
 
       - name: Installera beroenden
         run: python3 -m pip install "requests==2.33.0"
