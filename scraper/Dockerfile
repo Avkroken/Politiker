@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy@sha256:aaa8048c7a7c414fab6ad809469eb35f13bbf5093038113eef851b3c4814ad77
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
