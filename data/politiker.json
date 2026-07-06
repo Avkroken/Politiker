@@ -122464,6 +122464,366 @@
     "role": null
   },
   {
+    "name": "Amanda Carlshamre Stockholms stift",
+    "email": "amanda.carlshamre@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "POSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Anders Brunnstedt",
+    "email": "anders.brunnstedt@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "POSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Anna Sundberg",
+    "email": "anna.sundberg@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "SDSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Bengt Kjellgren",
+    "email": "bengt.kjellgren@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": null,
+    "role": "1:e vice ordförande"
+  },
+  {
+    "name": "Britt Björneke",
+    "email": "britt.bjorneke@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "VISK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Erik Sjöstrand",
+    "email": "erik.sjostrand@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "POSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Erik Vikström",
+    "email": "erik.vikstrom@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": null,
+    "role": "Ordförande"
+  },
+  {
+    "name": "Håkan Widepalm",
+    "email": "hakan.widepalm@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "C",
+    "role": "2:e vice ordförande"
+  },
+  {
+    "name": "Jesper Eneroth",
+    "email": "jesper.eneroth@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Karin Janfalk",
+    "email": "karin.janfalk@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "ÖKA",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Karin Perers",
+    "email": "karin.perers@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": null,
+    "role": "2:e vice ordförande"
+  },
+  {
+    "name": "Lars Johnsson",
+    "email": "lars.a.johnsson@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Madeleine Jonsson",
+    "email": "Madeleine.Jonsson@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "DGSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Marie Johansson",
+    "email": "marie.johansson2@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Olle Reichenberg",
+    "email": "olle.reichenberg@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "BA",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Roberth Krantz",
+    "email": "roberth.krantz@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Wanja Lundby-Wedin",
+    "email": "wanja.lundby-wedin@svenskakyrkan.se",
+    "area_name": "Svenska kyrkan",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "1:e vice ordförande"
+  },
+  {
+    "name": "Agneta Hedlundh",
+    "email": "agneta.hedlundh@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "POSK",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Ann Katrine Myles",
+    "email": "annkatrine.myles@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "DGSK",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Anna-Karin Åström",
+    "email": "anna-karin.astrom@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "SDSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Anna-Lena Berglund",
+    "email": "anna-lena.berglund@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "POSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Chatarina Erdtman",
+    "email": "c.erdtman@gmail.com",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Christian Nordberg",
+    "email": "nordbergchristian@gmail.com",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "POSK",
+    "role": "Ersättare"
+  },
+  {
+    "name": "David Berggren",
+    "email": "david.berggren@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Eva Blomberg Svensson",
+    "email": "eva.bs@telia.com",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "VISK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Eva Marja Andersson",
+    "email": "evamarja.andersson@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "BKS",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Helena Emanuelsson Brink",
+    "email": "helena.emanuel.brink@gmail.com",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "C",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Ingela Bengtsson",
+    "email": "ingela.bengtsson2@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "ÖKA",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Judith Hartwig",
+    "email": "Judith.Hartwig@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Kajsa Berg",
+    "email": "kajsa.berg@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "POSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Karin Johannesson",
+    "email": "thomas.arnqvist@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": null,
+    "role": "Ordförande"
+  },
+  {
+    "name": "Kent Haug",
+    "email": "kenth.haug@telia.com",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "ÖKA",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Kerstin Eskhult",
+    "email": "kerstin.eskhult@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "C",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Kicki Lidén",
+    "email": "kicki.liden@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "POSK",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Kristina Bergström",
+    "email": "kristina.bergstrom@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "DGSK",
+    "role": "Vice ordförande"
+  },
+  {
+    "name": "Kristina Drotz",
+    "email": "kristina.drotz@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ordförande"
+  },
+  {
+    "name": "Lars Norvik",
+    "email": "lars_norvik@yahoo.com",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "SDSK",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Magnus Åkerman",
+    "email": "magnus.akerman@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "BKS",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Matilda Helg",
+    "email": "matilda.helg@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": null,
+    "role": "Ersättare"
+  },
+  {
+    "name": "Mattias Benke",
+    "email": "Mattias.Benke@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Ove Grip",
+    "email": "ove.grip@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "VISK",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Peder Granath",
+    "email": "peder.granath@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Ledamot"
+  },
+  {
+    "name": "Per Swedberg",
+    "email": "per.swedberg@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "FISK",
+    "role": "Ersättare"
+  },
+  {
+    "name": "Roberth Krantz",
+    "email": "roberth.krantz@svenskakyrkan.se",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "S",
+    "role": "Vice ordförande"
+  },
+  {
+    "name": "Susanne Engström",
+    "email": "sus73e@live.com",
+    "area_name": "Uppsala stift",
+    "area_type": "kyrka",
+    "party": "C",
+    "role": "Ledamot"
+  },
+  {
     "name": "Arbetsmarknadsdepartementet",
     "email": "arbetsmarknadsdepartementet.registrator@regeringskansliet.se",
     "area_name": "Arbetsmarknadsdepartementet",
