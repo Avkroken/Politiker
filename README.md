@@ -50,6 +50,10 @@ cp .env.example .env
 docker compose up
 ```
 
+Sätt valfritt `SENTRY_DSN` i `.env` för att skicka ohanterade fel per
+kommun/region samt globala krascher till Sentry. Saknas variabeln körs
+scrapern som vanligt utan felspårning (no-op).
+
 Scrapern skriver till `OUTPUT_DIR`:
 
 - VCF-filer (en per region + en samlad)

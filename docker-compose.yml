@@ -8,3 +8,4 @@ services:
       - ${LOG_DIR:-./logs}:/logs
     environment:
       - TZ=Europe/Stockholm
+      - SENTRY_DSN=${SENTRY_DSN:-}

@@ -19,6 +19,7 @@ import unicodedata
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import unquote
+import sentry_sdk
 from playwright.async_api import async_playwright, Error as PlaywrightError
 from pypdf import PdfReader
 
@@ -42,6 +43,12 @@ logging.basicConfig(
     ],
 )
 log = logging.getLogger(__name__)
+
+sentry_sdk.init(
+    dsn=os.environ.get("SENTRY_DSN"),
+    traces_sample_rate=1.0,
+    send_default_pii=False,
+)
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
 
@@ -801,49 +808,54 @@ async def main():
 
         for region in REGIONER:
             namn = region["namn"]
-            if region["typ"] == "netpublicator":
-                people = await scrape_netpublicator(
-                    context, namn,
-                    region["netpub_registry"],
-                    region["netpub_board"],
-                )
-            elif region["typ"] == "troman":
-                people = await scrape_troman(context, namn, region["url"])
-            elif region["typ"] == "w3d3":
-                people = await scrape_w3d3(context, namn, region["url"])
-            elif region["typ"] == "fmr":
-                people = await scrape_fmr(context, namn, region["url"])
-            elif region["typ"] == "profilsidor":
-                people = await scrape_profilsidor(
-                    context, namn,
-                    region["url"],
-                    region["link_pattern"],
-                    region["domain"],
-                )
-            elif region["typ"] == "namnmonster":
-                people = await scrape_namnmonster(
-                    context, namn,
-                    region["url"],
-                    region["domain"],
-                    region["section_start"],
-                    region.get("section_end"),
-                    region.get("expand_text"),
-                )
-            elif region["typ"] == "mailto":
-                people = await scrape_mailto(context, namn, region["url"])
-            elif region["typ"] == "pdf":
-                people = await scrape_pdf_lista(context, namn, region["url"], region["domain"])
-            elif region["typ"] == "namnlista":
-                people = await scrape_namnlista(
-                    context, namn,
-                    region["url"],
-                    region["domain"],
-                    region["section_start"],
-                    region.get("section_end"),
-                    region.get("skip_lines"),
-                )
-            else:
-                raise ValueError(f"{namn}: okänd typ '{region['typ']}'")
+            try:
+                if region["typ"] == "netpublicator":
+                    people = await scrape_netpublicator(
+                        context, namn,
+                        region["netpub_registry"],
+                        region["netpub_board"],
+                    )
+                elif region["typ"] == "troman":
+                    people = await scrape_troman(context, namn, region["url"])
+                elif region["typ"] == "w3d3":
+                    people = await scrape_w3d3(context, namn, region["url"])
+                elif region["typ"] == "fmr":
+                    people = await scrape_fmr(context, namn, region["url"])
+                elif region["typ"] == "profilsidor":
+                    people = await scrape_profilsidor(
+                        context, namn,
+                        region["url"],
+                        region["link_pattern"],
+                        region["domain"],
+                    )
+                elif region["typ"] == "namnmonster":
+                    people = await scrape_namnmonster(
+                        context, namn,
+                        region["url"],
+                        region["domain"],
+                        region["section_start"],
+                        region.get("section_end"),
+                        region.get("expand_text"),
+                    )
+                elif region["typ"] == "mailto":
+                    people = await scrape_mailto(context, namn, region["url"])
+                elif region["typ"] == "pdf":
+                    people = await scrape_pdf_lista(context, namn, region["url"], region["domain"])
+                elif region["typ"] == "namnlista":
+                    people = await scrape_namnlista(
+                        context, namn,
+                        region["url"],
+                        region["domain"],
+                        region["section_start"],
+                        region.get("section_end"),
+                        region.get("skip_lines"),
+                    )
+                else:
+                    raise ValueError(f"{namn}: okänd typ '{region['typ']}'")
+            except Exception as e:
+                log.error(f"{namn}: ohanterat fel, hoppar över ({e})")
+                sentry_sdk.capture_exception(e)
+                continue
 
             if people:
                 alla_people[namn] = people
