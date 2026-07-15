@@ -48,6 +48,7 @@ sentry_sdk.init(
     dsn=os.environ.get("SENTRY_DSN"),
     traces_sample_rate=1.0,
     send_default_pii=False,
+    include_local_variables=False,
 )
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
