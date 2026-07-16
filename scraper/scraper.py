@@ -856,6 +856,7 @@ async def main():
             except Exception as e:
                 log.error(f"{namn}: ohanterat fel, hoppar över ({e})")
                 sentry_sdk.capture_exception(e)
+                sentry_sdk.flush(timeout=5)
                 continue
 
             if people:
@@ -897,4 +898,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        log.error(f"Globalt ohanterat fel: {e}")
+        sentry_sdk.capture_exception(e)
+        sentry_sdk.flush(timeout=5)
+        raise
