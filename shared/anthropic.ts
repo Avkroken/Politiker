@@ -36,6 +36,12 @@ export async function callAnthropic(
   const today = todayUtc();
   const budget = opts.budget ?? DAILY_CALL_BUDGET;
 
+  // OBS: check-then-increment nedan är INTE atomisk. Det är säkert idag eftersom
+  // cron-schemaläggaren (campaign/src/index.ts) kör alla jobb sekventiellt och
+  // varje anrop väntas in ett i taget. Om något jobb någonsin parallelliseras
+  // (t.ex. Promise.all över politiker) måste detta göras atomiskt (reservera
+  // först via INSERT ... RETURNING) för att inte överskrida budgeten.
+
   // Kontrollera daglig budget
   const row = await db
     .prepare("SELECT call_count FROM daily_api_usage WHERE date = ?")

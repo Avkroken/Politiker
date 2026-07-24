@@ -1,6 +1,6 @@
 import type { Env } from "./index";
 import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
-import { callAnthropic, ANTHROPIC_HAIKU } from "../../shared/anthropic";
+import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError } from "../../shared/anthropic";
 
 const MAX_PER_RUN = 150;
 const SWEEP_DAYS  = 90;
@@ -49,7 +49,16 @@ export async function runBounceSweep(env: Env): Promise<void> {
 
   if (!politicians.length) { console.log("bounce-sweep: alla kommunpolitiker kontaktade"); return; }
 
-  const template = await generateSweepLetter(env);
+  let template: string;
+  try {
+    template = await generateSweepLetter(env);
+  } catch (e) {
+    if (e instanceof AnthropicBudgetExceededError) {
+      console.warn("bounce-sweep: daglig budget slut — avbryter");
+      return;
+    }
+    throw e;
+  }
   const config = {
     host: "smtp.gmail.com", port: 587,
     user: env.GMAIL_EMAIL, password: env.GMAIL_PASSWORD,

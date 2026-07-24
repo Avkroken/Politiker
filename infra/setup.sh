@@ -187,13 +187,22 @@ if [ -d "$REPO_DIR/infra/migrations" ]; then
       continue  # Hoppar över redan applicerade migrations.
     fi
 
-    # Kör migrationen.
-    ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --file "$m" >/dev/null )
-
-    # Registrera att den körts.
-    ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null )
-
-    ok "  $filename"
+    # Kör migrationen. Äldre migrationer kan sakna "IF NOT EXISTS" och därför
+    # misslyckas på databaser som redan har tabellerna men saknar en ifylld
+    # schema_migrations (dvs. databaser som fanns före migrationsspårningen).
+    # Ett misslyckande här ska inte avbryta hela skriptet — vi registrerar bara
+    # migrationen som körd om den faktiskt lyckades.
+    if ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --file "$m" >/dev/null 2>&1 ); then
+      # Registrera att den körts.
+      ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null )
+      ok "  $filename"
+    else
+      # Antag att objekten redan finns (t.ex. äldre migration utan IF NOT
+      # EXISTS på en befintlig databas). Markera som körd så vi inte försöker
+      # igen, och fortsätt med resterande migrationer.
+      ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null )
+      warn "  $filename (redan applicerad eller misslyckades — hoppar över)"
+    fi
   done
 fi
 
