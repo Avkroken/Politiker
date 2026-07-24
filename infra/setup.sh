@@ -200,7 +200,6 @@ if [ -d "$REPO_DIR/infra/migrations" ]; then
       warn "  $filename misslyckades"
       exit 1
     fi
-    fi
   done
 fi
 
