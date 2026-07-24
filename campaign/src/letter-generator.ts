@@ -1,5 +1,5 @@
 import type { Env } from "./index";
-import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError } from "../../shared/anthropic";
+import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError, LETTER_GEN_CALL_BUDGET } from "../../shared/anthropic";
 
 const MAX_ITEMS    = 5;
 const MAX_MAIN     = 10;
@@ -26,7 +26,7 @@ Hoppa BARA över: natur/miljö/strandskydd utan social koppling, tekniska detalj
 Svara ENBART "ja" eller "nej".
 
 Titel: ${item.title}
-Sammanfattning: ${(item.summary ?? "").slice(0, 400)}` }, db);
+Sammanfattning: ${(item.summary ?? "").slice(0, 400)}`, budget: LETTER_GEN_CALL_BUDGET }, db);
   return answer.toLowerCase().startsWith("ja");
 }
 
@@ -50,7 +50,7 @@ Skriv ett medborgarbrev (240–320 ord) som:
 7. Undertecknas "${senderName}"
 
 Ton: saklig, direkt, krävande. Inga tomma artighetsfraser.
-Skriv ENBART brevtexten.` }, db);
+Skriv ENBART brevtexten.`, budget: LETTER_GEN_CALL_BUDGET }, db);
 }
 
 function randomId(): string {
@@ -72,7 +72,19 @@ export async function runLetterGenerator(env: Env): Promise<void> {
   let totalDrafts = 0;
 
   for (const item of items) {
-    if (!await isRelevant(item, env.ANTHROPIC_API_KEY, env.DB)) {
+    let relevant: boolean;
+    try {
+      relevant = await isRelevant(item, env.ANTHROPIC_API_KEY, env.DB);
+    } catch (e) {
+      if (e instanceof AnthropicBudgetExceededError) {
+        console.warn("letter-gen: daglig budget slut — avbryter");
+        console.log(`letter-gen: ${totalDrafts} brevutkast skapade (avbrutet pga budget)`);
+        return;
+      }
+      throw e;
+    }
+
+    if (!relevant) {
       await env.DB.prepare("UPDATE monitored_items SET letter_queued=2 WHERE id=?").bind(item.id).run();
       continue;
     }

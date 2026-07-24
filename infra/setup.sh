@@ -170,6 +170,17 @@ else
   ok "  Befintlig databas — hoppar över schema (rör inte din data)"
 fi
 
+# Migrations körs alltid (idempotenta CREATE TABLE IF NOT EXISTS) så att
+# befintliga databaser får nya tabeller utan att röra data.
+if [ -d "$REPO_DIR/infra/migrations" ]; then
+  log "  Applicerar migrations…"
+  for m in "$REPO_DIR"/infra/migrations/*.sql; do
+    [ -e "$m" ] || continue
+    ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --file "$m" >/dev/null )
+    ok "  $(basename "$m")"
+  done
+fi
+
 # Sätt en secret om värdet inte är tomt.
 put_secret() { # <worker-dir> <namn> <värde>
   local d="$1" name="$2" val="$3"

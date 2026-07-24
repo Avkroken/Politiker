@@ -10,6 +10,13 @@ export const ANTHROPIC_SONNET = "claude-sonnet-4-6";
 // ~930 anrop/månad — håller oss långt under Anthropics konfigurerade limit.
 export const DAILY_CALL_BUDGET = 30;
 
+// Alla tre cron-jobb delar samma dagsbudget. letter-generator (körs först och
+// slukar flest anrop) ska lämna kvar utrymme åt bounce-sweep och kvartalsbrevet
+// som körs senare på dagen och bara gör ETT anrop var. Därför får det ett lägre
+// tak än totalen. Reserven täcker båda senare jobben (max 2 anrop, endast på
+// kvartalsstarten sammanfaller de) plus marginal för eventuella retries.
+export const LETTER_GEN_CALL_BUDGET = DAILY_CALL_BUDGET - 4;
+
 export class AnthropicBudgetExceededError extends Error {
   constructor() {
     super("Anthropic daily call budget exceeded — försöker igen imorgon");
@@ -23,10 +30,11 @@ function todayUtc(): string {
 
 export async function callAnthropic(
   apiKey: string,
-  opts: { model: string; maxTokens: number; prompt: string },
+  opts: { model: string; maxTokens: number; prompt: string; budget?: number },
   db: D1Database,
 ): Promise<string> {
   const today = todayUtc();
+  const budget = opts.budget ?? DAILY_CALL_BUDGET;
 
   // Kontrollera daglig budget
   const row = await db
@@ -34,7 +42,7 @@ export async function callAnthropic(
     .bind(today)
     .first<{ call_count: number }>();
   const currentCount = row?.call_count ?? 0;
-  if (currentCount >= DAILY_CALL_BUDGET) {
+  if (currentCount >= budget) {
     throw new AnthropicBudgetExceededError();
   }
 
