@@ -65,7 +65,7 @@ Svara med EXAKT detta format:
 ÄMNE: <ämnesrad, max 80 tecken>
 <tom rad>
 <brevtexten>`,
-  });
+  }, env.DB);
 
   const match = raw.match(/^ÄMNE:\s*(.+)\n+([\s\S]+)$/);
   if (!match) throw new Error("quarterly: kunde inte tolka ÄMNE/brödtext ur modellsvaret");

@@ -34,7 +34,7 @@ Skriv ett kort medborgarbrev (150–200 ord) som:
 5. Undertecknas "${env.SENDER_NAME}, medborgare"
 
 Skriv ENBART brevtexten.`,
-  });
+  }, env.DB);
 }
 
 export async function runBounceSweep(env: Env): Promise<void> {
