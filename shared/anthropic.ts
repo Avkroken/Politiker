@@ -36,19 +36,18 @@ export async function callAnthropic(
   const today = todayUtc();
   const budget = opts.budget ?? DAILY_CALL_BUDGET;
 
-  // OBS: check-then-increment nedan är INTE atomisk. Det är säkert idag eftersom
-  // cron-schemaläggaren (campaign/src/index.ts) kör alla jobb sekventiellt och
-  // varje anrop väntas in ett i taget. Om något jobb någonsin parallelliseras
-  // (t.ex. Promise.all över politiker) måste detta göras atomiskt (reservera
-  // först via INSERT ... RETURNING) för att inte överskrida budgeten.
-
-  // Kontrollera daglig budget
-  const row = await db
-    .prepare("SELECT call_count FROM daily_api_usage WHERE date = ?")
-    .bind(today)
-    .first<{ call_count: number }>();
-  const currentCount = row?.call_count ?? 0;
-  if (currentCount >= budget) {
+  // Atomisk budgetreservering: försök ta EN budgetenhet INNAN API-anropet.
+  // Om budget redan uppnådd returnerar UPDATE:n noll rader (call_count >= budget
+  // i WHERE-villkoret misslyckas) — då kastar vi AnthropicBudgetExceededError.
+  // Reserveringen behålls oavsett om fetch/parsing lyckas eller inte — ingen
+  // rollback vid fel, så att misslyckade anrop inte kan köras om i oändlighet.
+  const reservation = await db
+    .prepare(
+      "INSERT INTO daily_api_usage (date, call_count) VALUES (?, 1) ON CONFLICT(date) DO UPDATE SET call_count = call_count + 1 WHERE call_count < ?",
+    )
+    .bind(today, budget)
+    .run();
+  if (reservation.meta.changes === 0) {
     throw new AnthropicBudgetExceededError();
   }
 
@@ -65,14 +64,6 @@ export async function callAnthropic(
   const data = (await resp.json()) as { content?: Array<{ text: string }> };
   const text = data.content?.[0]?.text;
   if (!text) throw new Error("Anthropic: tomt svar");
-
-  // Räkna upp anropet efter lyckat svar
-  await db
-    .prepare(
-      "INSERT INTO daily_api_usage (date, call_count) VALUES (?, 1) ON CONFLICT(date) DO UPDATE SET call_count = call_count + 1",
-    )
-    .bind(today)
-    .run();
 
   return text.trim();
 }
