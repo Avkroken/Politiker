@@ -197,11 +197,9 @@ if [ -d "$REPO_DIR/infra/migrations" ]; then
       ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null )
       ok "  $filename"
     else
-      # Antag att objekten redan finns (t.ex. äldre migration utan IF NOT
-      # EXISTS på en befintlig databas). Markera som körd så vi inte försöker
-      # igen, och fortsätt med resterande migrationer.
-      ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null )
-      warn "  $filename (redan applicerad eller misslyckades — hoppar över)"
+      warn "  $filename misslyckades"
+      exit 1
+    fi
     fi
   done
 fi
