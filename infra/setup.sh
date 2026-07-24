@@ -170,14 +170,30 @@ else
   ok "  Befintlig databas — hoppar över schema (rör inte din data)"
 fi
 
-# Migrations körs alltid (idempotenta CREATE TABLE IF NOT EXISTS) så att
-# befintliga databaser får nya tabeller utan att röra data.
+# Migrations körs bara om de inte redan applicerats (spåras i schema_migrations).
 if [ -d "$REPO_DIR/infra/migrations" ]; then
   log "  Applicerar migrations…"
+  # Säkerställ att schema_migrations-tabellen finns.
+  ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "CREATE TABLE IF NOT EXISTS schema_migrations (filename TEXT PRIMARY KEY, applied_at INTEGER NOT NULL)" >/dev/null )
+
   for m in "$REPO_DIR"/infra/migrations/*.sql; do
     [ -e "$m" ] || continue
+    filename="$(basename "$m")"
+
+    # Kolla om denna migration redan körts.
+    already_applied="$( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "SELECT filename FROM schema_migrations WHERE filename = '$filename'" 2>/dev/null | grep -c "$filename" || true )"
+
+    if [ "$already_applied" -gt 0 ]; then
+      continue  # Hoppar över redan applicerade migrations.
+    fi
+
+    # Kör migrationen.
     ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --file "$m" >/dev/null )
-    ok "  $(basename "$m")"
+
+    # Registrera att den körts.
+    ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null )
+
+    ok "  $filename"
   done
 fi
 
