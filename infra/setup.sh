@@ -170,6 +170,39 @@ else
   ok "  Befintlig databas — hoppar över schema (rör inte din data)"
 fi
 
+# Migrations körs bara om de inte redan applicerats (spåras i schema_migrations).
+if [ -d "$REPO_DIR/infra/migrations" ]; then
+  log "  Applicerar migrations…"
+  # Säkerställ att schema_migrations-tabellen finns.
+  ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "CREATE TABLE IF NOT EXISTS schema_migrations (filename TEXT PRIMARY KEY, applied_at INTEGER NOT NULL)" >/dev/null )
+
+  for m in "$REPO_DIR"/infra/migrations/*.sql; do
+    [ -e "$m" ] || continue
+    filename="$(basename "$m")"
+
+    # Kolla om denna migration redan körts. SELECT:en returnerar sentinelraden
+    # MIGRATION_APPLIED bara när en matchande rad finns — texten dyker aldrig upp
+    # i kolumnrubriker eller kommando-eko, så grep -Fq blir entydigt (till
+    # skillnad från att matcha filnamnet, vars punkter dessutom är regex-metatecken).
+    if ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "SELECT 'MIGRATION_APPLIED' FROM schema_migrations WHERE filename = '$filename'" 2>/dev/null | grep -Fq "MIGRATION_APPLIED" ); then
+      continue  # Hoppar över redan applicerade migrations.
+    fi
+
+    # Kör migrationen. Äldre migrationer kan sakna "IF NOT EXISTS" och därför
+    # misslyckas på databaser som redan har tabellerna men saknar en ifylld
+    # schema_migrations (dvs. databaser som fanns före migrationsspårningen).
+    # Ett misslyckande här ska inte avbryta hela skriptet — vi registrerar bara
+    # migrationen som körd om den faktiskt lyckades.
+    if ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --file "$m" >/dev/null 2>&1 ); then
+      # Registrera att den körts.
+      ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null )
+      ok "  $filename"
+    else
+      warn "  $filename misslyckades — hoppar över och fortsätter"
+    fi
+  done
+fi
+
 # Sätt en secret om värdet inte är tomt.
 put_secret() { # <worker-dir> <namn> <värde>
   local d="$1" name="$2" val="$3"
