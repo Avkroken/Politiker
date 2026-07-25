@@ -1,5 +1,7 @@
+import * as Sentry from "@sentry/cloudflare";
 import type { Env } from "./index";
-import { callAnthropic, ANTHROPIC_HAIKU } from "../../shared/anthropic";
+import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError, LETTER_GEN_CALL_BUDGET } from "../../shared/anthropic";
+import { notifyBudgetExhausted } from "./notify";
 
 const MAX_ITEMS    = 5;
 const MAX_MAIN     = 10;
@@ -13,7 +15,7 @@ interface Politician {
   id: string; name: string; email: string; area_name: string; party: string | null; role: string | null;
 }
 
-async function isRelevant(item: MonitoredItem, apiKey: string): Promise<boolean> {
+async function isRelevant(item: MonitoredItem, apiKey: string, db: D1Database): Promise<boolean> {
   const answer = await callAnthropic(apiKey, { model: ANTHROPIC_HAIKU, maxTokens: 5, prompt: `Avgör om följande nyhet eller riksdagsärende berör MINST ETT av dessa ämnen:
 - Sociala rättigheter och välfärd: sjukvård, abort/reproduktiva rättigheter, äldreomsorg, psykiatri, funktionsnedsättning, barnfamiljer, hemlöshet
 - Bostad och stadsplanering: bostadsbrist, hyresrätt, segregation
@@ -26,11 +28,11 @@ Hoppa BARA över: natur/miljö/strandskydd utan social koppling, tekniska detalj
 Svara ENBART "ja" eller "nej".
 
 Titel: ${item.title}
-Sammanfattning: ${(item.summary ?? "").slice(0, 400)}` });
+Sammanfattning: ${(item.summary ?? "").slice(0, 400)}`, budget: LETTER_GEN_CALL_BUDGET }, db);
   return answer.toLowerCase().startsWith("ja");
 }
 
-async function generateLetter(item: MonitoredItem, pol: Politician, senderName: string, apiKey: string): Promise<string> {
+async function generateLetter(item: MonitoredItem, pol: Politician, senderName: string, apiKey: string, db: D1Database): Promise<string> {
   const polDesc = [pol.name, pol.role, pol.party ? `(${pol.party})` : null, pol.area_name].filter(Boolean).join(", ");
   const typeLabel: Record<string, string> = { motion: "motion", proposition: "proposition", betankande: "betänkande", news: "nyhet" };
   return callAnthropic(apiKey, { model: ANTHROPIC_HAIKU, maxTokens: 800, prompt: `Du är ${senderName}, kritisk och engagerad svensk medborgare.
@@ -50,7 +52,7 @@ Skriv ett medborgarbrev (240–320 ord) som:
 7. Undertecknas "${senderName}"
 
 Ton: saklig, direkt, krävande. Inga tomma artighetsfraser.
-Skriv ENBART brevtexten.` });
+Skriv ENBART brevtexten.`, budget: LETTER_GEN_CALL_BUDGET }, db);
 }
 
 function randomId(): string {
@@ -72,7 +74,21 @@ export async function runLetterGenerator(env: Env): Promise<void> {
   let totalDrafts = 0;
 
   for (const item of items) {
-    if (!await isRelevant(item, env.ANTHROPIC_API_KEY)) {
+    let relevant: boolean;
+    try {
+      relevant = await isRelevant(item, env.ANTHROPIC_API_KEY, env.DB);
+    } catch (e) {
+      if (e instanceof AnthropicBudgetExceededError) {
+        console.warn("letter-gen: daglig budget slut — avbryter");
+        Sentry.captureMessage("letter-gen: Anthropic daglig budget slut — resterande ärenden köade till imorgon", "warning");
+        await notifyBudgetExhausted(env, "letter-generator", `${totalDrafts} brevutkast skapade innan budgeten tog slut. Resterande ärenden ligger kvar i kön.`);
+        console.log(`letter-gen: ${totalDrafts} brevutkast skapade (avbrutet pga budget)`);
+        return;
+      }
+      throw e;
+    }
+
+    if (!relevant) {
       await env.DB.prepare("UPDATE monitored_items SET letter_queued=2 WHERE id=?").bind(item.id).run();
       continue;
     }
@@ -112,7 +128,7 @@ export async function runLetterGenerator(env: Env): Promise<void> {
 
     for (const pol of politicians) {
       try {
-        const body = await generateLetter(item, pol, env.SENDER_NAME, env.ANTHROPIC_API_KEY);
+        const body = await generateLetter(item, pol, env.SENDER_NAME, env.ANTHROPIC_API_KEY, env.DB);
         const draftId = randomId();
         const recId   = randomId();
 
@@ -131,6 +147,16 @@ export async function runLetterGenerator(env: Env): Promise<void> {
         totalDrafts++;
         itemDrafts++;
       } catch (e) {
+        if (e instanceof AnthropicBudgetExceededError) {
+          console.warn("letter-gen: daglig budget slut — avbryter");
+          Sentry.captureMessage("letter-gen: Anthropic daglig budget slut — resterande ärenden köade till imorgon", "warning");
+          if (itemDrafts > 0) {
+            await env.DB.prepare("UPDATE monitored_items SET letter_queued=1 WHERE id=?").bind(item.id).run();
+          }
+          await notifyBudgetExhausted(env, "letter-generator", `${totalDrafts} brevutkast skapade innan budgeten tog slut. Resterande ärenden ligger kvar i kön.`);
+          console.log(`letter-gen: ${totalDrafts} brevutkast skapade (avbrutet pga budget)`);
+          return;
+        }
         console.error(`letter-gen: fel för ${pol.name}:`, e);
       }
     }
