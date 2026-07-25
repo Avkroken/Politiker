@@ -1,6 +1,8 @@
+import * as Sentry from "@sentry/cloudflare";
 import type { Env } from "./index";
 import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
-import { callAnthropic, ANTHROPIC_HAIKU } from "../../shared/anthropic";
+import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError } from "../../shared/anthropic";
+import { notifyBudgetExhausted } from "./notify";
 
 const MAX_PER_RUN = 150;
 const SWEEP_DAYS  = 90;
@@ -34,7 +36,7 @@ Skriv ett kort medborgarbrev (150–200 ord) som:
 5. Undertecknas "${env.SENDER_NAME}, medborgare"
 
 Skriv ENBART brevtexten.`,
-  });
+  }, env.DB);
 }
 
 export async function runBounceSweep(env: Env): Promise<void> {
@@ -49,7 +51,18 @@ export async function runBounceSweep(env: Env): Promise<void> {
 
   if (!politicians.length) { console.log("bounce-sweep: alla kommunpolitiker kontaktade"); return; }
 
-  const template = await generateSweepLetter(env);
+  let template: string;
+  try {
+    template = await generateSweepLetter(env);
+  } catch (e) {
+    if (e instanceof AnthropicBudgetExceededError) {
+      console.warn("bounce-sweep: daglig budget slut — avbryter");
+      Sentry.captureMessage("bounce-sweep: Anthropic daglig budget slut — svepet hoppades över", "warning");
+      await notifyBudgetExhausted(env, "bounce-sweep", "Bounce-svepet hoppades över denna körning.");
+      return;
+    }
+    throw e;
+  }
   const config = {
     host: "smtp.gmail.com", port: 587,
     user: env.GMAIL_EMAIL, password: env.GMAIL_PASSWORD,

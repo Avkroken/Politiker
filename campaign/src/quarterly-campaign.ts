@@ -1,5 +1,7 @@
+import * as Sentry from "@sentry/cloudflare";
 import type { Env } from "./index";
-import { callAnthropic, ANTHROPIC_SONNET } from "../../shared/anthropic";
+import { callAnthropic, ANTHROPIC_SONNET, AnthropicBudgetExceededError } from "../../shared/anthropic";
+import { notifyBudgetExhausted } from "./notify";
 
 // Kvartalsbrevet: EN gång per kvartal researchas och författas ETT brev
 // (utifrån kvartalets socialt relevanta bevakade ärenden) som skickas till
@@ -43,10 +45,12 @@ export async function runQuarterlyCampaign(env: Env): Promise<void> {
   const corpus = items.map(i => `- ${i.title}: ${(i.summary ?? "").slice(0, 200)} (${i.url})`).join("\n")
     || "(inga bevakade ärenden detta kvartal — utgå från allmänt kända, aktuella svenska samhällsproblem)";
 
-  const raw = await callAnthropic(env.ANTHROPIC_API_KEY, {
-    model: ANTHROPIC_SONNET,
-    maxTokens: 2000,
-    prompt: `Du är ${env.SENDER_NAME}, kritisk och engagerad svensk medborgare. En gång per kvartal skriver du ETT gemensamt brev till samtliga förtroendevalda i Sverige — kommun, region, riksdag, regering och EU-parlament.
+  let raw: string;
+  try {
+    raw = await callAnthropic(env.ANTHROPIC_API_KEY, {
+      model: ANTHROPIC_SONNET,
+      maxTokens: 2000,
+      prompt: `Du är ${env.SENDER_NAME}, kritisk och engagerad svensk medborgare. En gång per kvartal skriver du ETT gemensamt brev till samtliga förtroendevalda i Sverige — kommun, region, riksdag, regering och EU-parlament.
 
 Underlag — kvartalets bevakade nyheter och riksdagsärenden:
 ${corpus}
@@ -65,7 +69,16 @@ Svara med EXAKT detta format:
 ÄMNE: <ämnesrad, max 80 tecken>
 <tom rad>
 <brevtexten>`,
-  });
+    }, env.DB);
+  } catch (e) {
+    if (e instanceof AnthropicBudgetExceededError) {
+      console.warn("quarterly: daglig budget slut — avbryter");
+      Sentry.captureMessage("quarterly: Anthropic daglig budget slut — kvartalsbrevet hoppades över", "warning");
+      await notifyBudgetExhausted(env, "quarterly-campaign", "Kvartalsbrevet hoppades över denna körning.");
+      return;
+    }
+    throw e;
+  }
 
   const match = raw.match(/^ÄMNE:\s*(.+)\n+([\s\S]+)$/);
   if (!match) throw new Error("quarterly: kunde inte tolka ÄMNE/brödtext ur modellsvaret");
