@@ -41,6 +41,14 @@ export async function callAnthropic(
   // i WHERE-villkoret misslyckas) — då kastar vi AnthropicBudgetExceededError.
   // Reserveringen behålls oavsett om fetch/parsing lyckas eller inte — ingen
   // rollback vid fel, så att misslyckade anrop inte kan köras om i oändlighet.
+  const today = todayUtc();
+  const budget = opts.budget ?? DAILY_CALL_BUDGET;
+  if (!Number.isSafeInteger(budget) || budget < 0) {
+    throw new RangeError("Anthropic budget must be a non-negative integer");
+  }
+  if (budget === 0) {
+    throw new AnthropicBudgetExceededError();
+  }
   const reservation = await db
     .prepare(
       "INSERT INTO daily_api_usage (date, call_count) VALUES (?, 1) ON CONFLICT(date) DO UPDATE SET call_count = call_count + 1 WHERE call_count < ?",
