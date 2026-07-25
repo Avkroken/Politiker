@@ -57,6 +57,13 @@ export async function callAnthropic(
     throw new AnthropicBudgetExceededError();
   }
 
+  // Rensa rader äldre än 7 dagar så tabellen inte växer obegränsat. Vi behöver
+  // bara dagens rad; historiken sparas några dagar enbart för felsökning.
+  await db
+    .prepare("DELETE FROM daily_api_usage WHERE date < ?")
+    .bind(new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
+    .run();
+
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },

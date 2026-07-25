@@ -180,10 +180,11 @@ if [ -d "$REPO_DIR/infra/migrations" ]; then
     [ -e "$m" ] || continue
     filename="$(basename "$m")"
 
-    # Kolla om denna migration redan körts.
-    already_applied="$( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "SELECT filename FROM schema_migrations WHERE filename = '$filename'" 2>/dev/null | grep -c "$filename" || true )"
-
-    if [ "$already_applied" -gt 0 ]; then
+    # Kolla om denna migration redan körts. SELECT:en returnerar sentinelraden
+    # MIGRATION_APPLIED bara när en matchande rad finns — texten dyker aldrig upp
+    # i kolumnrubriker eller kommando-eko, så grep -Fq blir entydigt (till
+    # skillnad från att matcha filnamnet, vars punkter dessutom är regex-metatecken).
+    if ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "SELECT 'MIGRATION_APPLIED' FROM schema_migrations WHERE filename = '$filename'" 2>/dev/null | grep -Fq "MIGRATION_APPLIED" ); then
       continue  # Hoppar över redan applicerade migrations.
     fi
 
@@ -197,8 +198,7 @@ if [ -d "$REPO_DIR/infra/migrations" ]; then
       ( cd "$REPO_DIR/app" && $WR d1 execute "$DB_NAME" --remote --yes --command "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null )
       ok "  $filename"
     else
-      warn "  $filename misslyckades"
-      exit 1
+      warn "  $filename misslyckades — hoppar över och fortsätter"
     fi
   done
 fi

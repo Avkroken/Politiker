@@ -1,5 +1,7 @@
+import * as Sentry from "@sentry/cloudflare";
 import type { Env } from "./index";
 import { callAnthropic, ANTHROPIC_SONNET, AnthropicBudgetExceededError } from "../../shared/anthropic";
+import { notifyBudgetExhausted } from "./notify";
 
 // Kvartalsbrevet: EN gång per kvartal researchas och författas ETT brev
 // (utifrån kvartalets socialt relevanta bevakade ärenden) som skickas till
@@ -71,6 +73,8 @@ Svara med EXAKT detta format:
   } catch (e) {
     if (e instanceof AnthropicBudgetExceededError) {
       console.warn("quarterly: daglig budget slut — avbryter");
+      Sentry.captureMessage("quarterly: Anthropic daglig budget slut — kvartalsbrevet hoppades över", "warning");
+      await notifyBudgetExhausted(env, "quarterly-campaign", "Kvartalsbrevet hoppades över denna körning.");
       return;
     }
     throw e;
