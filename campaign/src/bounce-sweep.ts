@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import type { Env } from "./index";
 import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
 import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError } from "../../shared/anthropic";
@@ -57,7 +56,7 @@ export async function runBounceSweep(env: Env): Promise<void> {
   } catch (e) {
     if (e instanceof AnthropicBudgetExceededError) {
       console.warn("bounce-sweep: daglig budget slut — avbryter");
-      Sentry.captureMessage("bounce-sweep: Anthropic daglig budget slut — svepet hoppades över", "warning");
+      console.warn("bounce-sweep: Anthropic daglig budget slut — svepet hoppades över", "warning");
       await notifyBudgetExhausted(env, "bounce-sweep", "Bounce-svepet hoppades över denna körning.");
       return;
     }

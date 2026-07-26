@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import type { Env } from "./index";
 import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError, LETTER_GEN_CALL_BUDGET } from "../../shared/anthropic";
 import { notifyBudgetExhausted } from "./notify";
@@ -80,7 +79,7 @@ export async function runLetterGenerator(env: Env): Promise<void> {
     } catch (e) {
       if (e instanceof AnthropicBudgetExceededError) {
         console.warn("letter-gen: daglig budget slut — avbryter");
-        Sentry.captureMessage("letter-gen: Anthropic daglig budget slut — resterande ärenden köade till imorgon", "warning");
+        console.warn("letter-gen: Anthropic daglig budget slut — resterande ärenden köade till imorgon", "warning");
         await notifyBudgetExhausted(env, "letter-generator", `${totalDrafts} brevutkast skapade innan budgeten tog slut. Resterande ärenden ligger kvar i kön.`);
         console.log(`letter-gen: ${totalDrafts} brevutkast skapade (avbrutet pga budget)`);
         return;
@@ -149,7 +148,7 @@ export async function runLetterGenerator(env: Env): Promise<void> {
       } catch (e) {
         if (e instanceof AnthropicBudgetExceededError) {
           console.warn("letter-gen: daglig budget slut — avbryter");
-          Sentry.captureMessage("letter-gen: Anthropic daglig budget slut — resterande ärenden köade till imorgon", "warning");
+          console.warn("letter-gen: Anthropic daglig budget slut — resterande ärenden köade till imorgon", "warning");
           if (itemDrafts > 0) {
             await env.DB.prepare("UPDATE monitored_items SET letter_queued=1 WHERE id=?").bind(item.id).run();
           }

@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import { runMonitor } from "./monitor";
 import { runLetterGenerator } from "./letter-generator";
 import { runLetterSender } from "./letter-sender";
@@ -17,7 +16,6 @@ export interface Env {
   GITHUB_FEEDBACK_TOKEN: string;
   SENDER_NAME: string;
   GITHUB_REPO: string;
-  SENTRY_DSN?: string;
 }
 
 // Cron-tider (UTC):
@@ -38,15 +36,7 @@ export interface Env {
 
 const QUARTERLY_CRON = "30 6 1 1,4,7,10 *";
 
-export default Sentry.withSentry(
-  (env: Env) => ({
-    dsn: env.SENTRY_DSN,
-    // 100% under Sentrys trial-period (för max insikt) — sänk till 0.1-0.2
-    // när trialen tar slut för att undvika kvot-/kostnadsproblem.
-    tracesSampleRate: 1.0,
-    enableLogs: true,
-  }),
-  {
+export default {
     async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
       const hour = new Date(event.scheduledTime).getUTCHours();
       ctx.waitUntil(
@@ -65,14 +55,12 @@ export default Sentry.withSentry(
             await runNewsletterSender(env);
             await runQuarterlyDrain(env);
           } catch (e) {
-            // withSentry() wrappar bara scheduled() själv — den asynkrona
-            // tasken inuti waitUntil() ligger utanför dess try/catch, så fel
-            // här måste fångas och rapporteras manuellt.
-            Sentry.captureException(e);
+            // Fel i den asynkrona tasken inuti waitUntil() bubblar inte upp
+            // till scheduled()s anropare, så de måste loggas explicit här.
+            console.error(e);
             throw e;
           }
         })()
       );
     },
-  } satisfies ExportedHandler<Env>,
-);
+  } satisfies ExportedHandler<Env>;

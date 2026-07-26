@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import type { Env } from "./index";
 import { callAnthropic, ANTHROPIC_SONNET, AnthropicBudgetExceededError } from "../../shared/anthropic";
 import { notifyBudgetExhausted } from "./notify";
@@ -73,7 +72,7 @@ Svara med EXAKT detta format:
   } catch (e) {
     if (e instanceof AnthropicBudgetExceededError) {
       console.warn("quarterly: daglig budget slut — avbryter");
-      Sentry.captureMessage("quarterly: Anthropic daglig budget slut — kvartalsbrevet hoppades över", "warning");
+      console.warn("quarterly: Anthropic daglig budget slut — kvartalsbrevet hoppades över", "warning");
       await notifyBudgetExhausted(env, "quarterly-campaign", "Kvartalsbrevet hoppades över denna körning.");
       return;
     }

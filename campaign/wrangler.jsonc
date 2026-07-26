@@ -8,8 +8,6 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
-  // Sentry: ladda upp source maps vid deploy så stacktraces visar riktig
-  // TS-kod istället för minifierat/bundlat JS.
   "upload_source_maps": true,
   "d1_databases": [
     {
