@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/cloudflare";
 import {
   signup,
   verifyEmail,
@@ -63,15 +62,7 @@ function setSessionCookie(token: string): string {
   return `session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 30}`;
 }
 
-export default Sentry.withSentry(
-  (env: Env) => ({
-    dsn: env.SENTRY_DSN,
-    // 100% under Sentrys trial-period (för max insikt) — sänk till 0.1-0.2
-    // när trialen tar slut för att undvika kvot-/kostnadsproblem.
-    tracesSampleRate: 1.0,
-    enableLogs: true,
-  }),
-  {
+export default {
     async fetch(req: Request, env: Env, execCtx: ExecutionContext): Promise<Response> {
       const url = new URL(req.url);
 
@@ -126,8 +117,7 @@ export default Sentry.withSentry(
 
     return new Response(resp.body, { status: resp.status, headers });
     },
-  } satisfies ExportedHandler<Env>,
-);
+  } satisfies ExportedHandler<Env>;
 
 // --- Tabelldriven routing för de inloggade JSON-endpointsen ---------------
 // De auth-känsliga vägarna (OAuth-redirects, cookie-sättning, civic-letter-
