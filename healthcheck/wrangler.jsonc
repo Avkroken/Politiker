@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "politiker-webapp-healthcheck",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-01",
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  // 05:00 UTC = 07:00 svensk sommartid, samma tid som den gamla crontab-raden
+  // på mp100 kördes.
+  "triggers": {
+    "crons": ["0 5 * * *"]
+  },
+  "workers_dev": false, // ingen HTTP-yta — bara cron
+  "preview_urls": false,
+  // D1 nås via binding, inte REST-API — själva radräkningarna (politicians,
+  // send_jobs) kräver då ingen Cloudflare-token alls. Samma databas som app/.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "politiker_webapp",
+      "database_id": "e9ecf94f-fa71-4004-a5b8-f9317eb4d4e9"
+    }
+  ],
+  "vars": {
+    "ACCOUNT_ID": "b74f8c0c6a92f3006483840cf27372fd",
+    "DOMAIN": "politiker.denied.se",
+    "APP_WORKER": "politiker-webapp-app",
+    "SENDER_WORKER": "politiker-webapp-sender",
+    "EMAIL_TO": "anders.eriksson@denied.se",
+    "EMAIL_FROM": "Hälsokontroll <health@send.denied.se>"
+  }
+  // Secrets (wrangler secret put), båda VALFRIA — se src/index.ts för att
+  // Workern medvetet INTE kraschar om de saknas (det var precis den hårda
+  // KeyError-kraschen som dödade föregångaren infra/healthcheck.py):
+  //   CF_API_TOKEN    — minsta möjliga behörighet: "Workers Scripts:Read" +
+  //                     "Access: Apps and Policies:Read" (kontroll 2 +
+  //                     diagnosen i kontroll 5). Saknas den hoppas kontroll 2
+  //                     och diagnosen bara över, ingen krasch.
+  //   RESEND_API_KEY  — för statusmejlet. Samma Resend-konto som politiker-webapp.
+}

@@ -26,10 +26,11 @@ npx tsc --noEmit            # typecheck
 ## Project Structure
 
 ```
-app/      # Huvud-Worker: statisk frontend + API (auth, mail-credentials, mottagarval, brev, feedback)
-sender/   # Queue consumer-Worker: faktisk SMTP-sändning
-shared/   # Delad kod (kryptering, SMTP-klient, TOTP, typer)
-infra/    # Cloudflare-provisionering (cf-api.sh, schema.sql, healthcheck.py)
+app/          # Huvud-Worker: statisk frontend + API (auth, mail-credentials, mottagarval, brev, feedback)
+sender/       # Queue consumer-Worker: faktisk SMTP-sändning
+shared/       # Delad kod (kryptering, SMTP-klient, TOTP, typer)
+healthcheck/  # Cron-Worker: daglig hälsokontroll (07:00), mailar status via Resend
+infra/        # Cloudflare-provisionering (cf-api.sh, schema.sql)
 ```
 
 ## Conventions
