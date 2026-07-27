@@ -1,0 +1,21 @@
+healthcheck/src/index.ts
+  s_a7d7d357735ad2::t_bcbfc4799ad769 9,24,62,106,169,176
+healthcheck/wrangler.jsonc
+  s_a7d7d357735ad2::t_459592cba16759 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "50f1afec26e7713a154c5572d41b71eda95f6d1f",
+  "prompts": {},
+  "sessions": {
+    "s_a7d7d357735ad2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01012648-7a48-4f93-9033-1842911a0230",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Anders Eriksson <36226327+blixten85@users.noreply.github.com>"
+    }
+  }
+}
