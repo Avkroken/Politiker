@@ -34,7 +34,7 @@
   // Secrets (wrangler secret put), båda VALFRIA — se src/index.ts för att
   // Workern medvetet INTE kraschar om de saknas (det var precis den hårda
   // KeyError-kraschen som dödade föregångaren infra/healthcheck.py):
-  //   CF_API_TOKEN    — minsta möjliga behörighet: "Workers Scripts:Read" +
+  //   POLITIKER_WEBAPP_HEALTHCHECK_TOKEN — minsta möjliga behörighet: "Workers Scripts:Read" +
   //                     "Access: Apps and Policies:Read" (kontroll 2 +
   //                     diagnosen i kontroll 5). Saknas den hoppas kontroll 2
   //                     och diagnosen bara över, ingen krasch.
