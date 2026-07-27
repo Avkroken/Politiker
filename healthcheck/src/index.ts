@@ -6,7 +6,7 @@
 //
 // Endast scheduled() — ingen HTTP-route, ingen yta att anropa utifrån.
 //
-// CF_API_TOKEN är VALFRI. Den gamla varianten kraschade hårt (KeyError) om
+// POLITIKER_WEBAPP_HEALTHCHECK_TOKEN är VALFRI. Den gamla varianten kraschade hårt (KeyError) om
 // token saknades — det felet ska aldrig upprepas. Saknas den hoppar Workern
 // bara över de två kontroller som kräver Cloudflare REST (worker-listan och
 // domän-/Access-diagnosen) och lägger till en notis om att diagnostiken är
@@ -21,7 +21,7 @@ interface Env {
   SENDER_WORKER: string;
   EMAIL_TO: string;
   EMAIL_FROM: string;
-  CF_API_TOKEN?: string;
+  POLITIKER_WEBAPP_HEALTHCHECK_TOKEN?: string;
   RESEND_API_KEY?: string;
 }
 
@@ -59,7 +59,7 @@ async function checkPublicHttp(env: Env, problems: string[]): Promise<void> {
   }
 }
 
-// 2. Workers existerar i kontot — kräver CF_API_TOKEN, hoppas över utan.
+// 2. Workers existerar i kontot — kräver POLITIKER_WEBAPP_HEALTHCHECK_TOKEN, hoppas över utan.
 async function checkWorkersExist(env: Env, token: string, problems: string[]): Promise<void> {
   try {
     const resp = await cfGet(token, `/accounts/${env.ACCOUNT_ID}/workers/scripts`);
@@ -103,7 +103,7 @@ async function checkStuckJobs(env: Env, problems: string[]): Promise<void> {
   }
 }
 
-// 5. Diagnos — körs bara om något redan är trasigt, och bara med CF_API_TOKEN.
+// 5. Diagnos — körs bara om något redan är trasigt, och bara med POLITIKER_WEBAPP_HEALTHCHECK_TOKEN.
 // Täcker de två fel vi faktiskt stötte på under utvecklingen (se README):
 // fel custom-domain-koppling och saknad Access-bypass-policy.
 async function diagnoseIfBroken(env: Env, token: string, problems: string[]): Promise<void> {
@@ -166,14 +166,14 @@ export default {
     await checkD1Reachable(env, problems, notes);
     await checkStuckJobs(env, problems);
 
-    const token = env.CF_API_TOKEN;
+    const token = env.POLITIKER_WEBAPP_HEALTHCHECK_TOKEN;
     if (token) {
       await checkWorkersExist(env, token, problems);
       if (problems.length > 0) {
         await diagnoseIfBroken(env, token, problems);
       }
     } else {
-      notes.push("Diagnostik (Cloudflare API) avstängd: CF_API_TOKEN saknas — worker-listan och domän-/Access-diagnosen hoppades över");
+      notes.push("Diagnostik (Cloudflare API) avstängd: POLITIKER_WEBAPP_HEALTHCHECK_TOKEN saknas — worker-listan och domän-/Access-diagnosen hoppades över");
     }
 
     const status = problems.length === 0 ? "OK" : `PROBLEM (${problems.length})`;
