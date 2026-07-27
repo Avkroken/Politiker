@@ -2,7 +2,8 @@ name: Deploy
 
 # Auto-deploy till Cloudflare. Repot har flera fristående Workers (var sin
 # wrangler.jsonc); bara de vars kod ändrats deployas. shared/ triggar de Workers
-# som importerar den (app, sender, campaign — alla tre).
+# som importerar den (app, sender, campaign — inte healthcheck, som medvetet
+# inte importerar shared/).
 #
 # HUR DEPLOYEN TRIGGAS: bot-auto-merge görs av github-actions[bot] med
 # GITHUB_TOKEN, vars push/pull_request-events INTE triggar andra workflows
@@ -47,7 +48,7 @@ on:
         description: "Vilken worker att deploya (eller 'all')"
         type: choice
         default: all
-        options: [all, app, sender, campaign]
+        options: [all, app, sender, campaign, healthcheck]
 
 concurrency:
   group: deploy
@@ -81,7 +82,7 @@ jobs:
 
           if [ "$EVENT" = "workflow_dispatch" ]; then
             if [ "$CHOICE" = "all" ]; then
-              echo 'workers=["app","sender","campaign"]' >> "$GITHUB_OUTPUT"
+              echo 'workers=["app","sender","campaign","healthcheck"]' >> "$GITHUB_OUTPUT"
             else
               echo "workers=[\"$CHOICE\"]" >> "$GITHUB_OUTPUT"
             fi
@@ -101,10 +102,14 @@ jobs:
           import json, sys
           changed = sys.argv[1].splitlines()
           workers = set()
+          # healthcheck importerar INTE shared/ (medvetet, se toppkommentaren) —
+          # den står därför utanför shared_consumers men får ändå egna ändringar
+          # i healthcheck/ deployade via medlemskapet i all_workers nedan.
+          all_workers = {"app", "sender", "campaign", "healthcheck"}
           shared_consumers = {"app", "sender", "campaign"}
           for f in changed:
               top = f.split("/", 1)[0]
-              if top in {"app", "sender", "campaign"}:
+              if top in all_workers:
                   workers.add(top)
               elif top == "shared":
                   workers |= shared_consumers
