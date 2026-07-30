@@ -45,7 +45,7 @@ jobs:
 
       - name: Exportera från D1
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN_POLITIKER: ${{ secrets.CLOUDFLARE_API_TOKEN_POLITIKER }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
         run: python3 export/export_d1.py
