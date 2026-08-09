@@ -1,5 +1,5 @@
 idna==3.18
 playwright==1.62.0
-pypdf==6.14.2
+pypdf==6.15.0
 requests==2.34.2
 sentry-sdk==2.66.1
