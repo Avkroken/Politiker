@@ -24,6 +24,19 @@ updates:
       docker-patch-minor:
         update-types: ["minor", "patch"]
 
+  # docker-compose.yml i roten låg utanför bevakningen. Compose är ett EGET
+  # ekosystem i Dependabot, skilt från "docker" (som bara läser Dockerfile).
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "03:40"
+      timezone: "Europe/Stockholm"
+    groups:
+      docker-compose-patch-minor:
+        update-types: ["minor", "patch"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
