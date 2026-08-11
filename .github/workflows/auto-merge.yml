@@ -19,6 +19,16 @@ jobs:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
     steps:
+      # Apptoken, inte github.token. Merges gjorda med GITHUB_TOKEN triggar
+      # aldrig push-baserade workflows (ACCESS-STANDARD regel 1) — 29 tysta
+      # workflows i 8 repon, och inga releaser sedan 23-27 juli.
+      - name: Prägla apptoken
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+
       - name: Fetch Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98
@@ -39,7 +49,7 @@ jobs:
           done
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Auto-merge patch and minor updates (other ecosystems)
         if: |
@@ -54,12 +64,19 @@ jobs:
           done
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
   security-autofix:
     runs-on: ubuntu-latest
     if: contains(github.head_ref, 'alert-autofix')
     steps:
+      - name: Prägla apptoken
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+
       - name: Enable auto-merge for security fixes
         run: |
           for i in 1 2 3 4 5; do
@@ -69,7 +86,7 @@ jobs:
           done
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
   claude:
     runs-on: ubuntu-latest
@@ -78,6 +95,13 @@ jobs:
     # De PR:erna ska ALDRIG auto-mergas — de kräver manuell granskning.
     if: (startsWith(github.head_ref, 'claude/') || contains(github.event.pull_request.labels.*.name, 'claude')) && !startsWith(github.head_ref, 'claude/autofix-')
     steps:
+      - name: Prägla apptoken
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+
       - name: Auto-merge Claude AI PRs once checks pass
         run: |
           gh pr ready "$PR_URL" || true
@@ -94,12 +118,19 @@ jobs:
           done
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
   maintainer-fix:
     runs-on: ubuntu-latest
     if: github.event.pull_request.user.login == 'blixten85' && startsWith(github.head_ref, 'fix/')
     steps:
+      - name: Prägla apptoken
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+
       - name: Auto-merge trusted fix PRs once checks pass
         run: |
           gh pr ready "$PR_URL" || true
@@ -111,12 +142,19 @@ jobs:
           done
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
   codex:
     runs-on: ubuntu-latest
     if: startsWith(github.head_ref, 'codex/')
     steps:
+      - name: Prägla apptoken
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+
       - name: Auto-merge Codex AI PRs once checks pass
         run: |
           gh pr ready "$PR_URL" || true
@@ -128,12 +166,19 @@ jobs:
           done
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
   copilot:
     runs-on: ubuntu-latest
     if: startsWith(github.head_ref, 'copilot/')
     steps:
+      - name: Prägla apptoken
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+
       - name: Auto-merge Copilot PRs once checks pass
         run: |
           gh pr ready "$PR_URL" || true
@@ -145,7 +190,7 @@ jobs:
           done
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
   # Så fort en auto-mergad PR faktiskt landat: fyra deployen direkt. GitHubs
   # loopskydd hindrar bot-mergens push från att trigga deploy.yml, men
@@ -162,6 +207,13 @@ jobs:
       startsWith(github.head_ref, 'codex/') ||
       startsWith(github.head_ref, 'copilot/')
     steps:
+      - name: Prägla apptoken
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+
       - name: Vänta på att mergen landar, fyra sedan deployen
         run: |
           # Pollar tills auto-mergen landat (checks gröna -> GitHub mergar).
@@ -183,5 +235,5 @@ jobs:
           echo "Timeout — schema-cronen får ta deployen."
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
