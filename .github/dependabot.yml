@@ -5,6 +5,9 @@ updates:
       - "/app"
       - "/sender"
       - "/campaign"
+      # /healthcheck är en egen Cloudflare Worker (package.json +
+      # wrangler.jsonc) som saknades här och därför aldrig bevakats.
+      - "/healthcheck"
     schedule:
       interval: "weekly"
       day: "wednesday"
