@@ -117,6 +117,10 @@ jobs:
           PY
 
   deploy:
+    # Grinden för produktionsdeploy ligger i miljön, inte i den här filen:
+    # deployment branch policy släpper bara main, och CLOUDFLARE_API_TOKEN
+    # är ett environment secret. En körning på dev får därför ingen token.
+    environment: production
     needs: select
     if: needs.select.outputs.workers != '[]' && needs.select.outputs.workers != ''
     runs-on: ubuntu-latest
