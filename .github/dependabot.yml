@@ -1,6 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
+    assignees: ["blixten85"]
     directories:
       - "/scraper"
       - "/verify"
@@ -14,6 +15,7 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: "docker"
+    assignees: ["blixten85"]
     directory: "/scraper"
     schedule:
       interval: "weekly"
@@ -27,6 +29,7 @@ updates:
   # docker-compose.yml i roten låg utanför bevakningen. Compose är ett EGET
   # ekosystem i Dependabot, skilt från "docker" (som bara läser Dockerfile).
   - package-ecosystem: "docker-compose"
+    assignees: ["blixten85"]
     directory: "/"
     schedule:
       interval: "weekly"
@@ -38,6 +41,7 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: "github-actions"
+    assignees: ["blixten85"]
     directory: "/"
     schedule:
       interval: "weekly"
