@@ -50,8 +50,12 @@ jobs:
           app-id: ${{ vars.POLITIKER_OCH_IDEMPOTENT }}
           private-key: ${{ secrets.POLITIKER_OCH_IDEMPOTENT }}
 
+      # dev, inte main: repot har två fasta grenar och rulesetet tillåter
+      # inte att nya skapas. Jobbet committar på dev och låter PR:en dev->main
+      # bära ändringen vidare.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: dev
           token: ${{ steps.app-token.outputs.token }}
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -76,14 +80,20 @@ jobs:
             echo "Ingen ändring i data/ — hoppar över."
             exit 0
           fi
-          BRANCH="claude/data-export-$(date +%Y%m%d-%H%M)"
           git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
           git config user.email "${{ steps.app-token.outputs.installation-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
           git add data/
           git commit -m "data: uppdatera politiker-export från D1"
-          git push origin "$BRANCH"
-          PR_URL=$(gh pr create --base main --head "$BRANCH" \
-            --title "data: uppdatera politiker-export från D1" \
-            --body 'Automatisk export av `politicians`-tabellen från live-D1 (read-only).')
-          gh pr merge --auto --squash --delete-branch "$PR_URL"
+          # Hämta in vad som hunnit landa på dev sedan checkouten, så pushen
+          # förblir fast-forward.
+          git pull --rebase origin dev
+          git push origin dev
+          # En öppen PR dev->main kan redan finnas från annat pågående arbete.
+          # gh pr create felar på en dubblett, så återanvänd den i så fall.
+          PR_URL=$(gh pr list --base main --head dev --state open --json url --jq '.[0].url // empty')
+          if [ -z "$PR_URL" ]; then
+            PR_URL=$(gh pr create --base main --head dev \
+              --title "data: uppdatera politiker-export från D1" \
+              --body 'Automatisk export av `politicians`-tabellen från live-D1 (read-only).')
+          fi
+          gh pr merge --auto --squash "$PR_URL"
