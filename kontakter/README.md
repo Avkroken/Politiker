@@ -16,7 +16,7 @@ områdestyp, parti och befattning för samtliga ~17 000 folkvalda:
 | `data/politiker.sql` | SQL (`INSERT OR IGNORE`) | Direktimport till en egen D1 |
 
 Filerna genereras direkt ur live-D1:n (read-only) av
-[`.github/workflows/export-politiker.yml`](.github/workflows/export-politiker.yml),
+[`.github/workflows/export-politiker.yml`](../.github/workflows/export-politiker.yml),
 som veckovis öppnar en auto-mergad PR när datan ändrats. Ingen extern skrapning
 sker i den workflowen — den läser bara den redan publika databasen.
 

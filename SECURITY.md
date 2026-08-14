@@ -1,22 +1,37 @@
-# Security Policy
+# Säkerhetspolicy
 
-## Supported Versions
+## Omfattning
 
-| Version | Supported |
-| ------- | --------- |
-| latest  | ✅ Yes    |
+Repot innehåller två delar med olika riskprofil:
 
-## Reporting a Vulnerability
+- **Webappen** (`app/`, `sender/`, `campaign/`, `healthcheck/`, `shared/`) —
+  hanterar användarkonton och användarnas egna SMTP-uppgifter. Det är här
+  känslig data finns.
+- **Skrapan** (`kontakter/`) — hämtar publikt publicerade e-postadresser till
+  förtroendevalda från kommuners och regioners egna webbplatser. Hanterar
+  inga inloggningsuppgifter och inga personuppgifter utöver redan offentligt
+  publicerad kontaktinformation.
 
-If you discover a security vulnerability, please **do not** open a public issue.
+## Rapportera en säkerhetsbrist
 
-Instead, use [GitHub's private reporting feature](https://github.com/blixten85/politiker-webapp/security/advisories/new) to report it confidentially.
+Om du upptäcker en säkerhetsbrist, **öppna inte ett publikt issue**.
 
-You should receive a response within 48 hours. If the issue is confirmed, we will release a patch as soon as possible.
+Rapportera den i stället privat via
+[GitHub Security Advisories](https://github.com/blixten85/politiker-webapp/security/advisories/new).
 
-## Security Best Practices
+Du bör få svar inom 48 timmar. Om bristen bekräftas släpps en rättning så
+snart som möjligt.
 
-- Always use environment variables / Wrangler secrets — never commit credentials
-- Användarnas SMTP-lösenord krypteras (AES-GCM) innan de lagras i D1 — nyckeln finns aldrig i koden
+## Så skyddas känslig data
+
+- Hemligheter sätts som miljövariabler eller Wrangler-secrets — aldrig i koden
+- Användarnas SMTP-lösenord krypteras (AES-GCM) innan de lagras i D1 —
+  nyckeln finns aldrig i koden
 - Kontolösenord hashas med PBKDF2, aldrig i klartext
-- Keep dependencies updated (Dependabot enabled)
+- Alla databasfrågor filtrerar på `account_id`
+
+## Beroenden
+
+Säkerhetsuppdateringar av tredjepartsbibliotek hanteras via Dependabot, för
+både npm-delarna och skrapans Python-beroenden (Playwright, pypdf, m.fl.).
+Öppna gärna ett issue om du ser en känd CVE som inte redan flaggats.
