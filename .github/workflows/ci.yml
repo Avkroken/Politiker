@@ -2,29 +2,65 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   typecheck:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         worker: [app, sender, campaign, healthcheck]
+    defaults:
+      run:
+        working-directory: ${{ matrix.worker }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
-          node-version: 24.18.0
+          node-version: 24
 
-      - name: Install dependencies
-        working-directory: ${{ matrix.worker }}
+      - name: Installera beroenden
         run: npm install
 
-      - name: Type-check
-        working-directory: ${{ matrix.worker }}
+      - name: Typkontroll
         run: npx tsc --noEmit
+
+  python:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kontakter
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.x'
+          cache: pip
+
+      - name: Installera beroenden
+        run: |
+          python -m pip install --upgrade pip
+          find . -name 'requirements.txt' -print0 | xargs -0 -r -n1 python -m pip install -r
+
+      - name: Kompilera
+        run: python -m compileall .
+
+      - name: Kör tester
+        run: |
+          if [ -d tests ]; then
+            python -m pip install pytest
+            python -m pytest
+          else
+            echo "Ingen tests-katalog, hoppar över."
+          fi

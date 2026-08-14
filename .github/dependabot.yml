@@ -29,3 +29,19 @@ updates:
     groups:
       actions-patch-minor:
         update-types: ["minor", "patch"]
+
+  # Scrapern och verifieringsskripten som flyttade hit från
+  # politiker-kontakter. Egna requirements.txt per katalog.
+  - package-ecosystem: "pip"
+    assignees: ["blixten85"]
+    directories:
+      - "/kontakter/scraper"
+      - "/kontakter/verify"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "03:00"
+      timezone: "Europe/Stockholm"
+    groups:
+      pip-patch-minor:
+        update-types: ["minor", "patch"]

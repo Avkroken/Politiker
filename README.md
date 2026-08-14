@@ -18,8 +18,21 @@ personaliserade brev — utan att plattformen själv blir avsändare. Live på
 För kommun/region är parti och befattning (t.ex. "Ordförande") tillagt
 där det går att fastställa — antingen direkt vid skrapning (mailto/troman/
 netpublicator, ~94% av kommunerna) eller via matchning mot Valmyndighetens
-öppna data om nuvarande ledamöter. Se `politiker-kontakter`-repot för
-skrapningslogiken.
+öppna data om nuvarande ledamöter. Skrapningslogiken ligger i
+[`kontakter/`](kontakter/) — se dess egen README.
+
+## Repots delar
+
+| Katalog | Vad |
+| --- | --- |
+| `app/`, `sender/`, `campaign/`, `healthcheck/` | Webappens Cloudflare Workers |
+| `shared/` | Kod som `app`, `sender` och `campaign` delar |
+| `kontakter/` | Scrapern som fyller D1:n, och exportverktygen |
+
+Scrapern och webappen låg tidigare i var sitt repo trots att de delar
+databas: `kontakter/` skriver in i samma D1 som webappen serverar, och
+`export-politiker.yml` läser tillbaka ur den. Det gav två uppsättningar
+workflows och regler för en enda datakedja.
 
 ## Funktioner
 
