@@ -10,8 +10,9 @@ name: Exportera politiker-data från D1
 #     snävare än deploy-tokenet POLITIKER_WEBAPP; jobbet läser bara en tabell.
 #     Skickas vidare som CLOUDFLARE_API_TOKEN_POLITIKER, som är namnet
 #     kontakter/scraper/d1.py läser.
-#   CI_APP_PRIVATE_KEY / CI_APP_ID — GitHub-appen denied.se CI. PR:er öppnade
-#     med inbyggda GITHUB_TOKEN startar inga workflows, så auto-merge uteblir.
+#   POLITIKER_OCH_IDEMPOTENT — GitHub-appens ID (variabel) och privata nyckel
+#     (secret); samma namn, skilda namnrymder. PR:er öppnade med inbyggda
+#     GITHUB_TOKEN startar inga workflows, så auto-merge uteblir.
 #   D1_DATABASE_ID, CLOUDFLARE_ACCOUNT_ID — variabler, inte secrets.
 
 on:
@@ -31,7 +32,7 @@ jobs:
   export:
     runs-on: ubuntu-latest
     # Appens ID/nyckel och D1-tokenet ligger som environment-värden på
-    # produktion. Utan den här raden är vars.CI_APP_ID tom och
+    # produktion. Utan den här raden är vars.POLITIKER_OCH_IDEMPOTENT tom och
     # tokenprägligen faller direkt.
     environment: produktion
     defaults:
@@ -46,8 +47,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ vars.CI_APP_ID }}
-          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+          app-id: ${{ vars.POLITIKER_OCH_IDEMPOTENT }}
+          private-key: ${{ secrets.POLITIKER_OCH_IDEMPOTENT }}
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
