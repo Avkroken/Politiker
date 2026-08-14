@@ -38,6 +38,27 @@ jobs:
       # den inbyggda GITHUB_TOKEN startar inga andra workflows, så required
       # checks och auto-merge uteblir. Appens token gör det, och dör efter en
       # timme.
+      - name: DIAGNOSTIK — var ligger värdena? (tas bort igen)
+        env:
+          V_APP_ID: ${{ vars.CI_APP_ID }}
+          S_APP_ID: ${{ secrets.CI_APP_ID }}
+          S_KEY: ${{ secrets.CI_APP_PRIVATE_KEY }}
+          V_D1: ${{ vars.D1_DATABASE_ID }}
+          S_D1: ${{ secrets.D1_DATABASE_ID }}
+          V_ACC: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          S_D1READ: ${{ secrets.POLITIKER_WEBAPP_D1_READ }}
+        run: |
+          p() { [ -n "$2" ] && echo "  $1: SATT (${#2} tecken)" || echo "  $1: tom"; }
+          echo "Variabler (vars.*):"
+          p "CI_APP_ID"             "$V_APP_ID"
+          p "D1_DATABASE_ID"        "$V_D1"
+          p "CLOUDFLARE_ACCOUNT_ID" "$V_ACC"
+          echo "Secrets (secrets.*):"
+          p "CI_APP_ID"                 "$S_APP_ID"
+          p "CI_APP_PRIVATE_KEY"        "$S_KEY"
+          p "D1_DATABASE_ID"            "$S_D1"
+          p "POLITIKER_WEBAPP_D1_READ"  "$S_D1READ"
+
       - name: Prägla apptoken
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
