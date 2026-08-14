@@ -16,7 +16,7 @@ områdestyp, parti och befattning för samtliga ~17 000 folkvalda:
 | `data/politiker.sql` | SQL (`INSERT OR IGNORE`) | Direktimport till en egen D1 |
 
 Filerna genereras direkt ur live-D1:n (read-only) av
-[`.github/workflows/export-politiker.yml`](.github/workflows/export-politiker.yml),
+[`.github/workflows/export-politiker.yml`](../.github/workflows/export-politiker.yml),
 som veckovis öppnar en auto-mergad PR när datan ändrats. Ingen extern skrapning
 sker i den workflowen — den läser bara den redan publika databasen.
 
@@ -49,10 +49,6 @@ cp .env.example .env
 # Justera OUTPUT_DIR i .env
 docker compose up
 ```
-
-Sätt valfritt `SENTRY_DSN` i `.env` för att skicka ohanterade fel per
-kommun/region samt globala krascher till Sentry. Saknas variabeln körs
-scrapern som vanligt utan felspårning (no-op).
 
 Scrapern skriver till `OUTPUT_DIR`:
 

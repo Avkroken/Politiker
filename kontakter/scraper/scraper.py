@@ -19,7 +19,6 @@ import unicodedata
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import unquote
-import sentry_sdk
 from playwright.async_api import async_playwright, Error as PlaywrightError
 from pypdf import PdfReader
 
@@ -43,13 +42,6 @@ logging.basicConfig(
     ],
 )
 log = logging.getLogger(__name__)
-
-sentry_sdk.init(
-    dsn=os.environ.get("SENTRY_DSN"),
-    traces_sample_rate=1.0,
-    send_default_pii=False,
-    include_local_variables=False,
-)
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
 
@@ -855,8 +847,6 @@ async def main():
                     raise ValueError(f"{namn}: okänd typ '{region['typ']}'")
             except Exception as e:
                 log.error(f"{namn}: ohanterat fel, hoppar över ({e})")
-                sentry_sdk.capture_exception(e)
-                sentry_sdk.flush(timeout=5)
                 continue
 
             if people:
@@ -902,6 +892,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except Exception as e:
         log.error(f"Globalt ohanterat fel: {e}")
-        sentry_sdk.capture_exception(e)
-        sentry_sdk.flush(timeout=5)
         raise

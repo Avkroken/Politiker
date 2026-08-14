@@ -6,4 +6,10 @@ infra/cf_*.json
 infra/cloudflare-resources.json
 __pycache__/
 *.pyc
+.pytest_cache/
+.claude/
 infra/.env
+kontakter/.env
+kontakter/output/
+kontakter/vcf/
+kontakter/logs/
