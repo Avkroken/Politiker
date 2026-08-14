@@ -90,12 +90,12 @@ SMTP-host/-user/-from och OAuth-client-ID:n bor i `app/wrangler.jsonc` → `vars
 om du vill ändra dem.
 
 > Databasen skapas tom på politikerdata — importera den från
-> [`politiker-kontakter`](https://github.com/blixten85/politiker-kontakter)-repot,
-> som publicerar hela kontaktdatabasen som färdig SQL:
+> [`kontakter/data/`](kontakter/data/), som publicerar hela kontaktdatabasen
+> som färdig SQL:
 >
 > ```bash
 > wrangler d1 execute politiker_webapp --remote --yes \
->   --file ../politiker-kontakter/data/politiker.sql
+>   --file kontakter/data/politiker.sql
 > ```
 
 Kampanj-Workern deployas även automatiskt vid push till `main` via Cloudflare Workers Builds.
