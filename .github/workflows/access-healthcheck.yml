@@ -19,6 +19,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Access-service-tokenet ligger som environment secret på produktion.
+    # Utan den här raden är secrets.CF_ACCESS_* tomma, och tomma headers ger
+    # 403 — samma symptom som en trasig Access-policy, men annan orsak.
+    environment: produktion
     steps:
       - name: Anropa /api/admin/accounts med service-token
         run: |

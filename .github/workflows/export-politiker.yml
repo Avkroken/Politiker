@@ -5,7 +5,7 @@ name: Exportera politiker-data från D1
 # skrapning sker här — datan kommer från den redan publika D1:n som scrapern
 # matar.
 #
-# Secrets och variabler (Repo → Settings → Secrets and variables → Actions):
+# Secrets och variabler (Repo → Settings → Environments → produktion):
 #   POLITIKER_WEBAPP_D1_READ — Cloudflare API-token, endast D1 Read. Medvetet
 #     snävare än deploy-tokenet POLITIKER_WEBAPP; jobbet läser bara en tabell.
 #     Skickas vidare som CLOUDFLARE_API_TOKEN_POLITIKER, som är namnet
@@ -30,6 +30,10 @@ concurrency:
 jobs:
   export:
     runs-on: ubuntu-latest
+    # Appens ID/nyckel och D1-tokenet ligger som environment-värden på
+    # produktion. Utan den här raden är vars.CI_APP_ID tom och
+    # tokenprägligen faller direkt.
+    environment: produktion
     defaults:
       run:
         working-directory: kontakter
