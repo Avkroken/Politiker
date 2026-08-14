@@ -4,6 +4,15 @@ name: Exportera politiker-data från D1
 # uppdaterad kontakter/data/-export via PR med auto-merge. Ingen extern
 # skrapning sker här — datan kommer från den redan publika D1:n som scrapern
 # matar.
+#
+# Secrets och variabler (Repo → Settings → Secrets and variables → Actions):
+#   POLITIKER_WEBAPP_D1_READ — Cloudflare API-token, endast D1 Read. Medvetet
+#     snävare än deploy-tokenet POLITIKER_WEBAPP; jobbet läser bara en tabell.
+#     Skickas vidare som CLOUDFLARE_API_TOKEN_POLITIKER, som är namnet
+#     kontakter/scraper/d1.py läser.
+#   CI_APP_PRIVATE_KEY / CI_APP_ID — GitHub-appen denied.se CI. PR:er öppnade
+#     med inbyggda GITHUB_TOKEN startar inga workflows, så auto-merge uteblir.
+#   D1_DATABASE_ID, CLOUDFLARE_ACCOUNT_ID — variabler, inte secrets.
 
 on:
   schedule:
@@ -49,7 +58,7 @@ jobs:
 
       - name: Exportera från D1
         env:
-          CLOUDFLARE_API_TOKEN_POLITIKER: ${{ secrets.CLOUDFLARE_API_TOKEN_POLITIKER }}
+          CLOUDFLARE_API_TOKEN_POLITIKER: ${{ secrets.POLITIKER_WEBAPP_D1_READ }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
         run: python3 export/export_d1.py
