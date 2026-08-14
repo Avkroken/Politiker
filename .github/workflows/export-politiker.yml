@@ -1,12 +1,13 @@
 name: Exportera politiker-data från D1
 
-# Läser politicians-tabellen i politiker-webapps D1 (read-only) och committar
-# en uppdaterad data/-export via PR med auto-merge. Ingen extern skrapning sker
-# här — datan kommer från den redan publika D1:n som scrapern matar.
+# Läser politicians-tabellen i webappens D1 (read-only) och committar en
+# uppdaterad kontakter/data/-export via PR med auto-merge. Ingen extern
+# skrapning sker här — datan kommer från den redan publika D1:n som scrapern
+# matar.
 
 on:
   schedule:
-    - cron: "30 4 * * 1" # måndagar 04:30 UTC
+    - cron: '30 4 * * 1' # måndagar 04:30 UTC
   workflow_dispatch:
 
 permissions:
@@ -20,11 +21,14 @@ concurrency:
 jobs:
   export:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kontakter
     steps:
-      # Kortlivad token från GitHub-appen "denied.se CI" i stället för en
-      # långlivad PAT. Skälet är oförändrat: PR:er öppnade med den inbyggda
-      # GITHUB_TOKEN startar inga andra workflows, så required checks och
-      # auto-merge.yml uteblir. Appens token gör det, och dör efter en timme.
+      # Kortlivad apptoken i stället för en långlivad PAT. PR:er öppnade med
+      # den inbyggda GITHUB_TOKEN startar inga andra workflows, så required
+      # checks och auto-merge uteblir. Appens token gör det, och dör efter en
+      # timme.
       - name: Prägla apptoken
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -38,10 +42,10 @@ jobs:
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: "3.14.6"
+          python-version: '3.x'
 
       - name: Installera beroenden
-        run: python3 -m pip install "requests==2.33.0"
+        run: python3 -m pip install requests
 
       - name: Exportera från D1
         env:
@@ -65,6 +69,7 @@ jobs:
           git add data/
           git commit -m "data: uppdatera politiker-export från D1"
           git push origin "$BRANCH"
-          gh pr create --base main --head "$BRANCH" \
+          PR_URL=$(gh pr create --base main --head "$BRANCH" \
             --title "data: uppdatera politiker-export från D1" \
-            --body $'Automatisk export av `politicians`-tabellen från live-D1 (read-only).\n\nMergas automatiskt av `auto-merge.yml` när checkarna passerar.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)'
+            --body 'Automatisk export av `politicians`-tabellen från live-D1 (read-only).')
+          gh pr merge --auto --squash --delete-branch "$PR_URL"
