@@ -35,7 +35,7 @@ app/          # Huvud-Worker: statisk frontend + API (auth, mail-credentials, mo
 sender/       # Queue consumer-Worker: faktisk SMTP-sändning
 campaign/     # Worker för kampanjutskick
 shared/       # Delad kod (kryptering, SMTP-klient, TOTP, typer)
-healthcheck/  # Cron-Worker: daglig hälsokontroll (07:00), mailar status via Resend
+healthcheck/  # Cron-Worker: daglig hälsokontroll (05:00 UTC), mailar status via Resend
 infra/        # Cloudflare-provisionering (cf-api.sh, schema.sql)
 kontakter/    # Python-skrapan som fyller D1:n, plus export-/verifieringsskript
 forening/     # Föreningsdokument (stadgar, mötesmallar)

@@ -132,16 +132,9 @@ passwordlös mailkoppling via Microsoft Graph.
 
 ### Driftsövervakning
 
-Två oberoende hälsokontroller, ingen beroende av den andra eller av
-operatörens egen server:
-- Lokal cron-rutin på operatörens server (full skrivåtkomst, mejlar status)
-- Molnbaserad daglig rutin (`politiker-webapp-cloud-healthcheck`, läsbehörighet
-  endast) som postar till Slack
-
-En tredje molnrutin (`politiker-webapp-token-maintenance`, veckovis) håller
-Cloudflare API-tokens förnyade automatiskt och varnar i Slack om den
-GitHub-token som inte kan roteras programmatiskt (GitHub saknar API för
-att skapa/rotera personliga åtkomsttokens) börjar närma sig sin utgång.
+En daglig cron-Worker (`healthcheck/`, 05:00 UTC) kontrollerar att appen
+svarar och att D1 går att läsa, och mejlar resultatet via Resend. Den kör i
+Cloudflare, oberoende av operatörens egen hårdvara.
 
 ### Kända Workers-specifika fallgropar
 
