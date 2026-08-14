@@ -24,10 +24,13 @@ import requests
 
 
 def _env(*names: str) -> str:
+    # strip(): värden som klistras in i GitHubs variabel-/secret-fält eller i en
+    # .env får lätt med sig en radbrytning. Den överlever in i URL:en som %0D%0A
+    # och ger ett 400 från Cloudflare som inte säger något om vad som är fel.
     for n in names:
         val = os.environ.get(n)
-        if val:
-            return val
+        if val and val.strip():
+            return val.strip()
     sys.exit(f"FEL: sätt en av miljövariablerna: {', '.join(names)}")
 
 
