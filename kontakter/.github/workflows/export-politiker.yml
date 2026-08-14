@@ -1,0 +1,70 @@
+name: Exportera politiker-data från D1
+
+# Läser politicians-tabellen i politiker-webapps D1 (read-only) och committar
+# en uppdaterad data/-export via PR med auto-merge. Ingen extern skrapning sker
+# här — datan kommer från den redan publika D1:n som scrapern matar.
+
+on:
+  schedule:
+    - cron: "30 4 * * 1" # måndagar 04:30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: export-politiker
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      # Kortlivad token från GitHub-appen "denied.se CI" i stället för en
+      # långlivad PAT. Skälet är oförändrat: PR:er öppnade med den inbyggda
+      # GITHUB_TOKEN startar inga andra workflows, så required checks och
+      # auto-merge.yml uteblir. Appens token gör det, och dör efter en timme.
+      - name: Prägla apptoken
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.14.6"
+
+      - name: Installera beroenden
+        run: python3 -m pip install "requests==2.33.0"
+
+      - name: Exportera från D1
+        env:
+          CLOUDFLARE_API_TOKEN_POLITIKER: ${{ secrets.CLOUDFLARE_API_TOKEN_POLITIKER }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+        run: python3 export/export_d1.py
+
+      - name: Öppna PR vid ändring
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if [ -z "$(git status --porcelain data/)" ]; then
+            echo "Ingen ändring i data/ — hoppar över."
+            exit 0
+          fi
+          BRANCH="claude/data-export-$(date +%Y%m%d-%H%M)"
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.app-token.outputs.installation-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add data/
+          git commit -m "data: uppdatera politiker-export från D1"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "data: uppdatera politiker-export från D1" \
+            --body $'Automatisk export av `politicians`-tabellen från live-D1 (read-only).\n\nMergas automatiskt av `auto-merge.yml` när checkarna passerar.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)'
