@@ -1,0 +1,76 @@
+name: Docker
+
+# Bygger kontakter/scraper-imagen och skannar den med Trivy. Imagen publiceras
+# INTE: den körs bara lokalt via kontakter/docker-compose.yml, och ingenting
+# hämtar den från ett register. Bygget finns här enbart för att kunna skanna
+# den — basen är playwright/python på Ubuntu 22.04 (jammy), och utan en
+# skanning syns aldrig vad den bär med sig.
+#
+# Skanningen rapporterar till code scanning men fäller inte bygget, se
+# .github/actions/trivy.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - kontakter/scraper/Dockerfile
+      - kontakter/scraper/requirements.txt
+      - .github/workflows/docker.yml
+      - .github/actions/trivy/**
+  pull_request:
+    paths:
+      - kontakter/scraper/Dockerfile
+      - kontakter/scraper/requirements.txt
+      - .github/workflows/docker.yml
+      - .github/actions/trivy/**
+  # Basimagen får nya CVE:er utan att repot ändras — en veckoskanning fångar
+  # det som annars bara syns när någon råkar röra Dockerfilen.
+  schedule:
+    - cron: '20 5 * * 1' # måndagar 05:20 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Den obligatoriska checken heter docker och sätts av aggregatet längst ned —
+  # ett namn som inte ändras när en image läggs till eller tas bort.
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # Trivy-resultat till code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Short SHA
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: kontakter/scraper
+          push: false
+          load: true
+          tags: politiker-kontakter-scraper:sha-${{ steps.sha.outputs.short }}
+
+      - name: Trivy
+        uses: ./.github/actions/trivy
+        with:
+          image-ref: politiker-kontakter-scraper:sha-${{ steps.sha.outputs.short }}
+          category: trivy-kontakter-scraper
+
+  docker:
+    if: always()
+    needs: [image]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "image: ${{ needs.image.result }}"
+          case "${{ needs.image.result }}" in
+            failure|cancelled) echo "::error::Imagebygget misslyckades."; exit 1 ;;
+          esac
