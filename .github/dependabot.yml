@@ -32,6 +32,19 @@ updates:
 
   # Scrapern och verifieringsskripten som flyttade hit från
   # politiker-kontakter. Egna requirements.txt per katalog.
+  # kontakter/scraper/Dockerfile. Basimagen är den enda källan till nästan
+  # alla Trivy-fynd, så utan den här posten rapporteras fynd som ingen
+  # åtgärdar. Dependabot bumpar inom samma taggfamilj (-noble), inte över
+  # Ubuntu-generationer — det byter man för hand.
+  - package-ecosystem: "docker"
+    assignees: ["blixten85"]
+    directory: "/kontakter/scraper"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "00:20"
+      timezone: "Europe/Stockholm"
+
   - package-ecosystem: "pip"
     assignees: ["blixten85"]
     directories:
