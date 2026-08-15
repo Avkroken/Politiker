@@ -1,4 +1,4 @@
-# politiker-webapp — Claude Code Guide
+# politiker-webapp — AI Agent Guide
 
 Gratis webbverktyg där medborgare skapar konto, kopplar sitt **eget**
 mailkonto (Gmail/Outlook/iCloud/generisk SMTP), väljer kommuner/regioner/

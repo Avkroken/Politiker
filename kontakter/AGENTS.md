@@ -1,4 +1,4 @@
-# kontakter/ — Claude Code Guide
+# kontakter/ — AI Agent Guide
 
 Delen av politiker-webapp som fyller databasen. Repots gemensamma regler står
 i rot-`CLAUDE.md`; det här dokumentet gäller `kontakter/` och alla sökvägar
