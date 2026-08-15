@@ -120,6 +120,19 @@ bundlat JS.
 
 Sentry användes tidigare men är avvecklat — se `git log` för borttagningen.
 
+## Versioner
+
+Beroenden och basimager hålls **flytande**, inte pinnade. En pinne som ingen
+revideras sitter kvar långt efter att den blivit fel: scraperns basimage satt
+på Ubuntu 22.04 långt efter att 24.04 fanns, eftersom OS-generationen låg i
+taggnamnet (`v1.62.0-jammy`) och Dependabot aldrig byter taggfamilj.
+
+Enda undantaget är GitHub Actions, som pinnas till commit-SHA. En tagg som
+`@v4` kan pekas om till annan kod; en SHA kan den inte. Det är en
+leverantörskedjekontroll, inte versionshantering.
+
+Se `AGENTS.md` för regeln i sin helhet.
+
 ## Status
 
 Live på politiker.denied.se. Inloggning med e-post, Google, GitHub och

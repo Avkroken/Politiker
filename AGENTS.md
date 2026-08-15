@@ -49,6 +49,28 @@ forening/     # Föreningsdokument (stadgar, mötesmallar)
 - Aldrig logga eller exponera SMTP-lösenord, TOTP-secrets eller session-tokens
 - Alla databasfrågor filtrerar på `account_id` — konton är helt isolerade från varandra utom via `/api/admin/*` (kräver `is_admin = 1`)
 
+## Versioner: flytande som standard
+
+Pinna aldrig ett versionsnummer, en release-flavor eller en digest om det inte
+är ett absolut måste. En pinne som ingen revideras sitter kvar långt efter att
+den blivit fel — basimagen här satt på Ubuntu 22.04 långt efter att 24.04 fanns,
+just för att OS-generationen låg inbakad i taggnamnet och Dependabot aldrig
+rör sig mellan taggfamiljer.
+
+Gäller basimager, pip- och npm-beroenden, och allt annat med en version.
+
+**Om en pinne ändå är nödvändig** ska den dokumenteras på plats, i den här
+filen och i README — med vad som är pinnat, varför, och vad som måste
+kontrolleras för att kunna släppa den igen. En odokumenterad pinne är en bugg
+som väntar.
+
+### Nuvarande undantag
+
+- **GitHub Actions pinnas till commit-SHA.** En tagg som `@v4` är föränderlig
+  och kan pekas om till annan kod; en SHA kan den inte. Det är en
+  leverantörskedjekontroll, inte versionshantering, och Dependabot bumpar dem
+  ändå automatiskt.
+
 ## Allowed
 - Create branches
 - Modify code
