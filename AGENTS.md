@@ -79,7 +79,7 @@ som väntar.
 
 ## Forbidden
 - Push directly to main/master
-- Merge PRs
+- Merge PRs på eget initiativ (be uttryckligen så är det okej)
 - Delete branches
 - Disable workflows
 - Modify secrets
