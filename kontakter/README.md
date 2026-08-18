@@ -42,6 +42,27 @@ python3 export/to_vcf.py --per-area               # en fil per område
 Filerna skrivs till `vcf/` (committas inte). Detta ersätter de tidigare
 hårdkodade VCF-filerna i repot.
 
+## Regioner utan data (2026-08-18)
+
+Skrapan är konfigurerad för alla 21 regioner i `scraper/regioner.json`, men
+två av dem ger noll poster i produktionsdatabasen. Det är inte en
+dokumenterad begränsning som i [`UNSUPPORTED_KOMMUNER.md`](UNSUPPORTED_KOMMUNER.md)
+— det är konfiguration som slutat fungera, och den syntes inte förrän
+täckningen mättes per region i stället för som en totalsumma.
+
+| Region | Konfiguration | Uppmätt |
+| --- | --- | --- |
+| Region Örebro län | `typ: "mailto"` mot `regionorebrolan.tromanpublik.se/` | Källan svarar **500**. Dessutom fel strategi: alla andra Troman-regioner använder `typ: "troman"` mot en `/organisation/<uuid>`-URL, och rot-URL:en har inga mailto-länkar att skrapa även när den svarar. |
+| Region Skåne | `typ: "mailto"` mot `skane.se/.../regionfullmaktige/` | Källan svarar **403** på en vanlig HTTP-hämtning (456 byte, ser ut som ett WAF-svar). Kan mycket väl fungera från Playwrights riktiga webbläsare — det behöver provas från en miljö med fungerande browser innan URL:en döms ut. |
+
+Vad det betyder för sajten: den som bor i Skåne eller Örebro län väljer sin
+region och får ingen att kontakta. Tillsammans är det drygt 1,7 miljoner
+invånare.
+
+Hälsokontrollen (`healthcheck/`) larmar numera på detta — se
+`checkRegionCoverage`. Tidigare rapporterades bara totalen ("17 196 politiker
+i databasen"), som såg fullt trovärdig ut medan två regioner var tomma.
+
 ## Köra scrapern själv
 
 ```bash

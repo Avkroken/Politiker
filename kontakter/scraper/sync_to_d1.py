@@ -39,8 +39,47 @@ UPSERT_SQL = (
     "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, party = excluded.party, role = excluded.role, last_scraped_at = excluded.last_scraped_at"
 )
 
+# Sveriges 21 regioner. Tjugo heter "Region X" och fångas av prefixregeln
+# nedan — Västra Götalandsregionen gör inte det, och föll därför igenom
+# till "kommun". Uppmätt i produktion 2026-08-18: 497 VGR-ledamöter låg
+# med area_type='kommun' och syntes alltså inte för den som filtrerade på
+# region, samtidigt som en region dök upp i kommunlistan.
+#
+# Uppräkningen står här och inte som ett mönster: mängden är sluten och
+# ändras bara genom riksdagsbeslut. Ett prefix som stämmer för 20 av 21
+# är inte en regel, det är en slump med ett undantag.
+#
+# Prefixregeln är kvar som skyddsnät för namnvarianter ("Region Skåne" vs
+# "Region Skane" i en källa som tappat diakriterna).
+REGION_NAMES = frozenset(
+    {
+        "Region Blekinge",
+        "Region Dalarna",
+        "Region Gotland",
+        "Region Gävleborg",
+        "Region Halland",
+        "Region Jämtland Härjedalen",
+        "Region Jönköpings län",
+        "Region Kalmar län",
+        "Region Kronoberg",
+        "Region Norrbotten",
+        "Region Skåne",
+        "Region Stockholm",
+        "Region Sörmland",
+        "Region Uppsala",
+        "Region Värmland",
+        "Region Västerbotten",
+        "Region Västernorrland",
+        "Region Västmanland",
+        "Region Örebro län",
+        "Region Östergötland",
+        "Västra Götalandsregionen",
+    }
+)
+
+
 def area_type_for(area_name: str) -> str:
-    if area_name.startswith("Region "):
+    if area_name in REGION_NAMES or area_name.startswith("Region "):
         return "region"
     if area_name in ("Sveriges riksdag", "Riksdagen"):
         return "riksdag"

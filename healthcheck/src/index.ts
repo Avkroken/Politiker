@@ -84,6 +84,48 @@ async function checkD1Reachable(env: Env, problems: string[], notes: string[]): 
   }
 }
 
+// 3b. Regiontäckning — att TOTALEN ser frisk ut säger ingenting om
+// fördelningen. Uppmätt 2026-08-18: 17 196 politiker i databasen, alltså
+// en fullt trovärdig siffra, samtidigt som Region Skåne och Region
+// Örebro län hade NOLL ledamöter och Region Sörmland två. Kontrollen
+// ovan hade rapporterat det som en notis och ingen hade märkt något.
+//
+// Alla 21 regioner ska finnas. En som saknas helt är trasig; en med
+// enstaka poster är en skrapning som gått halvvägs och tystnat.
+// Trösklarna är rök-, inte kravnivåer: minsta regionfullmäktige har
+// ett par tiotal ledamöter, men skrapan får bara med dem som har
+// publicerad e-post, så golvet sätts lågt med flit — det ska fånga
+// "uppenbart trasig", inte "ofullständig".
+const EXPECTED_REGIONS = 21;
+const THIN_REGION_THRESHOLD = 10;
+
+async function checkRegionCoverage(env: Env, problems: string[], notes: string[]): Promise<void> {
+  try {
+    const { results } = await env.DB.prepare(
+      "SELECT area_name, COUNT(*) as n FROM politicians WHERE area_type = 'region' GROUP BY area_name",
+    ).all<{ area_name: string; n: number }>();
+    const rows = results ?? [];
+
+    if (rows.length < EXPECTED_REGIONS) {
+      problems.push(
+        `Bara ${rows.length} av ${EXPECTED_REGIONS} regioner har ledamöter i databasen — ` +
+          "de som saknas går inte att kontakta via sajten",
+      );
+    }
+
+    const thin = rows
+      .filter((r) => r.n < THIN_REGION_THRESHOLD)
+      .map((r) => `${r.area_name} (${r.n})`);
+    if (thin.length > 0) {
+      problems.push(`Misstänkt tunn regiontäckning, skrapningen kan ha avbrutits: ${thin.join(", ")}`);
+    }
+
+    notes.push(`D1: ${rows.length} regioner representerade`);
+  } catch (e) {
+    problems.push(`Kunde inte kontrollera regiontäckning: ${String(e)}`);
+  }
+}
+
 // 4. Fastnade sändningsjobb — sender-workern kan ha fastnat om något legat
 // kvar i pending/sending i över 24h.
 async function checkStuckJobs(env: Env, problems: string[]): Promise<void> {
@@ -164,6 +206,7 @@ export default {
 
     await checkPublicHttp(env, problems);
     await checkD1Reachable(env, problems, notes);
+    await checkRegionCoverage(env, problems, notes);
     await checkStuckJobs(env, problems);
 
     const token = env.POLITIKER_WEBAPP_HEALTHCHECK_TOKEN;
