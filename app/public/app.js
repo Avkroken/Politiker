@@ -1632,6 +1632,11 @@ document.addEventListener("languagechange", () => {
 });
 
 (async function init() {
+  // CodeQL flaggar det här som js/user-controlled-bypass: en URL-parameter
+  // styr en grind. Grinden är dock bara vilken VY som ritas ut — själva
+  // token valideras av servern i resetPassword() (app/src/auth.ts), som slår
+  // upp reset_token i D1 och kontrollerar reset_expires_at. Att visa
+  // formuläret ger ingen behörighet.
   const resetToken = new URLSearchParams(location.search).get("reset");
   if (resetToken) {
     showAuthScreen("reset");

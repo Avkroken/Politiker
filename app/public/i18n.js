@@ -54,6 +54,9 @@ const LOCALE_MAP = {
   de: "de-DE", fr: "fr-FR", es: "es-ES", pl: "pl-PL", tr: "tr-TR", ru: "ru-RU",
   uk: "uk-UA", ar: "ar-SA", fa: "fa-IR", so: "so-SO", zh: "zh-CN", hi: "hi-IN",
 };
+// Anropas från app.js (toLocaleString/toLocaleDateString på flera ställen).
+// CodeQL flaggar den som oanvänd eftersom den analyserar en fil i taget och
+// inte ser den delade globala scopen mellan <script>-taggarna — radera inte.
 function currentLocale() {
   return LOCALE_MAP[currentLang] || "sv-SE";
 }
