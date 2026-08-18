@@ -4,7 +4,7 @@ Bounce processor för politiker-webapp.
 Läser studsade mail från Outlook IMAP, markerar döda adresser i Cloudflare D1.
 Körs av systemd-timer (se bounce-processor.timer).
 """
-import imaplib, email, re, sys, os, json, urllib.request, urllib.error, logging
+import imaplib, re, sys, os, json, urllib.request, urllib.error, logging
 
 logging.basicConfig(
     level=logging.INFO,

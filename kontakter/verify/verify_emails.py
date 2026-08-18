@@ -142,6 +142,9 @@ def probe_domain(domain: str, emails: list[str]) -> dict[str, str]:
         try:
             smtp.quit()
         except Exception:
+            # Städning i finally: servern har ofta redan stängt anslutningen
+            # när vi kommer hit. Ett fel här får inte maskera resultaten som
+            # redan samlats in — de returneras nedan oavsett.
             pass
 
     return results
