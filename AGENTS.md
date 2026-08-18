@@ -71,6 +71,16 @@ som väntar.
   leverantörskedjekontroll, inte versionshantering, och Dependabot bumpar dem
   ändå automatiskt.
 
+- **`kontakter/scraper/Dockerfile` pinnas till `v1.62.0-noble`.** Regeln säger
+  flytande, och det var också vad som stod här — men `:latest` pekar
+  fortfarande på Ubuntu 22.04 hos Microsoft. Uppmätt 2026-08-17: 856
+  åtgärdbara CVE:er på `:latest` mot 39 på `v1.62.0-noble`, alltså 96 procent
+  av code scanning-bruset i det här repot. Dependabot bumpar inom
+  `-noble`-familjen, men flyttar aldrig till nästa Ubuntu-generation — så
+  **det som måste kontrolleras för att släppa pinnen** är om `:latest` hunnit
+  ikapp till 24.04 eller senare, alternativt om det dykt upp en
+  26.04-variant som suffixet behöver bytas till.
+
 ## Allowed
 - Create branches
 - Modify code
