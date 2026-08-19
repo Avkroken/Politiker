@@ -68,7 +68,7 @@ skickas inga nyhetsbrev.</p>`;
     try {
       await env.EMAIL.send({
         to: email,
-        from: { email: "nyhetsbrev@denied.se", name: "Politiker-kontakt" },
+        from: { email: "noreply@denied.se", name: "Politiker-kontakt" },
         subject, html, text,
       });
       return;
@@ -80,7 +80,7 @@ skickas inga nyhetsbrev.</p>`;
     try {
       await sendResendMail(env.RESEND_API_KEY, {
         to: email,
-        from: "Politiker-kontakt <nyhetsbrev@send.denied.se>",
+        from: "Politiker-kontakt <noreply@denied.se>",
         subject, html, text,
       });
       return;

@@ -18,12 +18,12 @@
   ],
   // Utskickskanaler, i prioritetsordning: Cloudflare Email Service (bindingen
   // nedan; denied.se onboardad, Workers Paid) -> Resend (RESEND_API_KEY,
-  // send.denied.se) -> Gmail-SMTP. Kvartalsdräneringen använder bara Email
+  // kräver att denied.se är verifierad där) -> Gmail-SMTP. Kvartalsdräneringen använder bara Email
   // Service (3 000/mån ingår, sedan $0.35/1k — 17k-blasten ≈ $5/kvartal).
   "send_email": [
     {
       "name": "EMAIL",
-      "allowed_sender_addresses": ["nyhetsbrev@denied.se", "kampanj@denied.se"]
+      "allowed_sender_addresses": ["noreply@denied.se"]
     }
   ],
   "triggers": {

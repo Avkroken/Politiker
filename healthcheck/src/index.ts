@@ -29,12 +29,26 @@ const CF_API = "https://api.cloudflare.com/client/v4";
 const HTTP_TIMEOUT_MS = 10_000;
 const STUCK_JOB_CUTOFF_MS = 24 * 60 * 60 * 1000;
 
+// Kastar vid allt som inte är ett lyckat svar. Utan det returnerade en 403
+// (token återkallad eller utan behörighet) `{success:false, result:null}` med
+// HTTP-felet osynligt, och anroparnas `resp.result ?? []` blev en tom lista —
+// som lästes som "resursen finns inte". Det gav hälsomejlet "Worker
+// 'politiker-webapp-app' saknas helt i kontot!" för en Worker som levde och
+// betjänade trafik. Ett larm som ljuger om den allvarligaste tänkbara
+// händelsen är värre än inget larm.
 async function cfGet(token: string, path: string): Promise<any> {
   const res = await fetch(`${CF_API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
     signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
   });
-  return res.json();
+  const body = (await res.json().catch(() => null)) as
+    | { success?: boolean; errors?: Array<{ message?: string }> }
+    | null;
+  if (!res.ok || body?.success === false) {
+    const detail = body?.errors?.map((e) => e.message).filter(Boolean).join("; ") || `HTTP ${res.status}`;
+    throw new Error(`Cloudflare API ${res.status} på ${path}: ${detail}`);
+  }
+  return body;
 }
 
 // 1. Publikt HTTP-svar: samma två endpoints som operatören själv testar
@@ -172,8 +186,10 @@ async function diagnoseIfBroken(env: Env, token: string, problems: string[]): Pr
     } else if (!(app.policies ?? []).some((p) => p.decision === "bypass")) {
       problems.push(`DIAGNOS: Access-appen för ${env.DOMAIN} har ingen bypass-policy längre — sidan kan vara blockerad för besökare`);
     }
-  } catch {
-    // Se ovan.
+  } catch (e) {
+    // Inte tyst som ovan: den här grenen drar en slutsats ur en tom lista, så
+    // ett läsfel skulle annars läsas som "Access-appen är borta".
+    problems.push(`DIAGNOS: kunde inte läsa Access-apparna, ingen slutsats om ${env.DOMAIN}: ${String(e)}`);
   }
 }
 

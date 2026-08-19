@@ -28,8 +28,8 @@
     "DOMAIN": "politiker.denied.se",
     "APP_WORKER": "politiker-webapp-app",
     "SENDER_WORKER": "politiker-webapp-sender",
-    "EMAIL_TO": "anders.eriksson@denied.se",
-    "EMAIL_FROM": "Hälsokontroll <health@send.denied.se>"
+    "EMAIL_TO": "noreply@denied.se",
+    "EMAIL_FROM": "Hälsokontroll <noreply@denied.se>"
   }
   // Secrets (wrangler secret put), båda VALFRIA — se src/index.ts för att
   // Workern medvetet INTE kraschar om de saknas (det var precis den hårda

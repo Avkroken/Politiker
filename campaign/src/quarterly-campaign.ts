@@ -158,7 +158,7 @@ export async function runQuarterlyDrain(env: Env): Promise<void> {
     try {
       await env.EMAIL.send({
         to: rec.politician_email,
-        from: { email: "kampanj@denied.se", name: env.SENDER_NAME },
+        from: { email: "noreply@denied.se", name: env.SENDER_NAME },
         replyTo: env.GMAIL_EMAIL, // svar ska nå en riktig, läst inkorg
         subject: rec.subject,
         html: `<pre style="font-family:inherit;white-space:pre-wrap">${rec.html_body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`,

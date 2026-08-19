@@ -3,7 +3,7 @@ import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
 import { htmlToText } from "../../shared/html";
 import { sendResendMail } from "../../shared/resend";
 
-const NEWSLETTER_FROM = "Politiker-kontakt <nyhetsbrev@send.denied.se>";
+const NEWSLETTER_FROM = "Politiker-kontakt <noreply@denied.se>";
 
 // Nyhetsbrevsutskick: prenumeranterna får KVARTALSBREVET — samma AI-
 // researchade och -författade brev som skickas till samtliga politiker i
@@ -87,7 +87,7 @@ export async function runNewsletterSender(env: Env): Promise<void> {
       try {
         await env.EMAIL.send({
           to,
-          from: { email: "nyhetsbrev@denied.se", name: "Politiker-kontakt" },
+          from: { email: "noreply@denied.se", name: "Politiker-kontakt" },
           subject, html, text, headers,
         });
         return;
