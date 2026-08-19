@@ -41,7 +41,7 @@ from d1 import D1Client  # noqa: E402
 SMTP_TIMEOUT = 10
 DELAY_BETWEEN_DOMAINS = 1.5  # sekunder — var en god nätgranne, ingen brådska
 HELO_NAME = "denied.se"
-PROBE_FROM = "politiker@denied.se"  # riktig, levererbar adress vi äger — inte spoofad
+PROBE_FROM = "noreply@denied.se"  # riktig, levererbar adress vi äger — inte spoofad
 
 
 def random_local_part() -> str:

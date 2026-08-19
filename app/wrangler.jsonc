@@ -55,12 +55,13 @@
   // Nyhetsbrevets bekräftelsemail: Cloudflare Email Service (bindingen nedan)
   // -> Resend (RESEND_API_KEY) -> system-SMTP, i den ordningen.
   // Systemmailen (verifieringskod, lösenordsåterställning, feedback) går
-  // Resend -> system-SMTP: bindingen nedan får bara skicka som
-  // nyhetsbrev@denied.se, inte som SYSTEM_FROM_ADDRESS.
+  // Resend -> system-SMTP.
+  // Allt maskingenererat skickas som noreply@denied.se — adressen måste vara
+  // onboardad i Cloudflare Email Sending, annars avvisas send_email-anropen.
   "send_email": [
     {
       "name": "EMAIL",
-      "allowed_sender_addresses": ["nyhetsbrev@denied.se"]
+      "allowed_sender_addresses": ["noreply@denied.se"]
     }
   ],
   "vars": {
@@ -69,7 +70,7 @@
     "SYSTEM_SMTP_USER": "nils.anders.eriksson@icloud.com",
     // Maskingenererade systemmail — avsändaren är obevakad med flit. Måste vara
     // ett alias på iCloud-kontot i SYSTEM_SMTP_USER, annars nekas MAIL FROM i
-    // SMTP-ledet. Resend-ledet skickar som noreply@send.denied.se.
+    // SMTP-ledet.
     "SYSTEM_FROM_ADDRESS": "noreply@denied.se",
     "FEEDBACK_NOTIFY_EMAIL": "noreply@denied.se",
     "ISSUE_FIXER_INBOX": "steedpower3@gmail.com",

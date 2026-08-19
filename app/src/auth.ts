@@ -9,15 +9,12 @@ import { enforceAttemptLimit, recordFailedAttempt, clearAttempts } from "./rate-
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 dagar
 const RESET_TTL_MS = 30 * 60 * 1000; // 30 min
 
-// Resend-avsändare för systemmail. Verifierad avsändardomän på Resend-kontot
-// är send.denied.se, inte denied.se — därför en egen adress här i stället för
-// SYSTEM_FROM_ADDRESS (som SMTP-ledet använder).
+// En enda avsändaradress för allt maskingenererat, oavsett kanal.
 //
-// Obesvarad avsändare med flit: de här mejlen är maskingenererade, och svar på
-// dem hamnade tidigare i en inkorg som ingen bevakar. Den som vill nå oss gör
-// det via kontaktformuläret; feedbackmejlen bär avsändarens adress i kroppen
-// ("Svar önskas till: ..."), så inget svarsflöde tappas.
-const SYSTEM_RESEND_FROM = "Politiker-kontakt <noreply@send.denied.se>";
+// FÖRUTSÄTTNING: denied.se måste vara verifierad avsändardomän på
+// Resend-kontot. Tidigare var bara send.denied.se det — går verifieringen inte
+// igenom svarar Resend 403 och sändningen faller ned till system-SMTP.
+const SYSTEM_RESEND_FROM = "Politiker-kontakt <noreply@denied.se>";
 
 // Brute-force-spärrar (försök inom glidande fönster). Lösenords-/TOTP-koll
 // och e-postverifiering har annars inga försöksgränser — utan detta är en
@@ -238,8 +235,8 @@ export async function deleteOwnAccount(env: Env, accountId: string, password?: s
 }
 
 // Kanalordning: Resend -> system-SMTP (iCloud). Cloudflare Email Service ingår
-// inte — send_email-bindingen är låst till nyhetsbrev@denied.se och får inte
-// skicka som avsändaren här.
+// inte i kedjan än; nu när send_email-bindingen släpper samma noreply-adress
+// finns inget som hindrar den, men att lägga in ledet är ett eget beslut.
 //
 // Varför fallback alls: systemmailen bär verifieringskoden och
 // återställningslänken, alltså de enda vägarna tillbaka in i ett konto. Med
