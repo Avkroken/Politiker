@@ -67,7 +67,10 @@
     "SYSTEM_SMTP_HOST": "smtp.mail.me.com",
     "SYSTEM_SMTP_PORT": "587",
     "SYSTEM_SMTP_USER": "nils.anders.eriksson@icloud.com",
-    "SYSTEM_FROM_ADDRESS": "politiker@denied.se",
+    // Maskingenererade systemmail — avsändaren är obevakad med flit. Måste vara
+    // ett alias på iCloud-kontot i SYSTEM_SMTP_USER, annars nekas MAIL FROM i
+    // SMTP-ledet. Resend-ledet skickar som noreply@send.denied.se.
+    "SYSTEM_FROM_ADDRESS": "noreply@denied.se",
     "FEEDBACK_NOTIFY_EMAIL": "politiker@denied.se",
     "ISSUE_FIXER_INBOX": "steedpower3@gmail.com",
     "OAUTH_GOOGLE_CLIENT_ID": "1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com",

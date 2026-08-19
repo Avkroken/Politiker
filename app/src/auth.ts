@@ -10,9 +10,14 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 dagar
 const RESET_TTL_MS = 30 * 60 * 1000; // 30 min
 
 // Resend-avsändare för systemmail. Verifierad avsändardomän på Resend-kontot
-// är send.denied.se — SYSTEM_FROM_ADDRESS (politiker@denied.se) är inte det,
-// och duger därför bara som svarsadress.
-const SYSTEM_RESEND_FROM = "Politiker-kontakt <politiker@send.denied.se>";
+// är send.denied.se, inte denied.se — därför en egen adress här i stället för
+// SYSTEM_FROM_ADDRESS (som SMTP-ledet använder).
+//
+// Obesvarad avsändare med flit: de här mejlen är maskingenererade, och svar på
+// dem hamnade tidigare i en inkorg som ingen bevakar. Den som vill nå oss gör
+// det via kontaktformuläret; feedbackmejlen bär avsändarens adress i kroppen
+// ("Svar önskas till: ..."), så inget svarsflöde tappas.
+const SYSTEM_RESEND_FROM = "Politiker-kontakt <noreply@send.denied.se>";
 
 // Brute-force-spärrar (försök inom glidande fönster). Lösenords-/TOTP-koll
 // och e-postverifiering har annars inga försöksgränser — utan detta är en
@@ -249,7 +254,6 @@ export async function sendSystemMail(env: Env, to: string, subject: string, html
       await sendResendMail(env.RESEND_API_KEY, {
         to,
         from: SYSTEM_RESEND_FROM,
-        replyTo: env.SYSTEM_FROM_ADDRESS,
         subject,
         html,
         text: htmlToText(html),
