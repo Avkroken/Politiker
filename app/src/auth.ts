@@ -1,11 +1,18 @@
 import { hashPassword, verifyPassword, randomId, randomVerificationCode } from "../../shared/crypto";
 import { sendSmtpMail } from "../../shared/smtp";
+import { sendResendMail } from "../../shared/resend";
+import { htmlToText } from "../../shared/html";
 import { generateTotpSecret, totpAuthUri, verifyTotpCode } from "../../shared/totp";
 import { createAccount, getAccountByEmail, getAccountById, verifyAccountEmail, deleteAccount, type Env } from "./db";
 import { enforceAttemptLimit, recordFailedAttempt, clearAttempts } from "./rate-limit";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 dagar
 const RESET_TTL_MS = 30 * 60 * 1000; // 30 min
+
+// Resend-avsändare för systemmail. Verifierad avsändardomän på Resend-kontot
+// är send.denied.se — SYSTEM_FROM_ADDRESS (politiker@denied.se) är inte det,
+// och duger därför bara som svarsadress.
+const SYSTEM_RESEND_FROM = "Politiker-kontakt <politiker@send.denied.se>";
 
 // Brute-force-spärrar (försök inom glidande fönster). Lösenords-/TOTP-koll
 // och e-postverifiering har annars inga försöksgränser — utan detta är en
@@ -225,7 +232,34 @@ export async function deleteOwnAccount(env: Env, accountId: string, password?: s
   await deleteAccount(env, accountId);
 }
 
+// Kanalordning: Resend -> system-SMTP (iCloud). Cloudflare Email Service ingår
+// inte — send_email-bindingen är låst till nyhetsbrev@denied.se och får inte
+// skicka som avsändaren här.
+//
+// Varför fallback alls: systemmailen bär verifieringskoden och
+// återställningslänken, alltså de enda vägarna tillbaka in i ett konto. Med
+// bara SMTP kvar räckte ett utgånget iCloud-appspecifikt lösenord (Apple
+// återkallar dem när Apple-ID:t ändras) för att slå ut hela
+// lösenordsåterställningen: 535 gick rakt igenom till användaren och ingen
+// annan kanal försökte. Nyhetsbrevet hade redan den här kedjan; auth-mailen,
+// som betyder mer, hade den inte.
 export async function sendSystemMail(env: Env, to: string, subject: string, html: string): Promise<void> {
+  if (env.RESEND_API_KEY) {
+    try {
+      await sendResendMail(env.RESEND_API_KEY, {
+        to,
+        from: SYSTEM_RESEND_FROM,
+        replyTo: env.SYSTEM_FROM_ADDRESS,
+        subject,
+        html,
+        text: htmlToText(html),
+      });
+      return;
+    } catch (e) {
+      console.warn(`systemmail: Resend misslyckades (${String(e).slice(0, 120)}), faller tillbaka på system-SMTP`);
+    }
+  }
+
   await sendSmtpMail(
     {
       host: env.SYSTEM_SMTP_HOST,

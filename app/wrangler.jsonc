@@ -54,6 +54,9 @@
   ],
   // Nyhetsbrevets bekräftelsemail: Cloudflare Email Service (bindingen nedan)
   // -> Resend (RESEND_API_KEY) -> system-SMTP, i den ordningen.
+  // Systemmailen (verifieringskod, lösenordsåterställning, feedback) går
+  // Resend -> system-SMTP: bindingen nedan får bara skicka som
+  // nyhetsbrev@denied.se, inte som SYSTEM_FROM_ADDRESS.
   "send_email": [
     {
       "name": "EMAIL",
