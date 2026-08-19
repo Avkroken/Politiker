@@ -1,5 +1,5 @@
 import type { Env } from "./index";
-import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
+import { sendSmtpMail, escapeHtml } from "../../../shared/smtp";
 
 const MAX_PER_RUN = 20;
 

@@ -38,12 +38,61 @@
       "id": "23255cc6e67a4a19b19e5ea67a676b40"
     }
   ],
+  // Appen är både producent och konsument av sändningskön sedan
+  // politiker-webapp-sender slogs ihop hit. En kö tillåter exakt EN konsument,
+  // så sender-Workern måste vara raderad innan den här konfigurationen
+  // deployas — annars avvisar Cloudflare bindningen.
   "queues": {
     "producers": [
       {
         "queue": "politiker-send-jobs",
         "binding": "SEND_QUEUE"
       }
+    ],
+    "consumers": [
+      {
+        // max_retries höjt 3 -> 10: riktiga SMTP-fel ackas direkt (aldrig
+        // retry, se send-queue.ts) så detta påverkar dem inte — det ger bara
+        // extra marginal åt den sällsynta fallback-vägen där
+        // waitForSendSlot() gett upp efter MAX_WAIT_MS och meddelandet
+        // läggs tillbaka i kön för att vänta in en ledig rate-limit-token.
+        "queue": "politiker-send-jobs",
+        "max_batch_size": 10,
+        "max_retries": 10,
+        "max_concurrency": 5
+      }
+    ]
+  },
+
+  // Token bucket per mailkoppling, från f.d. sender-Workern. Klassen måste
+  // exporteras från main (src/index.ts). Namnrymden är ny på den här Workern
+  // — den gamla försvann med sender-scriptet, och tillståndet är ändå bara
+  // ett kortlivat token-bucket-saldo som byggs upp igen på en minut.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RATE_LIMITER",
+        "class_name": "CredentialRateLimiter"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["CredentialRateLimiter"]
+    }
+  ],
+
+  // Cron-körningarna från f.d. politiker-webapp-campaign (UTC):
+  //   05 monitor · 06 brevgenerering · 07 utskick · 08 bounce-sweep
+  //   06:30 den 1:a i jan/apr/jul/okt: kvartalsbrevet
+  "triggers": {
+    "crons": [
+      "0 5 * * *",
+      "0 6 * * *",
+      "0 7 * * *",
+      "0 8 * * *",
+      "30 6 1 1,4,7,10 *"
     ]
   },
   "r2_buckets": [
@@ -75,6 +124,10 @@
     "FEEDBACK_NOTIFY_EMAIL": "noreply@denied.se",
     "ISSUE_FIXER_INBOX": "steedpower3@gmail.com",
     "OAUTH_GOOGLE_CLIENT_ID": "1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com",
-    "OAUTH_MICROSOFT_CLIENT_ID": "dd6d7bb1-3a2d-46ad-8d4f-12fe09691414"
+    "OAUTH_MICROSOFT_CLIENT_ID": "dd6d7bb1-3a2d-46ad-8d4f-12fe09691414",
+
+    // Från f.d. politiker-webapp-campaign.
+    "SENDER_NAME": "Anders Eriksson",
+    "GITHUB_REPO": "blixten85/politiker-webapp"
   }
 }

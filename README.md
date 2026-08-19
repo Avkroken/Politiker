@@ -25,8 +25,8 @@ netpublicator, ~94% av kommunerna) eller via matchning mot Valmyndighetens
 
 | Katalog | Vad |
 | --- | --- |
-| `app/`, `sender/`, `campaign/`, `healthcheck/` | Webappens Cloudflare Workers |
-| `shared/` | Kod som `app`, `sender` och `campaign` delar |
+| `app/` | Webappens Cloudflare Worker — HTTP, kö och cron i samma script |
+| `shared/` | Kod som appen delar med skrapan och verktygen |
 | `kontakter/` | Scrapern som fyller D1:n, och exportverktygen |
 
 Scrapern och webappen låg tidigare i var sitt repo trots att de delar
@@ -47,15 +47,15 @@ workflows och regler för en enda datakedja.
 - **Kontakt/FAQ**: inbyggd kontaktväg och vanliga frågor, separat från felrapportering — FAQ förklarar bland annat exakt vilken politikerdata som finns och hur mottagarfiltren kombineras
 - **Admin-panel**: konton, feedback, statistik (med diagram), export (CSV/JSON) per sektion eller allt i ett — samt en separat, fristående export av politiker-listan
 - **Felrapportering**: oväntade JS-fel loggas till konsolen; användaren kan rapportera via kontaktformuläret
-- **Autonom kampanj-Worker** (`campaign/`): cron-driven Worker (05–09 UTC dagligen) som självständigt hämtar nyheter från SVT, Aftonbladet, Expressen och Riksdagen, filtrerar socialt relevanta ärenden med Claude, genererar personaliserade medborgarbrev och skickar dem via Gmail till kommunpolitiker, regionpolitiker och riksdagsledamöter — utan mänsklig inblandning. Inkluderar bounce-sweep (kontaktar kommunpolitiker som inte nåtts på 90 dagar). Klientfel rapporteras automatiskt som GitHub-issues direkt från app-Workern (gratis via GitHub API, ingen LLM)
+- **Autonom kampanj** (`app/src/campaign/`): cron-driven (05–09 UTC dagligen) som självständigt hämtar nyheter från SVT, Aftonbladet, Expressen och Riksdagen, filtrerar socialt relevanta ärenden med Claude, genererar personaliserade medborgarbrev och skickar dem via Gmail till kommunpolitiker, regionpolitiker och riksdagsledamöter — utan mänsklig inblandning. Inkluderar bounce-sweep (kontaktar kommunpolitiker som inte nåtts på 90 dagar). Klientfel rapporteras automatiskt som GitHub-issues direkt från app-Workern (gratis via GitHub API, ingen LLM)
 - **Kvartalsbrev + nyhetsbrev**: den 1:a i varje kvartal researchar och författar campaign-Workern ETT gemensamt medborgarbrev (utifrån kvartalets bevakade ärenden) som skickas till **samtliga ~17 000 politiker i landet** via Cloudflare Email Service. Nyhetsbrevsprenumeranter (dubbel opt-in, Turnstile-skyddat, inget konto behövs) får exakt samma brev samma dag, med avregistreringslänk i varje utskick. Hela kedjan nyhetsbevakning → research → brev → utskick till politiker + prenumeranter är automatiserad
 
 ## Struktur
 
 - `app/` — huvud-Worker: statisk frontend (`public/`, inkl. `i18n.js`, `components/` för wizard-stegen) + API (auth, mail-credentials, mottagarval, brev, AI-utkast, feedback, API-nycklar, admin)
-- `sender/` — Queue consumer-Worker: faktisk SMTP-/Graph-sändning + `rate-limiter.ts` (Durable Object, token bucket per mailkoppling)
-- `campaign/` — kampanj-Worker (`politiker-webapp-campaign`): autonom cron-kampanj som dagligen hämtar nyheter/riksdagsärenden, genererar medborgarbrev med Claude och skickar dem via Gmail
-- `shared/` — kod som delas mellan Workers (kryptering, SMTP-klient, TOTP, Graph-mail, leverantörs-takter, typer)
+- `app/src/send-queue.ts` — kö-konsumenten: faktisk SMTP-/Graph-sändning + `rate-limiter.ts` (Durable Object, token bucket per mailkoppling)
+- `app/src/campaign/` — cron-körningarna: autonom kampanj som dagligen hämtar nyheter/riksdagsärenden, genererar medborgarbrev med Claude och skickar dem via Gmail
+- `shared/` — kod som delas mellan Workern och Python-verktygen (kryptering, SMTP-klient, TOTP, Graph-mail, leverantörs-takter, typer)
 - `infra/` — Cloudflare-provisionering (`cf-api.sh`, `az-graph-api.sh`, `schema.sql`) + `bounce-processor.py` (systemd-tjänst för Gmail-bouncehantering)
 
 ## Köra din egen kopia (ett kommando)
@@ -82,7 +82,7 @@ automatiskt) och avslutar så du kan fylla i dina värden. Minst:
 1. `wrangler login` (öppnar webbläsare om du inte är inloggad)
 2. Skapar D1, KV, Queue och R2 i ditt konto — och patchar `wrangler.jsonc` med dina resurs-ID:n
 3. Applicerar `infra/schema.sql` (bara på en nyskapad databas — rör aldrig befintlig data)
-4. Sätter secrets och deployar `app`, `sender` och (om kampanj-creds finns) `campaign`
+4. Sätter secrets och deployar `app`
 5. Installerar `bounce-processor` som systemd-timer (Linux + Gmail-creds)
 
 Kör om `bash infra/setup.sh` när som helst för att uppdatera deployen.
@@ -104,11 +104,12 @@ Kampanj-Workern deployas även automatiskt vid push till `main` via Cloudflare W
 
 ```bash
 cd app && npm install && cp .dev.vars.example .dev.vars  # fyll i riktiga värden
-cd ../sender && npm install
 npx wrangler dev --remote
 ```
 
-`MAIL_CRED_KEY` måste vara **samma värde** i app och sender (app krypterar, sender dekrypterar).
+`MAIL_CRED_KEY` krypterar och dekrypterar användarnas SMTP-lösenord. Den låg
+tidigare i två Workers och måste hållas identisk mellan dem; efter
+sammanslagningen finns bara en.
 
 ### Felspårning
 
@@ -145,9 +146,11 @@ passwordlös mailkoppling via Microsoft Graph.
 
 ### Driftsövervakning
 
-En daglig cron-Worker (`healthcheck/`, 05:00 UTC) kontrollerar att appen
-svarar och att D1 går att läsa, och mejlar resultatet via Resend. Den kör i
-Cloudflare, oberoende av operatörens egen hårdvara.
+Ingen automatisk hälsokontroll. Den tidigare cron-Workern (`healthcheck/`,
+05:00 UTC) togs bort: dess två Cloudflare-API-kontroller läste ett tomt
+`result` som "resursen finns inte" och larmade om raderade Workers när
+API-tokenen bara saknade behörighet, och Access-kontrollen utgick från en
+policymodell som inte längre gäller för domänen.
 
 ### Kända Workers-specifika fallgropar
 

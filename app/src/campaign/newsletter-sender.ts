@@ -1,7 +1,7 @@
 import type { Env } from "./index";
-import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
-import { htmlToText } from "../../shared/html";
-import { sendResendMail } from "../../shared/resend";
+import { sendSmtpMail, escapeHtml } from "../../../shared/smtp";
+import { htmlToText } from "../../../shared/html";
+import { sendResendMail } from "../../../shared/resend";
 
 const NEWSLETTER_FROM = "Politiker-kontakt <noreply@denied.se>";
 

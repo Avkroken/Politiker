@@ -5,7 +5,7 @@
 #
 # Skapar Cloudflare-resurser (D1/KV/Queue/R2) i ditt inloggade konto, patchar
 # wrangler-konfigurationen med dina resurs-ID:n, applicerar databasschemat,
-# sätter secrets, deployar app/sender/campaign-Workers och installerar
+# sätter secrets, deployar app-Workern och installerar
 # bounce-processor (systemd). Idempotent — säker att köra om.
 #
 # Krav: Node 18+, npm, git, samt `wrangler login` (skriptet ber dig logga in
@@ -133,9 +133,7 @@ ok "R2: $R2_BUCKET"
 
 # ── 5. Patcha wrangler-konfigurationen ─────────────────────────────────────
 log "[5/8] Patchar wrangler-konfiguration med dina resurs-ID:n…"
-for f in app/wrangler.jsonc sender/wrangler.jsonc campaign/wrangler.jsonc; do
-  sed -i -E "s|\"database_id\": \"[^\"]*\"|\"database_id\": \"$DB_ID\"|" "$REPO_DIR/$f"
-done
+sed -i -E "s|\"database_id\": \"[^\"]*\"|\"database_id\": \"$DB_ID\"|" "$REPO_DIR/app/wrangler.jsonc"
 # KV-id finns bara i app (enda raden med "id": där).
 sed -i -E "s|\"id\": \"[a-f0-9]{32}\"|\"id\": \"$KV_ID\"|" "$REPO_DIR/app/wrangler.jsonc"
 
@@ -153,10 +151,8 @@ fi
 
 # ── 6. npm install ─────────────────────────────────────────────────────────
 log "[6/8] Installerar npm-beroenden…"
-for d in app sender campaign; do
-  ( cd "$REPO_DIR/$d" && npm install --no-audit --no-fund --silent )
-  ok "  $d/"
-done
+( cd "$REPO_DIR/app" && npm install --no-audit --no-fund --silent )
+ok "  app/"
 
 # ── 7. Schema + secrets + deploy ───────────────────────────────────────────
 log "[7/8] Databas, secrets och deploy…"
@@ -211,30 +207,19 @@ put_secret() { # <worker-dir> <namn> <värde>
   ok "  $d/ $name"
 }
 
-# app
+# Allt ligger på en Worker sedan app, sender och campaign slogs ihop — en
+# uppsättning secrets, en deploy. Kampanj-secreten sätts när de finns; utan
+# ANTHROPIC_API_KEY vägrar cron-körningen starta, men fetch och kön går ändå.
 put_secret app MAIL_CRED_KEY "$MAIL_CRED_KEY"
 put_secret app SYSTEM_SMTP_PASSWORD "$SYSTEM_SMTP_PASSWORD"
 put_secret app GITHUB_FEEDBACK_TOKEN "$GITHUB_FEEDBACK_TOKEN"
 put_secret app OAUTH_GOOGLE_CLIENT_SECRET "$OAUTH_GOOGLE_CLIENT_SECRET"
 put_secret app OAUTH_GITHUB_CLIENT_SECRET "$OAUTH_GITHUB_CLIENT_SECRET"
 put_secret app OAUTH_MICROSOFT_CLIENT_SECRET "$OAUTH_MICROSOFT_CLIENT_SECRET"
+put_secret app ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
+put_secret app GMAIL_EMAIL "$GMAIL_EMAIL"
+put_secret app GMAIL_PASSWORD "$GMAIL_PASSWORD"
 ( cd "$REPO_DIR/app" && $WR deploy >/dev/null ) && ok "  Deployade app"
-
-# sender
-put_secret sender MAIL_CRED_KEY "$MAIL_CRED_KEY"
-put_secret sender OAUTH_MICROSOFT_CLIENT_SECRET "$OAUTH_MICROSOFT_CLIENT_SECRET"
-( cd "$REPO_DIR/sender" && $WR deploy >/dev/null ) && ok "  Deployade sender"
-
-# campaign (bara om kampanj-creds finns)
-if [ -n "$ANTHROPIC_API_KEY" ] && [ -n "$GMAIL_EMAIL" ] && [ -n "$GMAIL_PASSWORD" ]; then
-  put_secret campaign ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
-  put_secret campaign GMAIL_EMAIL "$GMAIL_EMAIL"
-  put_secret campaign GMAIL_PASSWORD "$GMAIL_PASSWORD"
-  put_secret campaign GITHUB_FEEDBACK_TOKEN "$GITHUB_FEEDBACK_TOKEN"
-  ( cd "$REPO_DIR/campaign" && $WR deploy >/dev/null ) && ok "  Deployade campaign"
-else
-  warn "  Hoppar över campaign (ANTHROPIC_API_KEY/GMAIL_* saknas)"
-fi
 
 # ── 8. bounce-processor (systemd, valfritt) ────────────────────────────────
 log "[8/8] bounce-processor (systemd)…"

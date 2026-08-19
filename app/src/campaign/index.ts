@@ -4,19 +4,18 @@ import { runLetterSender } from "./letter-sender";
 import { runNewsletterSender } from "./newsletter-sender";
 import { runQuarterlyCampaign, runQuarterlyDrain } from "./quarterly-campaign";
 import { runBounceSweep } from "./bounce-sweep";
-import type { EmailSendBinding } from "../../shared/types";
 
-export interface Env {
-  DB: D1Database;
-  EMAIL?: EmailSendBinding; // Cloudflare Email Service — primär utskickskanal
-  RESEND_API_KEY?: string; // Resend — fallback (wrangler secret)
-  ANTHROPIC_API_KEY: string;
-  GMAIL_EMAIL: string;
-  GMAIL_PASSWORD: string;
-  GITHUB_FEEDBACK_TOKEN: string;
-  SENDER_NAME: string;
-  GITHUB_REPO: string;
-}
+// Kampanjmodulerna importerar Env från "./index" sedan de låg i en egen
+// Worker. Efter sammanslagningen är den appens Env — men med ANTHROPIC_API_KEY
+// smalnad till string. Appens fetch-väg klarar sig utan nyckeln (draft-letter
+// felar begripligt när den saknas), medan kampanjen inte har någon meningsfull
+// delmängd att köra utan den: brevgenerering, relevansfiltrering,
+// bounce-sweep och kvartalsbrevet anropar alla Claude.
+//
+// Grinden står i handleScheduled nedan och körs en gång per cron, i stället
+// för fyra optional-checkar utspridda i modulerna.
+import type { Env as AppEnv } from "../db";
+export type Env = AppEnv & { ANTHROPIC_API_KEY: string };
 
 // Cron-tider (UTC):
 //   05:00 → monitor        (07:00 CET)
@@ -36,10 +35,14 @@ export interface Env {
 
 const QUARTERLY_CRON = "30 6 1 1,4,7,10 *";
 
-export default {
-    async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+export async function handleScheduled(event: ScheduledController, appEnv: AppEnv, ctx: ExecutionContext): Promise<void> {
+  if (!appEnv.ANTHROPIC_API_KEY) {
+    throw new Error("Kampanjkörningen kräver ANTHROPIC_API_KEY (wrangler secret put ANTHROPIC_API_KEY)");
+  }
+  const env = appEnv as Env;
+
       const hour = new Date(event.scheduledTime).getUTCHours();
-      ctx.waitUntil(
+  ctx.waitUntil(
         (async () => {
           try {
             if (event.cron === QUARTERLY_CRON) { await runQuarterlyCampaign(env); return; }
@@ -60,7 +63,6 @@ export default {
             console.error(e);
             throw e;
           }
-        })()
-      );
-    },
-  } satisfies ExportedHandler<Env>;
+    })(),
+  );
+}
