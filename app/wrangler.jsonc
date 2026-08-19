@@ -105,8 +105,10 @@
   // -> Resend (RESEND_API_KEY) -> system-SMTP, i den ordningen.
   // Systemmailen (verifieringskod, lösenordsåterställning, feedback) går
   // Resend -> system-SMTP.
-  // Allt maskingenererat skickas som noreply@denied.se — adressen måste vara
-  // onboardad i Cloudflare Email Sending, annars avvisas send_email-anropen.
+  // Cloudflare Email Service och system-SMTP skickar som noreply@denied.se;
+  // adressen måste vara onboardad i Email Sending, annars avvisas
+  // send_email-anropen. Resend-ledet skickar från noreply@send.denied.se —
+  // den domänen är den som är verifierad på Resend-kontot.
   "send_email": [
     {
       "name": "EMAIL",
