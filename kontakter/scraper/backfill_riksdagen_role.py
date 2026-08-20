@@ -41,6 +41,11 @@ def fetch_current_members() -> list[dict]:
             last_err = err
             print(f"Försök {attempt + 1}/5 misslyckades ({err}), försöker igen...", file=sys.stderr, flush=True)
             time.sleep(5)
+    # last_err är satt i praktiken (loopen körs alltid fem varv), men typen är
+    # Optional — och `raise None` ger ett TypeError som döljer det verkliga
+    # felet just när något gått snett.
+    if last_err is None:
+        raise RuntimeError(f"Kunde inte hämta {RIKSDAGEN_API} efter 5 försök")
     raise last_err
 
 

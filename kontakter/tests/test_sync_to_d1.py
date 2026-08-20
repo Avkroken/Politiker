@@ -11,6 +11,31 @@ def test_area_type_for():
     assert s.area_type_for("Lysekils kommun") == "kommun"
 
 
+def test_vastra_gotalandsregionen_is_a_region_despite_its_name():
+    """Regressionen som faktiskt inträffade.
+
+    Den gamla regeln var `startswith("Region ")`, och VGR är den enda av
+    Sveriges 21 regioner vars namn inte börjar så. 497 ledamöter låg
+    därför som "kommun" i produktion — osynliga för den som filtrerade på
+    region, och en region mitt i kommunlistan. Det gamla testet hade
+    "Region Skåne", alltså just ett av de tjugo namn regeln råkade klara.
+    """
+    assert s.area_type_for("Västra Götalandsregionen") == "region"
+
+
+def test_every_configured_region_classifies_as_a_region():
+    """Kontraktet, inte stickprovet.
+
+    Skrapans egen källista är facit: varje regionpost i `regioner.json`
+    ska klassas som region. Utan det här kan listan växa med ett namn som
+    inte passar mönstret, precis som VGR gjorde, utan att något säger
+    ifrån.
+    """
+    for name in sorted(s.REGION_NAMES):
+        assert s.area_type_for(name) == "region", name
+    assert len(s.REGION_NAMES) == 21, "Sverige har 21 regioner"
+
+
 def test_parse_csv(tmp_path):
     csv_path = tmp_path / "resultat.csv"
     csv_path.write_text(

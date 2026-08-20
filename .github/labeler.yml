@@ -2,10 +2,6 @@ app:
   - changed-files:
     - any-glob-to-any-file: 'app/**'
 
-sender:
-  - changed-files:
-    - any-glob-to-any-file: 'sender/**'
-
 shared:
   - changed-files:
     - any-glob-to-any-file: 'shared/**'

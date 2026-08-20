@@ -1,9 +1,14 @@
 import type { Env } from "./index";
-import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
-import { htmlToText } from "../../shared/html";
-import { sendResendMail } from "../../shared/resend";
+import { sendSmtpMail, escapeHtml } from "../../../shared/smtp";
+import { htmlToText } from "../../../shared/html";
+import { sendResendMail } from "../../../shared/resend";
 
-const NEWSLETTER_FROM = "Politiker-kontakt <nyhetsbrev@send.denied.se>";
+// Resend skickar från send.denied.se — den domänen är verifierad på
+// Resend-kontot sedan tidigare. denied.se är det inte, och Resend avvisar
+// avsändare på overifierade domäner. Cloudflare Email Service och system-SMTP
+// använder noreply@denied.se; det är bara Resend-ledet som ligger på
+// subdomänen.
+const NEWSLETTER_FROM = "Politiker-kontakt <noreply@send.denied.se>";
 
 // Nyhetsbrevsutskick: prenumeranterna får KVARTALSBREVET — samma AI-
 // researchade och -författade brev som skickas till samtliga politiker i
@@ -87,7 +92,7 @@ export async function runNewsletterSender(env: Env): Promise<void> {
       try {
         await env.EMAIL.send({
           to,
-          from: { email: "nyhetsbrev@denied.se", name: "Politiker-kontakt" },
+          from: { email: "noreply@denied.se", name: "Politiker-kontakt" },
           subject, html, text, headers,
         });
         return;

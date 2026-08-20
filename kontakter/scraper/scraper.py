@@ -97,6 +97,8 @@ async def extract_person_name(page) -> tuple[str, str | None]:
             if _looks_like_name(name_only):
                 return name_only, party
     except PlaywrightError:
+        # <h1> saknas, är borttagen ur DOM:en, eller sidan hann navigera om.
+        # Nästa strategi (sidans <title>) får försöka i stället.
         pass
     try:
         title = await page.title()
@@ -131,6 +133,9 @@ async def accept_cookies(page):
                     await asyncio.sleep(1)
                     return
             except PlaywrightError:
+                # Selektorn matchade inget, eller knappen försvann mellan
+                # is_visible() och click(). Sidan har oftast ingen
+                # cookiebanner alls — nästa formulering i listan får försöka.
                 pass
 
 
@@ -159,6 +164,10 @@ async def expand_collapsibles(page, only_text=None):
                 await header.click(timeout=2000)
                 progress = True
             except PlaywrightError:
+                # En rubrik som inte går att klicka (överlappad, borttagen,
+                # timeout) ska inte stoppa de övriga i varvet. `progress`
+                # avgör om varvet gav något alls — blev inget utfällt bryter
+                # loopen nedan.
                 pass
         if not progress:
             break
@@ -195,6 +204,9 @@ async def visit_profiles(context, urls, extract, *, wait_until="domcontentloaded
             await asyncio.sleep(settle)
             people.update(await extract(page, url))
         except PlaywrightError:
+            # Medvetet: en trasig profilsida (timeout, 404, JS-krasch) ska
+            # inte stoppa resten av kommunen — se funktionens docstring.
+            # Sidan stängs i finally oavsett.
             pass
         finally:
             await page.close()
@@ -289,6 +301,8 @@ async def extract_troman_role(page) -> str | None:
         if rows:
             return rows[0][1] or None
     except PlaywrightError:
+        # Tabellen finns inte på alla profilsidor. Utan uppdragstabell finns
+        # ingen roll att hämta, och None nedan är rätt svar — inte ett fel.
         pass
     return None
 

@@ -41,7 +41,7 @@ from d1 import D1Client  # noqa: E402
 SMTP_TIMEOUT = 10
 DELAY_BETWEEN_DOMAINS = 1.5  # sekunder — var en god nätgranne, ingen brådska
 HELO_NAME = "denied.se"
-PROBE_FROM = "politiker@denied.se"  # riktig, levererbar adress vi äger — inte spoofad
+PROBE_FROM = "noreply@denied.se"  # riktig, levererbar adress vi äger — inte spoofad
 
 
 def random_local_part() -> str:
@@ -142,6 +142,9 @@ def probe_domain(domain: str, emails: list[str]) -> dict[str, str]:
         try:
             smtp.quit()
         except Exception:
+            # Städning i finally: servern har ofta redan stängt anslutningen
+            # när vi kommer hit. Ett fel här får inte maskera resultaten som
+            # redan samlats in — de returneras nedan oavsett.
             pass
 
     return results

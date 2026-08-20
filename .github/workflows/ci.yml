@@ -17,8 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # En Worker kvar, men matrisen behålls: den ger jobbet namnet
+      # "typecheck (app)", och required status checks i rulesetet är bundna
+      # till exakt det namnet. Tas matrisen bort heter jobbet "typecheck" och
+      # den required-raden blir omöjlig att uppfylla.
       matrix:
-        worker: [app, sender, campaign, healthcheck]
+        worker: [app]
     defaults:
       run:
         working-directory: ${{ matrix.worker }}

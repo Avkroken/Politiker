@@ -1,5 +1,5 @@
 import type { Env } from "./index";
-import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError, LETTER_GEN_CALL_BUDGET } from "../../shared/anthropic";
+import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError, LETTER_GEN_CALL_BUDGET } from "../../../shared/anthropic";
 import { notifyBudgetExhausted } from "./notify";
 
 const MAX_ITEMS    = 5;

@@ -22,20 +22,19 @@ i `kontakter/CLAUDE.md`.
 
 ```bash
 cd app && npm install && cp .dev.vars.example .dev.vars  # fyll i riktiga värden
-cd ../sender && npm install
 
-npx wrangler dev --remote   # i app/ eller sender/
+npx wrangler dev --remote   # i app/
 npx tsc --noEmit            # typecheck
 ```
 
 ## Project Structure
 
 ```
-app/          # Huvud-Worker: statisk frontend + API (auth, mail-credentials, mottagarval, brev, feedback)
-sender/       # Queue consumer-Worker: faktisk SMTP-sändning
-campaign/     # Worker för kampanjutskick
+app/          # Hela Workern: fetch (frontend + API), queue (utskick), scheduled (kampanj)
+  src/campaign/   # Cron-körningarna: nyhetsbevakning, brevgenerering, utskick, kvartalsbrev
+  src/send-queue.ts  # Kö-konsumenten: SMTP-/Graph-sändning av användarnas brev
+  src/rate-limiter.ts # Durable Object, token bucket per mailkoppling
 shared/       # Delad kod (kryptering, SMTP-klient, TOTP, typer)
-healthcheck/  # Cron-Worker: daglig hälsokontroll (05:00 UTC), mailar status via Resend
 infra/        # Cloudflare-provisionering (cf-api.sh, schema.sql)
 kontakter/    # Python-skrapan som fyller D1:n, plus export-/verifieringsskript
 forening/     # Föreningsdokument (stadgar, mötesmallar)
@@ -43,7 +42,10 @@ forening/     # Föreningsdokument (stadgar, mötesmallar)
 
 ## Conventions
 
-- `MAIL_CRED_KEY` (AES-nyckel för krypterade SMTP-lösenord) måste vara **identisk** i app och sender — sätts via `wrangler secret put`, aldrig hårdkodad
+- **En Worker, tre handlers.** `politiker-webapp-app` bär `fetch`, `queue` och `scheduled`. Tidigare var det fyra Workers (app, sender, campaign, healthcheck); de slogs ihop för att bindings, secrets och deploypipeline hölls synkade för hand mellan dem. Healthchecken togs bort helt.
+- **Kön tillåter en konsument.** `politiker-send-jobs` konsumeras av appen. Ett andra script som deklarerar samma konsument avvisas av Cloudflare.
+- **Durable Object-klassen exporteras från `src/index.ts`** — Workers kräver att DO-klasser ligger i entrypointen.
+- `MAIL_CRED_KEY` (AES-nyckel för krypterade SMTP-lösenord) sätts via `wrangler secret put`, aldrig hårdkodad — appen både krypterar och dekrypterar sedan sammanslagningen
 - Lösenord hashas med PBKDF2 via Web Crypto — **max 100 000 iterationer**, Workers' runtime tillåter inte mer
 - `socket.startTls()` kräver `.releaseLock()` på writer/reader innan anropet, inte `.close()` — annars kastar uppgraderingen fel
 - Aldrig logga eller exponera SMTP-lösenord, TOTP-secrets eller session-tokens
@@ -71,6 +73,16 @@ som väntar.
   leverantörskedjekontroll, inte versionshantering, och Dependabot bumpar dem
   ändå automatiskt.
 
+- **`kontakter/scraper/Dockerfile` pinnas till `v1.62.0-noble`.** Regeln säger
+  flytande, och det var också vad som stod här — men `:latest` pekar
+  fortfarande på Ubuntu 22.04 hos Microsoft. Uppmätt 2026-08-17: 856
+  åtgärdbara CVE:er på `:latest` mot 39 på `v1.62.0-noble`, alltså 96 procent
+  av code scanning-bruset i det här repot. Dependabot bumpar inom
+  `-noble`-familjen, men flyttar aldrig till nästa Ubuntu-generation — så
+  **det som måste kontrolleras för att släppa pinnen** är om `:latest` hunnit
+  ikapp till 24.04 eller senare, alternativt om det dykt upp en
+  26.04-variant som suffixet behöver bytas till.
+
 ## Allowed
 - Create branches
 - Modify code
@@ -79,7 +91,7 @@ som väntar.
 
 ## Forbidden
 - Push directly to main/master
-- Merge PRs
+- Merge PRs på eget initiativ (be uttryckligen så är det okej)
 - Delete branches
 - Disable workflows
 - Modify secrets
@@ -91,3 +103,25 @@ som väntar.
 - Never include unrelated changes
 - Never commit credentials
 - Never force push
+
+## Svarsformat
+
+Regeluppsättningen kommer från plugin:et `i-have-adhd`. Den laddas inte i
+alla sessioner (t.ex. inte i Claude Code på webben), så den står här —
+det här är källan som gäller oavsett var agenten kör.
+
+Form:
+
+- Led med åtgärden eller kommandot, inte med bakgrunden
+- Numrera flerstegsprocesser, ett avgränsat steg per rad
+- Max fem punkter per lista
+- Hoppa över inledningar, sammanfattningar och avslutningsfraser
+- Långa förklaringar bara på begäran
+
+Innehåll:
+
+- Säg uttryckligen vad som är gjort och vad som återstår
+- Ange konkreta tidsuppskattningar
+- Visa vad som fungerar efter en ändring, inte bara att den är gjord
+- Vid fel: var, varför och hur det åtgärdas — kortfattat
+- Avsluta med ett nästa steg som tar under två minuter

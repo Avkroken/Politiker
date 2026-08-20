@@ -9,11 +9,11 @@ SYSTEM_SMTP_HOST=smtp.mail.me.com
 SYSTEM_SMTP_PORT=587
 SYSTEM_SMTP_USER=nils.anders.eriksson@icloud.com
 SYSTEM_SMTP_PASSWORD=<app-specifikt lösenord>
-SYSTEM_FROM_ADDRESS=anders.eriksson@denied.se
+SYSTEM_FROM_ADDRESS=noreply@denied.se
 
 GITHUB_FEEDBACK_TOKEN=<fine-grained PAT med Issues:Write på blixten85/politiker-webapp>
 OAUTH_GITHUB_CLIENT_ID=<GitHub OAuth-appens klient-ID>
-FEEDBACK_NOTIFY_EMAIL=anders.eriksson@denied.se
+FEEDBACK_NOTIFY_EMAIL=noreply@denied.se
 
 # Cloudflare Turnstile siteverify-hemlighet (bot-skydd på signup/reset)
 TURNSTILE_SECRET=
