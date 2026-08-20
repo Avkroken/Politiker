@@ -13,14 +13,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  impact:
+    runs-on: ubuntu-latest
+    outputs:
+      node: ${{ steps.impact.outputs.node }}
+      python: ${{ steps.impact.outputs.python }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bestäm språk-/komponentpåverkan
+        id: impact
+        env:
+          CI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: bash .github/scripts/ci-impact.sh
+
   typecheck:
+    needs: impact
+    if: ${{ needs.impact.outputs.node == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      # En Worker kvar, men matrisen behålls: den ger jobbet namnet
-      # "typecheck (app)", och required status checks i rulesetet är bundna
-      # till exakt det namnet. Tas matrisen bort heter jobbet "typecheck" och
-      # den required-raden blir omöjlig att uppfylla.
+      # Matrisen behålls eftersom required check-namnet är `typecheck (app)`.
       matrix:
         worker: [app]
     defaults:
@@ -28,6 +44,8 @@ jobs:
         working-directory: ${{ matrix.worker }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
@@ -40,12 +58,16 @@ jobs:
         run: npx tsc --noEmit
 
   python:
+    needs: impact
+    if: ${{ needs.impact.outputs.python == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: kontakter
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
