@@ -3,17 +3,13 @@ import { escapeHtml } from "../../shared/html";
 import { sendSystemMail } from "./auth";
 import type { Env } from "./db";
 
-const FEEDBACK_REPO = "blixten85/politiker";
+// Tak för hur många NYA automatiska felnotiser som får mejlas per dygn.
+// Överskjutande fel sparas och räknas fortfarande i D1.
+const MAX_NEW_AUTO_ERROR_EMAILS_PER_DAY = 20;
 
-// Tak för hur många NYA auto-issues som får skapas per dygn — skyddar mot
-// issue-spam om en deploy felar för alla besökare samtidigt. Överskjutande
-// fel räknas fortfarande i client_errors men öppnar ingen issue.
-const MAX_NEW_AUTO_ISSUES_PER_DAY = 20;
-
-// Automatiskt rapporterat klientfel → GitHub-issue (gratis via GitHub API,
-// INGEN LLM inblandad). Deduplicerar på en signatur (felmeddelande + fil:rad)
-// så återkommande fel räknas upp på EN issue i stället för att skapa nya, och
-// har ett dygnstak mot spam. Best effort: får aldrig kasta vidare.
+// Automatiskt rapporterat klientfel → D1 + e-postnotis. Deduplicerar på en
+// signatur (felmeddelande + fil:rad) så återkommande fel räknas upp på samma
+// rad och har ett dygnstak mot mejlspam. Best effort: får aldrig kasta vidare.
 export async function reportClientError(
   env: Env,
   input: { message: string; stack?: string; url?: string },
@@ -41,43 +37,30 @@ export async function reportClientError(
 
   const since24h = now - 24 * 60 * 60 * 1000;
   const day = await env.DB.prepare(
-    "SELECT COUNT(*) as n FROM client_errors WHERE github_issue_url IS NOT NULL AND first_seen >= ?",
+    "SELECT COUNT(*) as n FROM client_errors WHERE email_notified_at >= ?",
   )
     .bind(since24h)
     .first<{ n: number }>();
-  if ((day?.n ?? 0) >= MAX_NEW_AUTO_ISSUES_PER_DAY) return { reported: false };
+  if ((day?.n ?? 0) > MAX_NEW_AUTO_ERROR_EMAILS_PER_DAY) return { reported: false };
 
   try {
-    const resp = await fetch(`https://api.github.com/repos/${FEEDBACK_REPO}/issues`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.GITHUB_FEEDBACK_TOKEN}`,
-        Accept: "application/vnd.github+json",
-        "User-Agent": "politiker-autoreport",
-      },
-      body: JSON.stringify({
-        title: `Auto: ${message.slice(0, 80)}`,
-        body: [
-          "Automatiskt rapporterat klientfel — oväntat JS-undantag i produktion.",
-          "",
-          `**Fel:** ${message}`,
-          input.url ? `**Sida:** ${input.url}` : "",
-          stack ? `**Stack:**\n\`\`\`\n${stack}\n\`\`\`` : "",
-        ]
-          .filter(Boolean)
-          .join("\n"),
-        labels: ["bug", "auto-reported"],
-      }),
-    });
-    if (resp.ok) {
-      const issue = (await resp.json()) as { html_url: string };
-      await env.DB.prepare("UPDATE client_errors SET github_issue_url = ? WHERE signature = ?")
-        .bind(issue.html_url, signature)
-        .run();
-      return { reported: true };
+    const subject = `Automatiskt klientfel — ${message.slice(0, 80)}`;
+    const html = [
+      "<p>Automatiskt rapporterat JavaScript-fel i produktion.</p>",
+      `<p><strong>Fel:</strong> ${escapeHtml(message)}</p>`,
+      input.url ? `<p><strong>Sida:</strong> ${escapeHtml(input.url)}</p>` : "",
+      stack ? `<pre>${escapeHtml(stack)}</pre>` : "",
+    ].join("");
+    await sendSystemMail(env, env.FEEDBACK_NOTIFY_EMAIL, subject, html);
+    await env.DB.prepare("UPDATE client_errors SET email_notified_at = ? WHERE signature = ?")
+      .bind(now, signature)
+      .run();
+    if (env.ERROR_FIXER_INBOX) {
+      await sendSystemMail(env, env.ERROR_FIXER_INBOX, subject, html).catch(() => {});
     }
+    return { reported: true };
   } catch {
-    // best effort — felet är redan loggat i client_errors
+    // Best effort — felet är redan sparat i client_errors.
   }
   return { reported: false };
 }
@@ -99,9 +82,8 @@ export async function submitFeedback(
     type?: "bug" | "contact";
     replyTo?: string;
   },
-): Promise<{ githubIssueUrl: string | null }> {
+): Promise<{ received: true }> {
   const isContact = input.type === "contact";
-  let githubIssueUrl: string | null = null;
 
   // Hämta serverfel för kontot (senaste 48h) — ger auto-triage-boten
   // serverkontext utan att exponera hemligheter (endpoint=pathname, ingen body).
@@ -119,62 +101,31 @@ export async function submitFeedback(
   // Rensa gamla rader (>48h) — best effort, piggybacks på befintlig skrivning.
   env.DB.prepare("DELETE FROM worker_errors WHERE created_at < ?").bind(since48h).run().catch(() => {});
 
-  // Allmänna kontaktfrågor skapar inte en GitHub-issue (är inte buggar/buggrapporter
-  // som hör hemma i kodspårningen) — bara felrapporter gör det.
-  if (!isContact) {
-    try {
-      const resp = await fetch(`https://api.github.com/repos/${FEEDBACK_REPO}/issues`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.GITHUB_FEEDBACK_TOKEN}`,
-          Accept: "application/vnd.github+json",
-          "User-Agent": "politiker-feedback",
-        },
-        body: JSON.stringify({
-          title: `Feedback: ${input.message.slice(0, 60)}${input.message.length > 60 ? "…" : ""}`,
-          body: [
-            input.message,
-            "",
-            "---",
-            `Konto: ${input.accountId ?? "ej inloggad"}`,
-            input.context ? `Klientkontext: \`\`\`json\n${JSON.stringify(input.context, null, 2)}\n\`\`\`` : "",
-            serverErrors.length > 0
-              ? `Serverfel (senaste 48h):\n\`\`\`\n${serverErrors.map(e => {
-                  const ts = new Date(e.created_at).toISOString();
-                  return `${ts}  ${e.method} ${e.endpoint}  ${e.status}  ${e.error_message}`;
-                }).join("\n")}\n\`\`\``
-              : "",
-          ].join("\n"),
-          labels: ["feedback", "user-reported"],
-        }),
-      });
-      if (resp.ok) {
-        const issue = (await resp.json()) as { html_url: string };
-        githubIssueUrl = issue.html_url;
-      }
-    } catch {
-      // GitHub-issue är "best effort" — mejlkopian nedan är huvudvägen för att felet inte ska gå förlorat.
-    }
-  }
-
   await env.DB.prepare(
     "INSERT INTO feedback (id, account_id, message, github_issue_url, created_at) VALUES (?, ?, ?, ?, ?)",
   )
-    .bind(randomId(), input.accountId, input.message, githubIssueUrl, Date.now())
+    .bind(randomId(), input.accountId, input.message, null, Date.now())
     .run();
 
   const mailSubject = isContact ? "Ny kontaktfråga — politiker.denied.se" : "Ny feedback — politiker.denied.se";
   const mailHtml = [
     input.replyTo ? `<p>Svar önskas till: ${escapeHtml(input.replyTo)}</p>` : "",
     `<p>${escapeHtml(input.message)}</p>`,
-    !isContact ? `<p>GitHub-issue: ${githubIssueUrl ? `<a href="${githubIssueUrl}">${githubIssueUrl}</a>` : "kunde inte skapas"}</p>` : "",
+    `<p><strong>Konto:</strong> ${escapeHtml(input.accountId ?? "ej inloggad")}</p>`,
+    input.context ? `<p><strong>Klientkontext:</strong></p><pre>${escapeHtml(JSON.stringify(input.context, null, 2))}</pre>` : "",
+    serverErrors.length > 0
+      ? `<p><strong>Serverfel senaste 48 timmarna:</strong></p><pre>${escapeHtml(serverErrors.map((error) => {
+          const timestamp = new Date(error.created_at).toISOString();
+          return `${timestamp}  ${error.method} ${error.endpoint}  ${error.status}  ${error.error_message}`;
+        }).join("\n"))}</pre>`
+      : "",
   ].join("");
 
   await sendSystemMail(env, env.FEEDBACK_NOTIFY_EMAIL, mailSubject, mailHtml);
-  // Skicka även till issue-fixer-inkorgen så att morgon-scriptet kan agera autonomt
-  if (!isContact && env.ISSUE_FIXER_INBOX) {
-    await sendSystemMail(env, env.ISSUE_FIXER_INBOX, mailSubject, mailHtml).catch(() => {});
+  // Skicka även till felrättningsinkorgen så att automatiseringen kan agera.
+  if (!isContact && env.ERROR_FIXER_INBOX) {
+    await sendSystemMail(env, env.ERROR_FIXER_INBOX, mailSubject, mailHtml).catch(() => {});
   }
 
-  return { githubIssueUrl };
+  return { received: true };
 }

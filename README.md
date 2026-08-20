@@ -47,7 +47,7 @@ workflows och regler för en enda datakedja.
 - **Kontakt/FAQ**: inbyggd kontaktväg och vanliga frågor, separat från felrapportering — FAQ förklarar bland annat exakt vilken politikerdata som finns och hur mottagarfiltren kombineras
 - **Admin-panel**: konton, feedback, statistik (med diagram), export (CSV/JSON) per sektion eller allt i ett — samt en separat, fristående export av politiker-listan
 - **Felrapportering**: oväntade JS-fel loggas till konsolen; användaren kan rapportera via kontaktformuläret
-- **Autonom kampanj** (`app/src/campaign/`): cron-driven (05–09 UTC dagligen) som självständigt hämtar nyheter från SVT, Aftonbladet, Expressen och Riksdagen, filtrerar socialt relevanta ärenden med Claude, genererar personaliserade medborgarbrev och skickar dem via Gmail till kommunpolitiker, regionpolitiker och riksdagsledamöter — utan mänsklig inblandning. Inkluderar bounce-sweep (kontaktar kommunpolitiker som inte nåtts på 90 dagar). Klientfel rapporteras automatiskt som GitHub-issues direkt från app-Workern (gratis via GitHub API, ingen LLM)
+- **Autonom kampanj** (`app/src/campaign/`): cron-driven (05–09 UTC dagligen) som självständigt hämtar nyheter från SVT, Aftonbladet, Expressen och Riksdagen, filtrerar socialt relevanta ärenden med Claude, genererar personaliserade medborgarbrev och skickar dem via Gmail till kommunpolitiker, regionpolitiker och riksdagsledamöter — utan mänsklig inblandning. Inkluderar bounce-sweep (kontaktar kommunpolitiker som inte nåtts på 90 dagar). Klientfel sparas deduplicerat i D1 och nya unika fel skickas som e-postnotiser med ett dygnstak mot spam.
 - **Kvartalsbrev + nyhetsbrev**: den 1:a i varje kvartal researchar och författar campaign-Workern ETT gemensamt medborgarbrev (utifrån kvartalets bevakade ärenden) som skickas till **samtliga ~17 000 politiker i landet** via Cloudflare Email Service. Nyhetsbrevsprenumeranter (dubbel opt-in, Turnstile-skyddat, inget konto behövs) får exakt samma brev samma dag, med avregistreringslänk i varje utskick. Hela kedjan nyhetsbevakning → research → brev → utskick till politiker + prenumeranter är automatiserad
 
 ## Struktur
@@ -60,7 +60,7 @@ workflows och regler för en enda datakedja.
 
 ## Köra din egen kopia (ett kommando)
 
-Hela stacken — Cloudflare-resurser, databas, secrets och alla tre Workers —
+Hela stacken — Cloudflare-resurser, databas, hemligheter och app-Workern —
 sätts upp av `infra/setup.sh`. Du behöver bara ett Cloudflare-konto och Node 18+.
 
 ```bash
@@ -73,7 +73,6 @@ bash infra/setup.sh
 automatiskt) och avslutar så du kan fylla i dina värden. Minst:
 
 - `SYSTEM_SMTP_PASSWORD` — SMTP-konto för verifierings-/notismail
-- `GITHUB_FEEDBACK_TOKEN` — fine-grained PAT med `Issues:Write` (för feedback/felrapporter)
 - `CUSTOM_DOMAIN` — egen domän (lämna tom → deploy till `*.workers.dev`)
 - Valfritt: `ANTHROPIC_API_KEY` + `GMAIL_EMAIL`/`GMAIL_PASSWORD` (autonom kampanj), `OAUTH_*_CLIENT_SECRET` (social inloggning)
 
@@ -98,7 +97,8 @@ om du vill ändra dem.
 >   --file kontakter/data/politiker.sql
 > ```
 
-Kampanj-Workern deployas även automatiskt vid push till `main` via Cloudflare Workers Builds.
+App-Workern, inklusive kampanjkörningarna, driftsätts även automatiskt vid
+kodöverföring till `main` via Cloudflare Workers Builds.
 
 ### Lokal utveckling
 
@@ -133,6 +133,18 @@ Enda undantaget är GitHub Actions, som pinnas till commit-SHA. En tagg som
 leverantörskedjekontroll, inte versionshantering.
 
 Se `AGENTS.md` för regeln i sin helhet.
+
+## Projektadministration
+
+Förvaret förvaltas som ett personligt projekt. GitHubs Issues, Discussions,
+Wiki och Projects används inte. Felrapporter och kontaktfrågor hanteras i
+appens inbyggda formulär och administratörsvy.
+
+## Sponsring
+
+Stöd utvecklingen via [GitHub Sponsors – @blixten85](https://github.com/sponsors/blixten85),
+[PayPal](https://www.paypal.com/paypalme/anders0225/25) eller
+[WhyDonate](https://whydonate.com/sv/donate/politiker-kontakt).
 
 ## Status
 

@@ -1,6 +1,6 @@
 -- Dedup-/räkningstabell för automatiskt rapporterade klientfel.
--- En rad per unik felsignatur (meddelande + fil:rad); github_issue_url sätts
--- när en GitHub-issue skapats för felet (NULL = ingen issue, t.ex. pga dygnstak).
+-- En rad per unik felsignatur (meddelande + fil:rad). github_issue_url är ett
+-- äldre kompatibilitetsfält och används inte för nya rapporter.
 CREATE TABLE IF NOT EXISTS client_errors (
   signature TEXT PRIMARY KEY,
   message TEXT NOT NULL,

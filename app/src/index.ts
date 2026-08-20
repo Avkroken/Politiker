@@ -680,8 +680,7 @@ async function handleRequest(req: Request, env: Env, url: URL): Promise<Response
       }
 
       // Automatisk klient-felrapportering (oväntade JS-undantag). Kräver INTE
-      // inloggning. Svaret blockeras aldrig av GitHub-anropet — körs i
-      // bakgrunden via waitUntil; klienten bryr sig inte om resultatet.
+      // inloggning. Felet sparas i D1 och nya unika fel mejlas med dygnstak.
       if (url.pathname === "/api/client-error" && req.method === "POST") {
         const { message, stack, url: pageUrl } = await req.json<{ message?: string; stack?: string; url?: string }>();
         if (message) await reportClientError(env, { message, stack, url: pageUrl });

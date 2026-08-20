@@ -36,14 +36,14 @@
 
    Låt `index.ts` mest fungera som composition entrypoint.
 
-5. ~~**Hårdsäkra eller tona ned den autonoma issue-fixern**~~ — LÖST: issue-fixern är borttagen (Claude skrev om hela filer, ~$3-4/issue). Klientfel rapporteras nu direkt som GitHub-issues utan LLM.
+5. ~~**Hårdsäkra eller tona ned den autonoma issue-fixern**~~ — LÖST: issue-fixern är borttagen (Claude skrev om hela filer, ~$3-4/issue). Klientfel sparas i D1 och nya unika fel skickas som e-postnotiser utan LLM.
 
 6. **Rätta logikmiss i mottagarförhandsvisningen**
    UI:t sparar valda roller som normaliserade `role_key`, och backend filtrerar också på normaliserad roll. Men förhandsräkningen i `app/public/app.js` jämför mot `r.role` i stället för `r.role_key`.
 
    Det kan ge fel mottagarantal när rollfilter används.
 
-7. ~~**Se över automatisk felrapportering i klienten**~~ — LÖST: `autoReportError()` skickar nu felet till `/api/client-error`, som skapar en GitHub-issue (gratis, dedup + dygnstak). Loggar fortfarande även i konsolen.
+7. ~~**Se över automatisk felrapportering i klienten**~~ — LÖST: `autoReportError()` skickar nu felet till `/api/client-error`, som sparar det deduplicerat i D1 och mejlar nya unika fel med dygnstak. Loggar fortfarande även i konsolen.
 
 ## Styrkor att bevara
 
