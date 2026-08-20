@@ -7,7 +7,7 @@ folkvalda — utan att plattformen själv blir avsändare. Live på
 politiker.denied.se.
 
 Repot rymmer hela datakedjan: `kontakter/` skrapar fram kontaktuppgifterna
-och skriver dem till D1, webappen serverar samma D1. De två låg tidigare i
+och skriver dem till D1, tjänsten serverar samma D1. De två låg tidigare i
 var sitt repo trots att de delar databas. Djupare detaljer om skraparen står
 i `kontakter/CLAUDE.md`.
 

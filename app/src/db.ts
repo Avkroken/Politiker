@@ -304,7 +304,7 @@ export async function countSentToday(db: D1Database, accountId: string): Promise
 
 // Räknar sänt per SPECIFIK mailkoppling, inte hela kontot — skyddar
 // leverantörskontot (t.ex. Gmail) från att bli av-rate-limitat/bannat,
-// oberoende av kontots övergripande dygnsgräns mot platiker-webapp.
+// oberoende av kontots övergripande dygnsgräns mot tjänsten.
 export async function countSentTodayForCredential(db: D1Database, mailCredentialId: string): Promise<number> {
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);

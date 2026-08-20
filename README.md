@@ -25,12 +25,12 @@ netpublicator, ~94% av kommunerna) eller via matchning mot Valmyndighetens
 
 | Katalog | Vad |
 | --- | --- |
-| `app/` | Webappens Cloudflare Worker — HTTP, kö och cron i samma script |
+| `app/` | Tjänstens Cloudflare Worker — HTTP, kö och cron i samma script |
 | `shared/` | Kod som appen delar med skrapan och verktygen |
 | `kontakter/` | Scrapern som fyller D1:n, och exportverktygen |
 
-Scrapern och webappen låg tidigare i var sitt repo trots att de delar
-databas: `kontakter/` skriver in i samma D1 som webappen serverar, och
+Scrapern och tjänsten låg tidigare i var sitt repo trots att de delar
+databas: `kontakter/` skriver in i samma D1 som tjänsten serverar, och
 `export-politiker.yml` läser tillbaka ur den. Det gav två uppsättningar
 workflows och regler för en enda datakedja.
 

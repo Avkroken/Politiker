@@ -9,10 +9,6 @@ name: Deploy
 #
 # Variables (Repo → Settings → Variables → Actions):
 #   CLOUDFLARE_ACCOUNT_ID — kontots ID.
-#
-# Namnmigreringen är idempotent och körs före varje deploy. Efter första
-# lyckade körningen blir den en verifiering/no-op. Den gamla R2-bucketen
-# behålls som återställningspunkt.
 
 on:
   push:
@@ -29,24 +25,7 @@ permissions:
   contents: read
 
 jobs:
-  migrate-names:
-    environment: produktion
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: main
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
-        with:
-          node-version: 24
-      - name: Migrate Cloudflare resource names
-        run: node scripts/migrate-cloudflare-names.mjs
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-
   deploy:
-    needs: migrate-names
     environment: produktion
     runs-on: ubuntu-latest
     defaults:
