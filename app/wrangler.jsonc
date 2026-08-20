@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "politiker-app",
+  "name": "politiker",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-01",
   // nodejs_compat: behövs av beroenden som använder node:-API:er.
