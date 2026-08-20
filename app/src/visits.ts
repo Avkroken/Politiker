@@ -6,7 +6,7 @@ import type { Env } from "./db";
 // trivialt ska kunna kopplas till en IP. Hashen är ändå irreversibel utan
 // både IP och user-agent (som aldrig lagras). Sätt env.VISITOR_SALT för att
 // rotera vid behov; annars används denna konstant.
-const DEFAULT_SALT = "politiker-visit-v1";
+const DEFAULT_SALT = "politiker-webapp-visit-v1";
 
 async function visitorHash(env: Env, req: Request): Promise<string> {
   const ip = req.headers.get("CF-Connecting-IP") ?? req.headers.get("X-Forwarded-For") ?? "okänd";
