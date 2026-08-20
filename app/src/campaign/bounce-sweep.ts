@@ -1,6 +1,6 @@
 import type { Env } from "./index";
-import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
-import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError } from "../../shared/anthropic";
+import { sendSmtpMail, escapeHtml } from "../../../shared/smtp";
+import { callAnthropic, ANTHROPIC_HAIKU, AnthropicBudgetExceededError } from "../../../shared/anthropic";
 import { notifyBudgetExhausted } from "./notify";
 
 const MAX_PER_RUN = 150;

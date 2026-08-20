@@ -7,7 +7,7 @@
 
 export interface ResendMail {
   to: string;
-  from: string; // "Namn <noreply@denied.se>" — avsändardomänen måste vara verifierad på Resend-kontot
+  from: string; // "Namn <noreply@send.denied.se>" — måste ligga på den verifierade domänen
   replyTo?: string;
   subject: string;
   html?: string;

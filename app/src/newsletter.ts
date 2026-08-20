@@ -80,7 +80,7 @@ skickas inga nyhetsbrev.</p>`;
     try {
       await sendResendMail(env.RESEND_API_KEY, {
         to: email,
-        from: "Politiker-kontakt <noreply@denied.se>",
+        from: "Politiker-kontakt <noreply@send.denied.se>", // Resend-domänen, se auth.ts
         subject, html, text,
       });
       return;

@@ -1,5 +1,5 @@
 import type { Env } from "./index";
-import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
+import { sendSmtpMail, escapeHtml } from "../../../shared/smtp";
 
 // Skickar ett notismail till operatören via samma Gmail-konto som breven
 // (env.GMAIL_EMAIL). Används när ett cron-jobb avbryts pga att Anthropics

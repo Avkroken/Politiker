@@ -47,6 +47,13 @@ import { getMicrosoftMailAuthorizeUrl } from "../../shared/graph-mail";
 import { randomId } from "../../shared/crypto";
 import { verifyTurnstile } from "./turnstile";
 import type { Env } from "./db";
+import { handleSendQueue } from "./send-queue";
+import { handleScheduled } from "./campaign";
+import type { SendJobMessage } from "../../shared/types";
+
+// Durable Object-klassen måste exporteras från Workerns entrypoint. Den kom
+// hit med kö-konsumenten när sender-Workern slogs ihop med appen.
+export { CredentialRateLimiter } from "./rate-limiter";
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -117,7 +124,18 @@ export default {
 
     return new Response(resp.body, { status: resp.status, headers });
     },
-  } satisfies ExportedHandler<Env>;
+    // Kö-konsument (f.d. politiker-webapp-sender): den faktiska SMTP-/Graph-
+    // sändningen av användarnas brev.
+    async queue(batch: MessageBatch<SendJobMessage>, env: Env): Promise<void> {
+      await handleSendQueue(batch, env);
+    },
+
+    // Cron (f.d. politiker-webapp-campaign): nyhetsbevakning, brevgenerering,
+    // utskick, bounce-sweep och kvartalsbrevet.
+    async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+      await handleScheduled(event, env, ctx);
+    },
+  } satisfies ExportedHandler<Env, SendJobMessage>;
 
 // --- Tabelldriven routing för de inloggade JSON-endpointsen ---------------
 // De auth-känsliga vägarna (OAuth-redirects, cookie-sättning, civic-letter-

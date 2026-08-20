@@ -3,18 +3,11 @@ import { sendSmtpMail, SmtpError } from "../../shared/smtp";
 import { sendGraphMail, refreshMicrosoftToken } from "../../shared/graph-mail";
 import type { SendJobMessage } from "../../shared/types";
 import { messagesPerMinuteFor } from "../../shared/provider-rates";
-import { CredentialRateLimiter } from "./rate-limiter";
+import type { Env } from "./db";
 
-export { CredentialRateLimiter };
-
-interface Env {
-  DB: D1Database;
-  ATTACHMENTS: R2Bucket;
-  MAIL_CRED_KEY: string;
-  RATE_LIMITER: DurableObjectNamespace;
-  OAUTH_MICROSOFT_CLIENT_ID?: string;
-  OAUTH_MICROSOFT_CLIENT_SECRET?: string;
-}
+// Kö-konsumenten låg i en egen Worker (politiker-webapp-sender) innan
+// sammanslagningen. Durable Object-klassen exporteras numera från index.ts,
+// eftersom en DO-klass måste ligga i Workerns entrypoint.
 
 interface CredentialRow {
   provider: string;
@@ -78,21 +71,19 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export default {
-    async queue(batch: MessageBatch<SendJobMessage>, env: Env): Promise<void> {
-      // Gruppera per send_job så kretsbrytaren räknar per jobb, inte per hela batchen
-      const byJob = new Map<string, SendJobMessage[]>();
-      for (const msg of batch.messages) {
-        const arr = byJob.get(msg.body.sendJobId) ?? [];
-        arr.push(msg.body);
-        byJob.set(msg.body.sendJobId, arr);
-      }
+export async function handleSendQueue(batch: MessageBatch<SendJobMessage>, env: Env): Promise<void> {
+  // Gruppera per send_job så kretsbrytaren räknar per jobb, inte per hela batchen
+  const byJob = new Map<string, SendJobMessage[]>();
+  for (const msg of batch.messages) {
+    const arr = byJob.get(msg.body.sendJobId) ?? [];
+    arr.push(msg.body);
+    byJob.set(msg.body.sendJobId, arr);
+  }
 
-      for (const [sendJobId, messages] of byJob) {
-        await processJobMessages(env, sendJobId, messages, batch);
-      }
-    },
-} satisfies ExportedHandler<Env, SendJobMessage>;
+  for (const [sendJobId, messages] of byJob) {
+    await processJobMessages(env, sendJobId, messages, batch);
+  }
+}
 
 async function processJobMessages(
   env: Env,

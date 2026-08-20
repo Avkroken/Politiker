@@ -1,5 +1,5 @@
 import type { Env } from "./index";
-import { callAnthropic, ANTHROPIC_SONNET, AnthropicBudgetExceededError } from "../../shared/anthropic";
+import { callAnthropic, ANTHROPIC_SONNET, AnthropicBudgetExceededError } from "../../../shared/anthropic";
 import { notifyBudgetExhausted } from "./notify";
 
 // Kvartalsbrevet: EN gång per kvartal researchas och författas ETT brev

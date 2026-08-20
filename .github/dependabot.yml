@@ -3,12 +3,8 @@ updates:
   - package-ecosystem: "npm"
     assignees: ["blixten85"]
     directories:
+      # En Worker kvar sedan app, sender, campaign och healthcheck slogs ihop.
       - "/app"
-      - "/sender"
-      - "/campaign"
-      # /healthcheck är en egen Cloudflare Worker (package.json +
-      # wrangler.jsonc) som saknades här och därför aldrig bevakats.
-      - "/healthcheck"
     schedule:
       interval: "weekly"
       day: "wednesday"

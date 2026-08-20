@@ -22,20 +22,19 @@ i `kontakter/CLAUDE.md`.
 
 ```bash
 cd app && npm install && cp .dev.vars.example .dev.vars  # fyll i riktiga värden
-cd ../sender && npm install
 
-npx wrangler dev --remote   # i app/ eller sender/
+npx wrangler dev --remote   # i app/
 npx tsc --noEmit            # typecheck
 ```
 
 ## Project Structure
 
 ```
-app/          # Huvud-Worker: statisk frontend + API (auth, mail-credentials, mottagarval, brev, feedback)
-sender/       # Queue consumer-Worker: faktisk SMTP-sändning
-campaign/     # Worker för kampanjutskick
+app/          # Hela Workern: fetch (frontend + API), queue (utskick), scheduled (kampanj)
+  src/campaign/   # Cron-körningarna: nyhetsbevakning, brevgenerering, utskick, kvartalsbrev
+  src/send-queue.ts  # Kö-konsumenten: SMTP-/Graph-sändning av användarnas brev
+  src/rate-limiter.ts # Durable Object, token bucket per mailkoppling
 shared/       # Delad kod (kryptering, SMTP-klient, TOTP, typer)
-healthcheck/  # Cron-Worker: daglig hälsokontroll (05:00 UTC), mailar status via Resend
 infra/        # Cloudflare-provisionering (cf-api.sh, schema.sql)
 kontakter/    # Python-skrapan som fyller D1:n, plus export-/verifieringsskript
 forening/     # Föreningsdokument (stadgar, mötesmallar)
@@ -43,7 +42,10 @@ forening/     # Föreningsdokument (stadgar, mötesmallar)
 
 ## Conventions
 
-- `MAIL_CRED_KEY` (AES-nyckel för krypterade SMTP-lösenord) måste vara **identisk** i app och sender — sätts via `wrangler secret put`, aldrig hårdkodad
+- **En Worker, tre handlers.** `politiker-webapp-app` bär `fetch`, `queue` och `scheduled`. Tidigare var det fyra Workers (app, sender, campaign, healthcheck); de slogs ihop för att bindings, secrets och deploypipeline hölls synkade för hand mellan dem. Healthchecken togs bort helt.
+- **Kön tillåter en konsument.** `politiker-send-jobs` konsumeras av appen. Ett andra script som deklarerar samma konsument avvisas av Cloudflare.
+- **Durable Object-klassen exporteras från `src/index.ts`** — Workers kräver att DO-klasser ligger i entrypointen.
+- `MAIL_CRED_KEY` (AES-nyckel för krypterade SMTP-lösenord) sätts via `wrangler secret put`, aldrig hårdkodad — appen både krypterar och dekrypterar sedan sammanslagningen
 - Lösenord hashas med PBKDF2 via Web Crypto — **max 100 000 iterationer**, Workers' runtime tillåter inte mer
 - `socket.startTls()` kräver `.releaseLock()` på writer/reader innan anropet, inte `.close()` — annars kastar uppgraderingen fel
 - Aldrig logga eller exponera SMTP-lösenord, TOTP-secrets eller session-tokens
