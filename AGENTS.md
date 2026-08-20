@@ -23,7 +23,7 @@ i `kontakter/CLAUDE.md`.
 ```bash
 cd app && npm install && cp .dev.vars.example .dev.vars  # fyll i riktiga värden
 
-npx wrangler dev --remote   # i app/
+npm run dev                 # i app/; använder ../wrangler.jsonc
 npx tsc --noEmit            # typecheck
 ```
 
@@ -45,6 +45,7 @@ forening/     # Föreningsdokument (stadgar, mötesmallar)
 - **En Worker, tre handlers.** `politiker` bär `fetch`, `queue` och `scheduled`. Tidigare var det fyra Workers (app, sender, campaign, healthcheck); de slogs ihop för att bindings, secrets och deploypipeline hölls synkade för hand mellan dem. Healthchecken togs bort helt.
 - **Kön tillåter en konsument.** `politiker-send-jobs` konsumeras av appen. Ett andra script som deklarerar samma konsument avvisas av Cloudflare.
 - **Stora användarutskick är beständiga.** Alla deduplicerade mottagare sparas i `send_job_recipients`; bara den del som ryms inom kontots och mailkopplingens dygnskvot läggs på Cloudflare Queue. Schemakörningarna fyller på nästa del tills jobbet är klart.
+- **Utskickstakten är data, inte kod.** `send_jobs` kan ha ett eget aktuellt dygnstak och ett schemalagt nästa tak. Värdena sätts vid skapandet eller ändras via utskickets API; hårdkoda aldrig kampanjspecifika antal eller datum.
 - **Durable Object-klassen exporteras från `src/index.ts`** — Workers kräver att DO-klasser ligger i entrypointen.
 - `MAIL_CRED_KEY` (AES-nyckel för krypterade SMTP-lösenord) sätts via `wrangler secret put`, aldrig hårdkodad — appen både krypterar och dekrypterar sedan sammanslagningen
 - Lösenord hashas med PBKDF2 via Web Crypto — **max 100 000 iterationer**, Workers' runtime tillåter inte mer

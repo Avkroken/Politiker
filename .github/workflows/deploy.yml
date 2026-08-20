@@ -49,7 +49,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       - name: Deploy
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config ../wrangler.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

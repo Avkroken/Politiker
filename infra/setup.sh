@@ -136,15 +136,15 @@ ok "R2: $R2_BUCKET"
 
 # ── 5. Patcha wrangler-konfigurationen ─────────────────────────────────────
 log "[5/8] Patchar wrangler-konfiguration med dina resurs-ID:n…"
-sed -i -E "0,/\"name\": \"[^\"]*\"/s//\"name\": \"$WORKER_NAME\"/" "$REPO_DIR/app/wrangler.jsonc"
-sed -i -E "s|\"database_name\": \"[^\"]*\"|\"database_name\": \"$DB_NAME\"|" "$REPO_DIR/app/wrangler.jsonc"
-sed -i -E "s|\"database_id\": \"[^\"]*\"|\"database_id\": \"$DB_ID\"|" "$REPO_DIR/app/wrangler.jsonc"
+sed -i -E "0,/\"name\": \"[^\"]*\"/s//\"name\": \"$WORKER_NAME\"/" "$REPO_DIR/wrangler.jsonc"
+sed -i -E "s|\"database_name\": \"[^\"]*\"|\"database_name\": \"$DB_NAME\"|" "$REPO_DIR/wrangler.jsonc"
+sed -i -E "s|\"database_id\": \"[^\"]*\"|\"database_id\": \"$DB_ID\"|" "$REPO_DIR/wrangler.jsonc"
 # KV-id finns bara i app (enda raden med "id": där).
-sed -i -E "s|\"id\": \"[a-f0-9]{32}\"|\"id\": \"$KV_ID\"|" "$REPO_DIR/app/wrangler.jsonc"
-sed -i -E "s|\"bucket_name\": \"[^\"]*\"|\"bucket_name\": \"$R2_BUCKET\"|" "$REPO_DIR/app/wrangler.jsonc"
+sed -i -E "s|\"id\": \"[a-f0-9]{32}\"|\"id\": \"$KV_ID\"|" "$REPO_DIR/wrangler.jsonc"
+sed -i -E "s|\"bucket_name\": \"[^\"]*\"|\"bucket_name\": \"$R2_BUCKET\"|" "$REPO_DIR/wrangler.jsonc"
 
 # Custom domain: använd din egen, eller ta bort routes-blocket -> *.workers.dev
-APP_WR="$REPO_DIR/app/wrangler.jsonc"
+APP_WR="$REPO_DIR/wrangler.jsonc"
 if [ -n "$CUSTOM_DOMAIN" ]; then
   sed -i "s|$OWNER_DOMAIN|$CUSTOM_DOMAIN|g" "$APP_WR"
   ok "Custom domain: $CUSTOM_DOMAIN"

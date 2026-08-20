@@ -26,7 +26,7 @@ import {
   MICROSOFT_GRAPH_DAILY_LIMIT,
 } from "./mail-credentials";
 import { listAreas, listParties, listRoles, searchPoliticiansInAreas, getRecipientsForAreas, deleteAccount } from "./db";
-import { createAndEnqueueSendJob, enqueuePendingUserSendJobs, getSendJobsForAccount } from "./send";
+import { createAndEnqueueSendJob, enqueuePendingUserSendJobs, getSendJobsForAccount, updateSendJobRate } from "./send";
 import { submitFeedback, reportClientError } from "./feedback";
 import { processAttachments, type AttachmentInput } from "./attachments";
 import { createApiKey, listApiKeys, revokeApiKey, getAccountFromApiKey } from "./api-keys";
@@ -301,6 +301,9 @@ const AUTHED_ROUTES: RouteDef[] = [
         includeRoles?: string[];
         includeEmails?: string[];
         attachments?: AttachmentInput[];
+        dailyLimit?: number | null;
+        switchAfterDays?: number | null;
+        nextDailyLimit?: number | null;
       }>();
       const letterId = randomId();
       await c.env.DB.prepare("INSERT INTO letters (id, account_id, html_body, created_at) VALUES (?, ?, ?, ?)")
@@ -322,10 +325,17 @@ const AUTHED_ROUTES: RouteDef[] = [
         excludeEmails: input.excludeEmails,
         includeRoles: input.includeRoles,
         includeEmails: input.includeEmails,
+        dailyLimit: input.dailyLimit,
+        switchAfterDays: input.switchAfterDays,
+        nextDailyLimit: input.nextDailyLimit,
       });
       return json(result);
     } },
   { method: "GET", rx: /^\/api\/send-jobs$/, h: async (c) => json(await getSendJobsForAccount(c.env, c.accountId)) },
+  { method: "PATCH", rx: /^\/api\/send-jobs\/([^/]+)\/rate$/, h: async (c, m) => {
+      const input = await c.req.json<{ dailyLimit?: number | null; switchAfterDays?: number | null; nextDailyLimit?: number | null }>();
+      return json(await updateSendJobRate(c.env, c.accountId, m[1], input));
+    } },
   { method: "GET", rx: /^\/api\/public\/letters$/, h: async (c) => {
       const page = Math.max(0, parseInt(c.url.searchParams.get("page") ?? "0", 10));
       const { results } = await c.env.DB.prepare(

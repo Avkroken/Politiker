@@ -41,7 +41,7 @@ workflows och regler för en enda datakedja.
 - **3-stegs wizard** (mottagare → brev → granska): nivåerna (EU/riksdag/regering/region/kommun/Svenska kyrkan) väljs via stora kort med levande mottagarantal (exakt, server-deduperat via `/api/recipients/count`). En framträdande **namnsökning** högst upp låter användaren hitta en enskild politiker och rikta till eller utesluta hen. Detaljerad filtrering (enskilda områden, befattning, parti-uteslutning) ligger bakom en hopfällbar "Avancerat"-sektion — stora grupper (>30 områden) hopfällda från start, sökning forcerar alltid utfällt. Befattningar grupperas kanoniskt (allt ordförande-aktigt inkl. vice → "Ordförande"; Ledamot/Ersättare/Gruppledare) så samma roll inte listas per stavningsvariant — nivå väljs genom att kombinera befattning med områdesfiltret.
 - **AI-brevutkast** (valfritt): beskriv ett ämne (eller låt AI:n själv hitta ett aktuellt) — researchar via riktig websökning och föreslår ett utkast som användaren läser igenom, redigerar och skickar under eget namn, inget skickas automatiskt
 - **Brev**: HTML/textredigerare, ämnesrad (full åäö/UTF-8-stöd), bilagor (PDF/txt/doc/docx, automatisk konvertering till brevtext)
-- **Beständig flerdagarskö + rate limiting per mailkonto**: stora urval, även hela landet, dedupliceras och sparas i D1. Dagens tillåtna del skickas direkt och resten fortsätter automatiskt vid kommande schemakörningar tills jobbet är klart. En Durable Object per mailkoppling ger sann delad sändningstakt mellan parallella utskick och dygnstaket skyddar leverantörskontot.
+- **Beständig flerdagarskö + hastighetsbegränsning per mailkonto**: stora urval, även hela landet, dedupliceras och sparas i D1. Dagens tillåtna del skickas direkt och resten fortsätter automatiskt vid kommande schemakörningar tills jobbet är klart. Varje utskick kan få ett eget dygnstak, automatisk växling efter valfritt antal dagar och ett nytt tak därefter; allt kan ändras medan utskicket pågår. En Durable Object per mailkoppling ger sann delad sändningstakt mellan parallella utskick och dygnstaket skyddar leverantörskontot.
 - **Flerspråkigt gränssnitt**: 18 språk (svenska, engelska, nordiska språk, tyska, franska, spanska, polska, turkiska, ryska, ukrainska, arabiska, persiska, somaliska, kinesiska, hindi) — automatisk detektion + manuellt val, hela gränssnittet inklusive dynamiska meddelanden
 - **API-nycklar**: programmatisk åtkomst (`Authorization: Bearer <nyckel>`) som alternativ till webbläsarinloggning
 - **Kontakt/FAQ**: inbyggd kontaktväg och vanliga frågor, separat från felrapportering — FAQ förklarar bland annat exakt vilken politikerdata som finns och hur mottagarfiltren kombineras
@@ -85,7 +85,7 @@ automatiskt) och avslutar så du kan fylla i dina värden. Minst:
 5. Installerar `bounce-processor` som systemd-timer (Linux + Gmail-creds)
 
 Kör om `bash infra/setup.sh` när som helst för att uppdatera deployen.
-SMTP-host/-user/-from och OAuth-client-ID:n bor i `app/wrangler.jsonc` → `vars`
+SMTP-host/-user/-from och OAuth-client-ID:n bor i `wrangler.jsonc` → `vars`
 om du vill ändra dem.
 
 > Databasen skapas tom på politikerdata — importera den från
@@ -104,7 +104,7 @@ kodöverföring till `main` via Cloudflare Workers Builds.
 
 ```bash
 cd app && npm install && cp .dev.vars.example .dev.vars  # fyll i riktiga värden
-npx wrangler dev --remote
+npm run dev
 ```
 
 `MAIL_CRED_KEY` krypterar och dekrypterar användarnas SMTP-lösenord. Den låg

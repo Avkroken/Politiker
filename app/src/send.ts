@@ -10,6 +10,37 @@ interface StagedRecipient {
   name: string;
 }
 
+interface SendRateInput {
+  dailyLimit?: number | null;
+  switchAfterDays?: number | null;
+  nextDailyLimit?: number | null;
+}
+
+function parseRateInput(input: SendRateInput, now = Date.now()) {
+  const normalize = (value: number | null | undefined, label: string): number | null => {
+    if (value == null) return null;
+    if (!Number.isInteger(value) || value < 1 || value > 10_000) {
+      throw new Error(`${label} måste vara ett heltal mellan 1 och 10 000`);
+    }
+    return value;
+  };
+  const dailyLimit = normalize(input.dailyLimit, "Gräns nu");
+  const nextDailyLimit = normalize(input.nextDailyLimit, "Gräns därefter");
+  let limitSwitchAt: number | null = null;
+  if (nextDailyLimit != null) {
+    if (!Number.isInteger(input.switchAfterDays) || (input.switchAfterDays ?? 0) < 1 || (input.switchAfterDays ?? 0) > 365) {
+      throw new Error("Antal dagar måste vara ett heltal mellan 1 och 365");
+    }
+    limitSwitchAt = now + Number(input.switchAfterDays) * 24 * 60 * 60 * 1000;
+  }
+  return { dailyLimit, nextDailyLimit, limitSwitchAt };
+}
+
+function effectiveJobDailyLimit(job: { daily_limit: number | null; next_daily_limit: number | null; limit_switch_at: number | null }, now = Date.now()) {
+  if (job.next_daily_limit != null && job.limit_switch_at != null && now >= job.limit_switch_at) return job.next_daily_limit;
+  return job.daily_limit;
+}
+
 async function remainingQuotaForCredential(
   env: Env,
   accountId: string,
@@ -119,6 +150,30 @@ export async function enqueuePendingRecipientsForJob(env: Env, sendJobId: string
   return queued;
 }
 
+async function remainingJobQuota(env: Env, sendJobId: string): Promise<number | null> {
+  const job = await env.DB.prepare(
+    "SELECT daily_limit, next_daily_limit, limit_switch_at FROM send_jobs WHERE id = ?",
+  ).bind(sendJobId).first<{ daily_limit: number | null; next_daily_limit: number | null; limit_switch_at: number | null }>();
+  if (!job) return 0;
+  const dailyLimit = effectiveJobDailyLimit(job);
+  if (dailyLimit == null) return null;
+
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+  const sent = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM send_log WHERE send_job_id = ? AND sent_at >= ? AND status = 'ok'",
+  ).bind(sendJobId, startOfDay.getTime()).first<{ n: number }>();
+  const queued = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM send_job_recipients WHERE send_job_id = ? AND status = 'queued'",
+  ).bind(sendJobId).first<{ n: number }>();
+  return Math.max(0, dailyLimit - (sent?.n ?? 0) - (queued?.n ?? 0));
+}
+
+async function enqueueWithinLimits(env: Env, sendJobId: string, providerRemaining: number): Promise<number> {
+  const jobRemaining = await remainingJobQuota(env, sendJobId);
+  return enqueuePendingRecipientsForJob(env, sendJobId, Math.min(providerRemaining, jobRemaining ?? providerRemaining));
+}
+
 export async function enqueuePendingUserSendJobs(env: Env): Promise<void> {
   const { results: jobs } = await env.DB.prepare(
     `SELECT id, account_id, mail_credential_id FROM send_jobs
@@ -129,7 +184,7 @@ export async function enqueuePendingUserSendJobs(env: Env): Promise<void> {
 
   for (const job of jobs) {
     const quota = await remainingQuotaForCredential(env, job.account_id, job.mail_credential_id);
-    if (quota.remaining > 0) await enqueuePendingRecipientsForJob(env, job.id, quota.remaining);
+    if (quota.remaining > 0) await enqueueWithinLimits(env, job.id, quota.remaining);
   }
 }
 
@@ -145,6 +200,9 @@ export async function createAndEnqueueSendJob(
     excludeEmails?: string[];
     includeRoles?: string[];
     includeEmails?: string[];
+    dailyLimit?: number | null;
+    switchAfterDays?: number | null;
+    nextDailyLimit?: number | null;
   },
 ): Promise<{ sendJobId: string; totalRecipients: number }> {
   const account = await env.DB.prepare("SELECT daily_send_cap FROM accounts WHERE id = ?").bind(accountId).first<{ daily_send_cap: number }>();
@@ -164,26 +222,53 @@ export async function createAndEnqueueSendJob(
   if (recipients.length === 0) throw new Error("Inga mottagare matchar valda filter — välj område, befattning eller enskilda politiker");
 
   const sendJobId = randomId();
+  const rate = parseRateInput(input);
   await env.DB.prepare(
-    `INSERT INTO send_jobs (id, account_id, letter_id, mail_credential_id, total_recipients, status, created_at)
-     VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
+    `INSERT INTO send_jobs
+       (id, account_id, letter_id, mail_credential_id, total_recipients, status,
+        daily_limit, next_daily_limit, limit_switch_at, created_at)
+     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
   )
-    .bind(sendJobId, accountId, input.letterId, input.mailCredentialId, recipients.length, Date.now())
+    .bind(sendJobId, accountId, input.letterId, input.mailCredentialId, recipients.length,
+      rate.dailyLimit, rate.nextDailyLimit, rate.limitSwitchAt, Date.now())
     .run();
 
   await stageRecipients(env, sendJobId, recipients, input.subject);
   const quota = await remainingQuotaForCredential(env, accountId, input.mailCredentialId);
-  await enqueuePendingRecipientsForJob(env, sendJobId, quota.remaining);
+  await enqueueWithinLimits(env, sendJobId, quota.remaining);
 
   return { sendJobId, totalRecipients: recipients.length };
 }
 
 export async function getSendJobsForAccount(env: Env, accountId: string) {
   const { results } = await env.DB.prepare(
-    `SELECT id, total_recipients, sent_count, bounce_count, status, created_at, finished_at
+    `SELECT id, letter_id, total_recipients, sent_count, bounce_count, status,
+            daily_limit, next_daily_limit, limit_switch_at, created_at, finished_at
      FROM send_jobs WHERE account_id = ? ORDER BY created_at DESC LIMIT 50`,
   )
     .bind(accountId)
     .all();
   return results;
+}
+
+export async function updateSendJobRate(
+  env: Env,
+  accountId: string,
+  sendJobId: string,
+  input: SendRateInput,
+): Promise<{ dailyLimit: number | null; nextDailyLimit: number | null; limitSwitchAt: number | null }> {
+  const job = await env.DB.prepare(
+    "SELECT id, mail_credential_id, status FROM send_jobs WHERE id = ? AND account_id = ?",
+  ).bind(sendJobId, accountId).first<{ id: string; mail_credential_id: string; status: string }>();
+  if (!job) throw new Error("Utskicket hittades inte");
+  if (!['pending', 'sending'].includes(job.status)) throw new Error("Takt kan bara ändras för ett pågående utskick");
+
+  const rate = parseRateInput(input);
+  await env.DB.prepare(
+    "UPDATE send_jobs SET daily_limit = ?, next_daily_limit = ?, limit_switch_at = ? WHERE id = ? AND account_id = ?",
+  ).bind(rate.dailyLimit, rate.nextDailyLimit, rate.limitSwitchAt, sendJobId, accountId).run();
+
+  const providerQuota = await remainingQuotaForCredential(env, accountId, job.mail_credential_id);
+  if (providerQuota.remaining > 0) await enqueueWithinLimits(env, sendJobId, providerQuota.remaining);
+  return rate;
 }

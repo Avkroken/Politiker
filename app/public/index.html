@@ -211,6 +211,20 @@
         <div id="review-summary"></div>
         <p class="hint" id="review-no-mail-warning" hidden data-i18n="review_no_mail_warning">Du måste koppla ett mailkonto innan du kan skicka — gör det under Inställningar.</p>
 
+        <fieldset class="send-rate-control">
+          <legend data-i18n="send_rate_title">Utskickstakt</legend>
+          <label><span data-i18n="send_rate_now">Högst per dag nu</span>
+            <input type="number" id="send-daily-limit" min="1" max="10000" inputmode="numeric" data-i18n-placeholder="send_rate_provider_default" placeholder="Leverantörens gräns">
+          </label>
+          <label><span data-i18n="send_rate_switch_days">Växla efter dagar</span>
+            <input type="number" id="send-switch-days" min="1" max="365" inputmode="numeric" data-i18n-placeholder="send_rate_example_days" placeholder="T.ex. 4">
+          </label>
+          <label><span data-i18n="send_rate_after">Högst per dag därefter</span>
+            <input type="number" id="send-next-daily-limit" min="1" max="10000" inputmode="numeric" data-i18n-placeholder="send_rate_example_after" placeholder="T.ex. 800">
+          </label>
+          <p class="hint" data-i18n="send_rate_hint">Tomma fält använder mailkontots vanliga gräns. Taket kan ändras medan utskicket pågår.</p>
+        </fieldset>
+
         <button type="button" id="send-btn" data-i18n="btn_send">Skicka till valda mottagare</button>
         <div class="progress-bar" id="send-progress" hidden><div class="progress-bar-fill" id="send-progress-fill"></div></div>
         <p id="send-msg"></p>
