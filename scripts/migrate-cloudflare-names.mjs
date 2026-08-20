@@ -29,7 +29,7 @@ async function renameD1() {
   const current = await request(`/d1/database/${id}`);
   if (current.result?.name !== "politiker") {
     await request(`/d1/database/${id}`, {
-      method: "PATCH",
+      method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ name: "politiker" }),
     });
@@ -100,22 +100,14 @@ async function ensureR2Bucket() {
   console.log(`R2: ${newBucket} ready; copied ${copied} object(s); old bucket retained`);
 }
 
-async function renameWorker() {
-  const newWorker = await request("/workers/workers/politiker", {}, true);
-  if (!newWorker) {
-    await request("/workers/workers/politiker-webapp-app", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "politiker" }),
-    });
-  }
-  const verified = await request("/workers/workers/politiker", {}, true);
-  if (!verified) throw new Error("Worker rename could not be verified");
-  console.log("Worker: politiker");
+async function verifyWorker() {
+  const worker = await request("/workers/workers/politiker", {}, true);
+  if (!worker) throw new Error("Expected the already-renamed Worker politiker");
+  console.log("Worker verified: politiker");
 }
 
 await ensureR2Bucket();
 await renameD1();
 await renameKv();
-await renameWorker();
+await verifyWorker();
 console.log("Cloudflare name migration complete.");
