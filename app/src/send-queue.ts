@@ -4,6 +4,7 @@ import { sendGraphMail, refreshMicrosoftToken } from "../../shared/graph-mail";
 import type { SendJobMessage } from "../../shared/types";
 import { messagesPerMinuteFor } from "../../shared/provider-rates";
 import type { Env } from "./db";
+import { personalizeLetter } from "./personalize-letter";
 
 // Kö-konsumenten låg i en egen Worker (politiker-sender) innan
 // sammanslagningen. Durable Object-klassen exporteras numera från index.ts,
@@ -138,6 +139,16 @@ async function processJobMessages(
       continue;
     }
 
+    const staged = await env.DB.prepare(
+      "SELECT status FROM send_job_recipients WHERE send_job_id = ? AND recipient_email = ?",
+    ).bind(sendJobId, m.recipientEmail).first<{ status: string }>();
+    if (staged && staged.status !== "queued") {
+      // Cloudflare Queues levererar minst en gång. Har mottagaren redan fått
+      // ett slutstatus ska en återleverans kvitteras utan ett nytt mejl.
+      queueMsg.ack();
+      continue;
+    }
+
     if (!(await waitForSendSlot(env, credentialId, credentialRow.provider))) {
       // Väntat förbi taket utan att få en token — ovanligt (stor backlog +
       // låg takt). queueMsg.retry() här (inte ack) så meddelandet kommer
@@ -151,8 +162,7 @@ async function processJobMessages(
 
     attempted++;
     try {
-      const greeting = firstName(m.recipientName) ? `Hej ${firstName(m.recipientName)}!` : "Hej!";
-      const html = `<p>${greeting}</p>\n${job.html_body}`;
+      const html = personalizeLetter(job.html_body, m.recipientName, m.recipientEmail);
       await sendOneMail(env, credentialRow, m.recipientEmail, html, m.subject, attachments);
       await logSend(env, m, "ok", null);
       queueMsg.ack();
@@ -251,6 +261,12 @@ async function logSend(env: Env, m: SendJobMessage, status: "ok" | "bounce", err
     .bind(randomId(), m.sendJobId, m.accountId, m.recipientEmail, status, error, now)
     .run();
 
+  await env.DB.prepare(
+    `UPDATE send_job_recipients
+     SET status = ?, finished_at = ?, error = ?
+     WHERE send_job_id = ? AND recipient_email = ?`,
+  ).bind(status, now, error, m.sendJobId, m.recipientEmail).run();
+
   // Riktiga utskick är samtidigt det mest tillförlitliga sättet att verifiera
   // att en politiker-adress fortfarande är levande — uppdatera direkt, ingen
   // separat batch-körning eller probing mot leverantörer behövs.
@@ -274,10 +290,4 @@ async function maybeFinishJob(env: Env, sendJobId: string): Promise<void> {
   if (job.sent_count + job.bounce_count >= job.total_recipients) {
     await env.DB.prepare("UPDATE send_jobs SET status = 'done', finished_at = ? WHERE id = ?").bind(Date.now(), sendJobId).run();
   }
-}
-
-function firstName(fullName: string): string {
-  const first = fullName.trim().split(/\s+/)[0] ?? "";
-  if (!first) return "";
-  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }

@@ -32,10 +32,17 @@ export function renderReview(container, { recipientCount, typeLabels, subject, b
 
   const preview = document.createElement("div");
   preview.className = "review-body-preview card";
-  preview.innerHTML = bodyHtml || `<em>${t("review_no_body")}</em>`;
+  preview.innerHTML = bodyHtml ? personalizePreview(bodyHtml) : `<em>${t("review_no_body")}</em>`;
   summary.appendChild(preview);
 
   container.appendChild(summary);
+}
+
+function personalizePreview(bodyHtml) {
+  const greeting = "Hej Anna!";
+  if (/\{GREETING\}/i.test(bodyHtml)) return bodyHtml.replace(/\{GREETING\}/gi, greeting);
+  if (/Hej\s+\[förnamn\]!/i.test(bodyHtml)) return bodyHtml.replace(/Hej\s+\[förnamn\]!/gi, greeting);
+  return `<p>${greeting}</p>\n${bodyHtml}`;
 }
 
 function escapeHtml(s) {

@@ -42,6 +42,12 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - name: Install
         run: npm ci
+      - name: Applicera databasmigreringar
+        working-directory: .
+        run: bash infra/apply-migrations.sh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       - name: Deploy
         run: npx wrangler deploy
         env:

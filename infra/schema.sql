@@ -104,6 +104,22 @@ CREATE TABLE send_jobs (
   finished_at INTEGER
 );
 
+-- Beständig mottagarkö för användarutskick som är större än mailkontots
+-- dygnskvot. En mottagare förekommer högst en gång per utskick.
+CREATE TABLE send_job_recipients (
+  send_job_id TEXT NOT NULL REFERENCES send_jobs(id) ON DELETE CASCADE,
+  recipient_email TEXT NOT NULL COLLATE NOCASE,
+  recipient_name TEXT NOT NULL,
+  subject TEXT,
+  status TEXT NOT NULL DEFAULT 'pending', -- pending | queued | ok | bounce
+  queued_at INTEGER,
+  finished_at INTEGER,
+  error TEXT,
+  PRIMARY KEY (send_job_id, recipient_email)
+);
+CREATE INDEX idx_send_job_recipients_pending ON send_job_recipients(send_job_id, status);
+CREATE INDEX idx_send_job_recipients_queued ON send_job_recipients(status, queued_at);
+
 -- En rad per mottagare, facit för rate-limit och bounce-cirkelbrytare
 CREATE TABLE send_log (
   id TEXT PRIMARY KEY,

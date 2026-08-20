@@ -37,7 +37,7 @@ ${topicInstruction} ${recipientHint}
 Sök på webben efter relevant, aktuell information om ämnet innan du skriver.
 Skriv ETT konkret, sakligt och respektfullt brev på svenska — inte vädjande, inte aggressivt.
 Brevet ska vara skrivet i FÖRSTA PERSON som om avsändaren (en vanlig medborgare) skrev det själv.
-Inkludera "[förnamn]" exakt en gång, där en personlig hälsning naturligt passar (det ersätts automatiskt per mottagare).
+Skriv ingen hälsningsrad. Tjänsten lägger automatiskt till en säker personlig eller neutral hälsning per mottagare.
 
 Svara ENDAST med ett JSON-objekt på exakt denna form, ingen övrig text:
 {"subject": "kort ämnesrad", "htmlBody": "<p>brevtext med HTML-stycken</p>"}`;
