@@ -838,7 +838,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     msg.textContent = t("msg_connect_mail_first");
     return;
   }
-  if (selectedAreas.size === 0) {
+  if (selectedAreas.size === 0 && includedRoles.size === 0 && includedRecipients.size === 0) {
     msg.textContent = t("msg_select_area_first");
     return;
   }

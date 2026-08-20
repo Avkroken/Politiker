@@ -26,7 +26,7 @@ import {
   MICROSOFT_GRAPH_DAILY_LIMIT,
 } from "./mail-credentials";
 import { listAreas, listParties, listRoles, searchPoliticiansInAreas, getRecipientsForAreas, deleteAccount } from "./db";
-import { createAndEnqueueSendJob, getSendJobsForAccount } from "./send";
+import { createAndEnqueueSendJob, enqueuePendingUserSendJobs, getSendJobsForAccount } from "./send";
 import { submitFeedback, reportClientError } from "./feedback";
 import { processAttachments, type AttachmentInput } from "./attachments";
 import { createApiKey, listApiKeys, revokeApiKey, getAccountFromApiKey } from "./api-keys";
@@ -133,6 +133,7 @@ export default {
     // Cron (f.d. politiker-campaign): nyhetsbevakning, brevgenerering,
     // utskick, bounce-sweep och kvartalsbrevet.
     async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+      ctx.waitUntil(enqueuePendingUserSendJobs(env));
       await handleScheduled(event, env, ctx);
     },
   } satisfies ExportedHandler<Env, SendJobMessage>;

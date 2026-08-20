@@ -256,38 +256,41 @@ export async function getRecipientsForAreas(
     const rawRoles = includeRoles.length > 0 ? await rawRolesForCanonicalKeys(db, includeRoles) : [];
     const roleFilterExcludesAll = includeRoles.length > 0 && rawRoles.length === 0;
     if (!roleFilterExcludesAll) {
-      let sql = `SELECT name, email, area_name FROM politicians WHERE 1=1`;
+      let sql = `SELECT name, email, area_name FROM politicians
+                 WHERE email IS NOT NULL AND TRIM(email) != ''
+                   AND (verification_status IS NULL OR verification_status NOT IN ('dead', 'dead_via_send'))`;
       const params: unknown[] = [];
       if (areaNames.length > 0) {
-        sql += ` AND area_name IN (${areaNames.map(() => "?").join(",")})`;
-        params.push(...areaNames);
+        sql += ` AND area_name IN (SELECT value FROM json_each(?))`;
+        params.push(JSON.stringify(areaNames));
       }
       if (rawRoles.length > 0) {
-        sql += ` AND role IN (${rawRoles.map(() => "?").join(",")})`;
-        params.push(...rawRoles);
+        sql += ` AND role IN (SELECT value FROM json_each(?))`;
+        params.push(JSON.stringify(rawRoles));
       }
       if (excludeParties.length > 0) {
-        sql += ` AND (party IS NULL OR party NOT IN (${excludeParties.map(() => "?").join(",")}))`;
-        params.push(...excludeParties);
+        sql += ` AND (party IS NULL OR party NOT IN (SELECT value FROM json_each(?)))`;
+        params.push(JSON.stringify(excludeParties));
       }
       const { results } = await db
         .prepare(sql)
         .bind(...params)
         .all<{ name: string; email: string; area_name: string }>();
-      for (const r of results) byEmail.set(r.email, r);
+      for (const r of results) byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"), { ...r, email: r.email.trim() });
     }
   }
 
   if (includeEmails.length > 0) {
-    const ph = includeEmails.map(() => "?").join(",");
     const { results } = await db
-      .prepare(`SELECT name, email, area_name FROM politicians WHERE email IN (${ph})`)
-      .bind(...includeEmails)
+      .prepare(`SELECT name, email, area_name FROM politicians
+                WHERE email IN (SELECT value FROM json_each(?))
+                  AND (verification_status IS NULL OR verification_status NOT IN ('dead', 'dead_via_send'))`)
+      .bind(JSON.stringify(includeEmails))
       .all<{ name: string; email: string; area_name: string }>();
-    for (const r of results) byEmail.set(r.email, r);
+    for (const r of results) byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"), { ...r, email: r.email.trim() });
   }
 
-  for (const e of excludeEmails) byEmail.delete(e);
+  for (const e of excludeEmails) byEmail.delete(e.trim().toLocaleLowerCase("sv-SE"));
   return [...byEmail.values()];
 }
 
