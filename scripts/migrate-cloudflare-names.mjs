@@ -46,8 +46,16 @@ async function renameKv() {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ title: "politiker_sessions" }),
   });
-  const namespaces = await request("/storage/kv/namespaces?per_page=1000");
-  const verified = namespaces.result?.some((item) => item.id === id && item.title === "politiker_sessions");
+  let verified = false;
+  let page = 1;
+  do {
+    const namespaces = await request(`/storage/kv/namespaces?per_page=100&page=${page}`);
+    verified = namespaces.result?.some(
+      (item) => item.id === id && item.title === "politiker_sessions",
+    );
+    if (verified || page >= (namespaces.result_info?.total_pages || 1)) break;
+    page += 1;
+  } while (true);
   if (!verified) throw new Error("KV rename could not be verified");
   console.log("KV: politiker_sessions");
 }
