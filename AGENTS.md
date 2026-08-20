@@ -23,7 +23,7 @@ i `kontakter/CLAUDE.md`.
 ```bash
 cd app && npm install && cp .dev.vars.example .dev.vars  # fyll i riktiga värden
 
-npm run dev                 # i app/; använder ../wrangler.jsonc
+npx wrangler dev --remote   # i app/
 npx tsc --noEmit            # typecheck
 ```
 

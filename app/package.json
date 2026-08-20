@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --remote --config ../wrangler.jsonc",
-    "deploy": "wrangler deploy --config ../wrangler.jsonc --outdir dist",
-    "versions:upload": "wrangler versions upload --config ../wrangler.jsonc --outdir dist",
-    "secret:set-mail-key": "wrangler secret put MAIL_CRED_KEY --config ../wrangler.jsonc"
+    "dev": "wrangler dev --remote",
+    "deploy": "wrangler deploy --outdir dist",
+    "versions:upload": "wrangler versions upload --outdir dist",
+    "secret:set-mail-key": "wrangler secret put MAIL_CRED_KEY"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260816.1",

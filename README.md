@@ -85,7 +85,7 @@ automatiskt) och avslutar så du kan fylla i dina värden. Minst:
 5. Installerar `bounce-processor` som systemd-timer (Linux + Gmail-creds)
 
 Kör om `bash infra/setup.sh` när som helst för att uppdatera deployen.
-SMTP-host/-user/-from och OAuth-client-ID:n bor i `wrangler.jsonc` → `vars`
+SMTP-host/-user/-from och OAuth-client-ID:n bor i `app/wrangler.jsonc` → `vars`
 om du vill ändra dem.
 
 > Databasen skapas tom på politikerdata — importera den från
@@ -104,7 +104,7 @@ kodöverföring till `main` via Cloudflare Workers Builds.
 
 ```bash
 cd app && npm install && cp .dev.vars.example .dev.vars  # fyll i riktiga värden
-npm run dev
+npx wrangler dev --remote
 ```
 
 `MAIL_CRED_KEY` krypterar och dekrypterar användarnas SMTP-lösenord. Den låg

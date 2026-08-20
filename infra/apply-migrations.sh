@@ -8,12 +8,10 @@ set -euo pipefail
 
 REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 DB_NAME="politiker"
-wrangler() {
-  npx wrangler "$@" --config "$REPO_DIR/wrangler.jsonc"
-}
+WR="npx wrangler"
 
 cd "$REPO_DIR/app"
-wrangler d1 execute "$DB_NAME" --remote --yes --command \
+$WR d1 execute "$DB_NAME" --remote --yes --command \
   "CREATE TABLE IF NOT EXISTS schema_migrations (filename TEXT PRIMARY KEY, applied_at INTEGER NOT NULL)" >/dev/null
 
 for baseline in \
@@ -22,20 +20,20 @@ for baseline in \
   003_client_errors.sql \
   004_newsletter.sql \
   005_daily_api_usage.sql; do
-  wrangler d1 execute "$DB_NAME" --remote --yes --command \
+  $WR d1 execute "$DB_NAME" --remote --yes --command \
     "INSERT OR IGNORE INTO schema_migrations (filename, applied_at) VALUES ('$baseline', 0)" >/dev/null
 done
 
 for migration in "$REPO_DIR"/infra/migrations/*.sql; do
   filename=$(basename "$migration")
-  if wrangler d1 execute "$DB_NAME" --remote --yes --command \
+  if $WR d1 execute "$DB_NAME" --remote --yes --command \
     "SELECT 'MIGRATION_APPLIED' FROM schema_migrations WHERE filename = '$filename'" 2>/dev/null \
     | grep -Fq "MIGRATION_APPLIED"; then
     continue
   fi
 
-  wrangler d1 execute "$DB_NAME" --remote --yes --file "$migration" >/dev/null
-  wrangler d1 execute "$DB_NAME" --remote --yes --command \
+  $WR d1 execute "$DB_NAME" --remote --yes --file "$migration" >/dev/null
+  $WR d1 execute "$DB_NAME" --remote --yes --command \
     "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null
   echo "Applicerat $filename"
 done
