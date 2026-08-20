@@ -6,16 +6,26 @@ export function escapeHtml(s: string): string {
 }
 
 // Plockar ut ren text ur en (av oss själv genererad) HTML-sträng, för mejlens
-// text/plain-del. Tar bort taggar i en loop tills strängen är stabil — en
-// enkel engångs-replace av /<[^>]+>/ kan lämna kvar innehåll vid överlappande
-// eller nästlade vinkelparenteser (CodeQL js/incomplete-multi-character-
-// sanitization). Loop-tills-stabil är den rekommenderade lösningen.
+// text/plain-del. Gör en enda linjär genomgång i stället för regex +
+// loop-tills-stabil; den senare kombinationen kan ge polynomial ReDoS på
+// angriparkontrollerad text (CodeQL js/polynomial-redos).
+//
+// Semantik: ett komplett <...>-segment tas bort. Om strängen slutar med ett
+// oavslutat '<' bevaras den återstående texten, precis som regexen gjorde.
 export function htmlToText(html: string): string {
-  let text = html;
-  let prev: string;
-  do {
-    prev = text;
-    text = text.replace(/<[^>]*>/g, "");
-  } while (text !== prev);
-  return text;
+  const out: string[] = [];
+  let tagStart = -1;
+
+  for (let i = 0; i < html.length; i++) {
+    const ch = html[i];
+    if (tagStart < 0) {
+      if (ch === "<") tagStart = i;
+      else out.push(ch);
+    } else if (ch === ">") {
+      tagStart = -1;
+    }
+  }
+
+  if (tagStart >= 0) out.push(html.slice(tagStart));
+  return out.join("");
 }
