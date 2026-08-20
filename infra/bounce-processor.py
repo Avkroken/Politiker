@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bounce processor för politiker-webapp.
+Bounce processor för politiker.
 Läser studsade mail från Outlook IMAP, markerar döda adresser i Cloudflare D1.
 Körs av systemd-timer (se bounce-processor.timer).
 """

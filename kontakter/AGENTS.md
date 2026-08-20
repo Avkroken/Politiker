@@ -1,6 +1,6 @@
 # kontakter/ — AI Agent Guide
 
-Delen av politiker-webapp som fyller databasen. Repots gemensamma regler står
+Delen av politiker som fyller databasen. Repots gemensamma regler står
 i rot-`CLAUDE.md`; det här dokumentet gäller `kontakter/` och alla sökvägar
 nedan är relativa hit.
 
@@ -57,7 +57,7 @@ samlar detta per kommun/region i `alla_people` och skriver:
 ## Publicerad data
 
 `data/` innehåller den fullständiga kontaktdatabasen (csv/json/sql), genererad
-ur politiker-webapps live-D1 av `export/export_d1.py` och
+ur politikers live-D1 av `export/export_d1.py` och
 `../.github/workflows/export-politiker.yml` (veckovis, auto-mergad PR). Endast
 stabila fält exporteras (inga tidsstämplar) så diffarna inte brusar. VCF
 committas inte längre — scrapern producerar dem fortfarande lokalt.

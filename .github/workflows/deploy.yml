@@ -1,44 +1,24 @@
 name: Deploy
 
-# Auto-deploy till Cloudflare. Repot har EN Worker (politiker-webapp-app) som
-# bär allt: HTTP-appen, kö-konsumenten och cron-körningarna. Tidigare fanns
-# fyra fristående Workers med var sin wrangler.jsonc, och den här filen bar
-# maskineriet för att lista ut vilka av dem som ändrats — ett `select`-jobb som
-# diffade mot en flyttbar `deployed`-tagg, plus ett `mark`-jobb som flyttade
-# taggen efteråt. Med en enda Worker finns inget att välja mellan: varje push
-# till main deployar den, och en deploy av oförändrad kod är ofarlig.
+# Auto-deploy till Cloudflare. Repot har EN Worker (politiker) som bär allt:
+# HTTP-appen, kö-konsumenten och cron-körningarna.
 #
-# HUR DEPLOYEN TRIGGAS: bot-auto-merge görs av github-actions[bot] med
-# GITHUB_TOKEN, vars push/pull_request-events INTE triggar andra workflows
-# (GitHubs loopskydd). Undantaget är repository_dispatch/workflow_dispatch — dem
-# FÅR GITHUB_TOKEN fyra. Därför fyrar Bot Auto-Merge en
-# `repository_dispatch: deploy-main` så fort mergen landat, vilket når hit direkt
-# utan PAT. Människo-merges/direkta pushar fångas av push:[main] (riktig
-# användartoken, inte suppressad).
-#
-# Secrets (Repo → Settings → Environments → produktion) — MÅSTE läggas till, annars failar
-# deployen:
-#   POLITIKER_WEBAPP — Cloudflare API-token. Workers Scripts:Edit + D1, KV, Queues, R2.
-#     Environment secret på miljön produktion, inte på repo-nivå.
+# Secrets (Repo → Settings → Environments → produktion):
+#   POLITIKER — delad Cloudflare API-token med Workers Scripts, D1, KV,
+#               Queues, R2 och Workers Routes Write.
 #
 # Variables (Repo → Settings → Variables → Actions):
-#   CLOUDFLARE_ACCOUNT_ID    — kontots ID. Variabel, inte secret: det är ingen
-#                              hemlighet, och som secret maskeras det i loggarna
-#                              vilket bara försvårar felsökning.
+#   CLOUDFLARE_ACCOUNT_ID — kontots ID.
 #
-# wrangler deploy rör INTE secrets satta via `wrangler secret put` (t.ex.
-# MAIL_CRED_KEY) — bara kod, vars och bindings uppdateras.
+# Namnmigreringen är idempotent och körs före varje deploy. Efter första
+# lyckade körningen blir den en verifiering/no-op. Den gamla R2-bucketen
+# behålls som återställningspunkt.
 
 on:
-  # Människo-merges och direkta pushar till main (riktig användartoken triggar
-  # push; bot-auto-merges gör det INTE — de fångas av repository_dispatch nedan).
   push:
     branches: [main]
-  # Bot-auto-merges: Bot Auto-Merge fyrar detta så fort mergen faktiskt landat.
-  # Enda vägen GITHUB_TOKEN når hit direkt (utan PAT) — se toppkommentaren.
   repository_dispatch:
     types: [deploy-main]
-  # Manuell körning, t.ex. för att deploya om efter en ändrad secret.
   workflow_dispatch:
 
 concurrency:
@@ -49,10 +29,24 @@ permissions:
   contents: read
 
 jobs:
+  migrate-names:
+    environment: produktion
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+      - name: Migrate Cloudflare resource names
+        run: node scripts/migrate-cloudflare-names.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
   deploy:
-    # Grinden för produktionsdeploy ligger i miljön, inte i den här filen:
-    # deployment branch policy släpper bara main, och POLITIKER_WEBAPP
-    # är ett environment secret. En körning på dev får därför ingen token.
+    needs: migrate-names
     environment: produktion
     runs-on: ubuntu-latest
     defaults:
@@ -61,10 +55,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: main   # deploya alltid main-HEAD, oavsett vilket event som fyrade
+          ref: main
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
-          node-version: 24.18.0
+          node-version: 24
           cache: npm
           cache-dependency-path: app/package-lock.json
       - name: Install
@@ -72,5 +66,5 @@ jobs:
       - name: Deploy
         run: npx wrangler deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER_WEBBAPP }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

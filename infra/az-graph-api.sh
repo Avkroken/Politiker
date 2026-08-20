@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wrapper för Microsoft Graph API-anrop via politiker-webapp-management
+# Wrapper för Microsoft Graph API-anrop via politiker-management
 # service principal (client-credentials, ingen interaktiv inloggning behövs).
 # Behörighet: Application.ReadWrite.OwnedBy — kan bara hantera apparna den
 # själv äger (Politiker-webbapp, AZURE_POLITIKER_APP_OBJECT_ID i .env).

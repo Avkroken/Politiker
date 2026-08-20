@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Synkar skraparens resultat till D1-tabellen `politicians` i politiker-webapp-
+Synkar skraparens resultat till D1-tabellen `politicians` i politiker-
 projektet. Körs som ett extra steg efter en skrapningskörning (inte en del av
 scraper.py självt — håller scraper-logiken oberörd).
 

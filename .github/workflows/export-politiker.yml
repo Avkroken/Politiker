@@ -6,8 +6,8 @@ name: Exportera politiker-data från D1
 # matar.
 #
 # Secrets och variabler (Repo → Settings → Environments → produktion):
-#   POLITIKER_WEBAPP_D1_READ — Cloudflare API-token, endast D1 Read. Medvetet
-#     snävare än deploy-tokenet POLITIKER_WEBAPP; jobbet läser bara en tabell.
+#   POLITIKER_D1_READ — Cloudflare API-token, endast D1 Read. Medvetet
+#     snävare än deploy-tokenet POLITIKER; jobbet läser bara en tabell.
 #     Skickas vidare som CLOUDFLARE_API_TOKEN_POLITIKER, som är namnet
 #     kontakter/scraper/d1.py läser.
 #   POLITIKER_OCH_IDEMPOTENT — GitHub-appens ID (variabel) och privata nyckel
@@ -67,7 +67,7 @@ jobs:
 
       - name: Exportera från D1
         env:
-          CLOUDFLARE_API_TOKEN_POLITIKER: ${{ secrets.POLITIKER_WEBAPP_D1_READ }}
+          CLOUDFLARE_API_TOKEN_POLITIKER: ${{ secrets.POLITIKER_D1_READ }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
         run: python3 export/export_d1.py

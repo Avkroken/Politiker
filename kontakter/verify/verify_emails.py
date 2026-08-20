@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Periodisk verifiering av e-postadresser i D1-tabellen `politicians`
-(politiker-webapp-projektet). Körs via cron/systemd-timer på mp100 — INTE
+(politiker-projektet). Körs via cron/systemd-timer på mp100 — INTE
 i Cloudflare Workers, eftersom Cloudflare blockerar utgående port 25
-ovillkorligt (dokumenterat i politiker-webapp/README.md).
+ovillkorligt (dokumenterat i politiker/README.md).
 
 Tekniken: en "SMTP callout" per domän — koppla upp mot mottagardomänens
 MX-server på port 25, skicka EHLO/MAIL FROM/RCPT TO för varje adress på den

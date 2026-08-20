@@ -24,7 +24,7 @@ registrera ett PayPal-konto för organisationen (inte din privata adress).
 
 ## 5. Uppdatera webbtjänsten
 När PayPal-kontot finns, byt donationslänken i
-`~/GitHub/politiker-webapp/app/public/index.html` och `.github/FUNDING.yml`
+`~/GitHub/politiker/app/public/index.html` och `.github/FUNDING.yml`
 från `business=anders.eriksson@denied.se` till föreningens PayPal-adress/ID.
 Säg till så fixar jag det direkt.
 

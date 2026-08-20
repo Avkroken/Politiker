@@ -17,7 +17,7 @@ Repot innehåller två delar med olika riskprofil:
 Om du upptäcker en säkerhetsbrist, **öppna inte ett publikt issue**.
 
 Rapportera den i stället privat via
-[GitHub Security Advisories](https://github.com/blixten85/politiker-webapp/security/advisories/new).
+[GitHub Security Advisories](https://github.com/blixten85/politiker/security/advisories/new).
 
 Du bör få svar inom 48 timmar. Om bristen bekräftas släpps en rättning så
 snart som möjligt.

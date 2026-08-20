@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# setup.sh — Provisionerar och deployar hela politiker-webapp i ETT kommando.
+# setup.sh — Provisionerar och deployar hela politiker i ETT kommando.
 #
-#   git clone … && cd politiker-webapp && bash infra/setup.sh
+#   git clone … && cd politiker && bash infra/setup.sh
 #
 # Skapar Cloudflare-resurser (D1/KV/Queue/R2) i ditt inloggade konto, patchar
 # wrangler-konfigurationen med dina resurs-ID:n, applicerar databasschemat,
@@ -20,10 +20,15 @@ WR="npx --yes wrangler"
 
 # Kanoniska resurs-ID:n i wrangler-filerna (ägarens konto). Patchas till dina.
 PLACEHOLDER_DB_ID="e9ecf94f-fa71-4004-a5b8-f9317eb4d4e9"
-DB_NAME="politiker_webapp"
-KV_TITLE="politiker_webapp_sessions"
+DB_NAME="politiker"
+LEGACY_DB_NAME="politiker_webapp"
+KV_TITLE="politiker_sessions"
+LEGACY_KV_TITLE="politiker_webapp_sessions"
 QUEUE_NAME="politiker-send-jobs"
-R2_BUCKET="politiker-webapp-attachments"
+WORKER_NAME="politiker"
+LEGACY_WORKER_NAME="politiker-webapp-app"
+R2_BUCKET="politiker-attachments"
+LEGACY_R2_BUCKET="politiker-webapp-attachments"
 OWNER_DOMAIN="politiker.denied.se"
 
 log()  { printf '\033[1;34m›\033[0m %s\n' "$*"; }
@@ -43,7 +48,7 @@ _set() {
   fi
 }
 
-echo "=== politiker-webapp setup ==="
+echo "=== politiker setup ==="
 echo "Repokatalog: $REPO_DIR"
 
 # ── 1. Beroenden ────────────────────────────────────────────────────────────
@@ -106,6 +111,13 @@ log "[4/8] Provisionerar Cloudflare-resurser…"
 DB_ID="$($WR d1 list --json 2>/dev/null | jq -r ".[] | select(.name==\"$DB_NAME\") | (.uuid // .database_id // .id)" | head -1)"
 NEW_DB=0
 if [ -z "$DB_ID" ] || [ "$DB_ID" = "null" ]; then
+  DB_ID="$($WR d1 list --json 2>/dev/null | jq -r ".[] | select(.name==\"$LEGACY_DB_NAME\") | (.uuid // .database_id // .id)" | head -1)"
+  if [ -n "$DB_ID" ] && [ "$DB_ID" != "null" ]; then
+    DB_NAME="$LEGACY_DB_NAME"
+    log "  Återanvänder äldre D1-namn: $DB_NAME"
+  fi
+fi
+if [ -z "$DB_ID" ] || [ "$DB_ID" = "null" ]; then
   log "  Skapar D1-databas $DB_NAME…"
   $WR d1 create "$DB_NAME" >/dev/null
   DB_ID="$($WR d1 list --json 2>/dev/null | jq -r ".[] | select(.name==\"$DB_NAME\") | (.uuid // .database_id // .id)" | head -1)"
@@ -115,7 +127,14 @@ fi
 ok "D1: $DB_NAME ($DB_ID)"
 
 # KV
-KV_ID="$($WR kv namespace list 2>/dev/null | jq -r ".[] | select(.title|test(\"$KV_TITLE\")) | .id" | head -1)"
+KV_ID="$($WR kv namespace list 2>/dev/null | jq -r ".[] | select(.title==\"$KV_TITLE\") | .id" | head -1)"
+if [ -z "$KV_ID" ] || [ "$KV_ID" = "null" ]; then
+  KV_ID="$($WR kv namespace list 2>/dev/null | jq -r ".[] | select(.title==\"$LEGACY_KV_TITLE\") | .id" | head -1)"
+  if [ -n "$KV_ID" ] && [ "$KV_ID" != "null" ]; then
+    KV_TITLE="$LEGACY_KV_TITLE"
+    log "  Återanvänder äldre KV-namn: $KV_TITLE"
+  fi
+fi
 if [ -z "$KV_ID" ] || [ "$KV_ID" = "null" ]; then
   log "  Skapar KV-namespace $KV_TITLE…"
   KV_ID="$($WR kv namespace create "$KV_TITLE" 2>&1 | grep -oE '"?id"?[ :=]+"?[a-f0-9]{32}' | grep -oE '[a-f0-9]{32}' | head -1)"
@@ -127,15 +146,33 @@ ok "KV: $KV_TITLE ($KV_ID)"
 $WR queues create "$QUEUE_NAME" >/dev/null 2>&1 || true
 ok "Queue: $QUEUE_NAME"
 
-# R2 (efter namn)
-$WR r2 bucket create "$R2_BUCKET" >/dev/null 2>&1 || true
+# R2 (efter namn). Återanvänd äldre bucket i befintliga installationer.
+R2_NAMES="$($WR r2 bucket list --json 2>/dev/null | jq -r '.[]?.name' || true)"
+if ! grep -Fxq "$R2_BUCKET" <<<"$R2_NAMES"; then
+  if grep -Fxq "$LEGACY_R2_BUCKET" <<<"$R2_NAMES"; then
+    R2_BUCKET="$LEGACY_R2_BUCKET"
+    log "  Återanvänder äldre R2-namn: $R2_BUCKET"
+  else
+    $WR r2 bucket create "$R2_BUCKET" >/dev/null
+  fi
+fi
 ok "R2: $R2_BUCKET"
+
+# Worker: återanvänd äldre script vid en uppgradering så att kön aldrig får
+# två konsumenter. Ägarens Worker är redan omdöpt och tar därför den nya vägen.
+if $WR deployments list --name "$LEGACY_WORKER_NAME" >/dev/null 2>&1; then
+  WORKER_NAME="$LEGACY_WORKER_NAME"
+  log "  Återanvänder äldre Worker-namn: $WORKER_NAME"
+fi
 
 # ── 5. Patcha wrangler-konfigurationen ─────────────────────────────────────
 log "[5/8] Patchar wrangler-konfiguration med dina resurs-ID:n…"
+sed -i -E "0,/\"name\": \"[^\"]*\"/s//\"name\": \"$WORKER_NAME\"/" "$REPO_DIR/app/wrangler.jsonc"
+sed -i -E "s|\"database_name\": \"[^\"]*\"|\"database_name\": \"$DB_NAME\"|" "$REPO_DIR/app/wrangler.jsonc"
 sed -i -E "s|\"database_id\": \"[^\"]*\"|\"database_id\": \"$DB_ID\"|" "$REPO_DIR/app/wrangler.jsonc"
 # KV-id finns bara i app (enda raden med "id": där).
 sed -i -E "s|\"id\": \"[a-f0-9]{32}\"|\"id\": \"$KV_ID\"|" "$REPO_DIR/app/wrangler.jsonc"
+sed -i -E "s|\"bucket_name\": \"[^\"]*\"|\"bucket_name\": \"$R2_BUCKET\"|" "$REPO_DIR/app/wrangler.jsonc"
 
 # Custom domain: använd din egen, eller ta bort routes-blocket -> *.workers.dev
 APP_WR="$REPO_DIR/app/wrangler.jsonc"
@@ -227,7 +264,7 @@ if command -v systemctl >/dev/null && [ -n "$GMAIL_EMAIL" ] && [ -n "$GMAIL_PASS
   for f in bounce-processor.service bounce-processor.timer; do
     sudo sed \
       -e "s|User=berduf|User=${CURRENT_USER}|g" \
-      -e "s|/home/berduf/GitHub/politiker-webapp|${REPO_DIR}|g" \
+      -e "s|/home/berduf/GitHub/politiker|${REPO_DIR}|g" \
       "$REPO_DIR/infra/$f" | sudo tee "$SERVICE_DIR/$f" > /dev/null
   done
   sudo systemctl daemon-reload
@@ -239,7 +276,7 @@ fi
 
 echo
 echo "=== Klar ==="
-APP_URL="${CUSTOM_DOMAIN:-politiker-webapp-app.workers.dev}"
+APP_URL="${CUSTOM_DOMAIN:-$WORKER_NAME.workers.dev}"
 echo "App: https://$APP_URL"
 [ "$NEW_DB" = "1" ] && echo "Glöm inte att importera politiker-data (se 'politiker-kontakter')."
 echo "Kör om denna fil när som helst för att uppdatera deployen."

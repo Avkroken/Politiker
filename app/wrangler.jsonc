@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "politiker-webapp-app",
+  "name": "politiker",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-01",
   // nodejs_compat: behövs av beroenden som använder node:-API:er.
@@ -28,7 +28,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "politiker_webapp",
+      "database_name": "politiker",
       "database_id": "e9ecf94f-fa71-4004-a5b8-f9317eb4d4e9"
     }
   ],
@@ -39,7 +39,7 @@
     }
   ],
   // Appen är både producent och konsument av sändningskön sedan
-  // politiker-webapp-sender slogs ihop hit. En kö tillåter exakt EN konsument,
+  // politiker-sender slogs ihop hit. En kö tillåter exakt EN konsument,
   // så sender-Workern måste vara raderad innan den här konfigurationen
   // deployas — annars avvisar Cloudflare bindningen.
   "queues": {
@@ -83,7 +83,7 @@
     }
   ],
 
-  // Cron-körningarna från f.d. politiker-webapp-campaign (UTC):
+  // Cron-körningarna från f.d. politiker-campaign (UTC):
   //   05 monitor · 06 brevgenerering · 07 utskick · 08 bounce-sweep
   //   06:30 den 1:a i jan/apr/jul/okt: kvartalsbrevet
   "triggers": {
@@ -98,7 +98,7 @@
   "r2_buckets": [
     {
       "binding": "ATTACHMENTS",
-      "bucket_name": "politiker-webapp-attachments"
+      "bucket_name": "politiker-attachments"
     }
   ],
   // Nyhetsbrevets bekräftelsemail: Cloudflare Email Service (bindingen nedan)
@@ -128,8 +128,8 @@
     "OAUTH_GOOGLE_CLIENT_ID": "1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com",
     "OAUTH_MICROSOFT_CLIENT_ID": "dd6d7bb1-3a2d-46ad-8d4f-12fe09691414",
 
-    // Från f.d. politiker-webapp-campaign.
+    // Från f.d. politiker-campaign.
     "SENDER_NAME": "Anders Eriksson",
-    "GITHUB_REPO": "blixten85/politiker-webapp"
+    "GITHUB_REPO": "blixten85/politiker"
   }
 }

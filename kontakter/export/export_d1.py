@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exporterar politicians-tabellen ur politiker-webapps D1 till publicerbara filer.
+"""Exporterar politicians-tabellen ur politikers D1 till publicerbara filer.
 
 Producerar (i data/):
   - politiker.csv   kanonisk, människoläsbar databas
