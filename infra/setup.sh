@@ -25,6 +25,8 @@ LEGACY_DB_NAME="politiker_webapp"
 KV_TITLE="politiker_sessions"
 LEGACY_KV_TITLE="politiker_webapp_sessions"
 QUEUE_NAME="politiker-send-jobs"
+WORKER_NAME="politiker"
+LEGACY_WORKER_NAME="politiker-webapp-app"
 R2_BUCKET="politiker-attachments"
 LEGACY_R2_BUCKET="politiker-webapp-attachments"
 OWNER_DOMAIN="politiker.denied.se"
@@ -156,8 +158,16 @@ if ! grep -Fxq "$R2_BUCKET" <<<"$R2_NAMES"; then
 fi
 ok "R2: $R2_BUCKET"
 
+# Worker: återanvänd äldre script vid en uppgradering så att kön aldrig får
+# två konsumenter. Ägarens Worker är redan omdöpt och tar därför den nya vägen.
+if $WR deployments list --name "$LEGACY_WORKER_NAME" >/dev/null 2>&1; then
+  WORKER_NAME="$LEGACY_WORKER_NAME"
+  log "  Återanvänder äldre Worker-namn: $WORKER_NAME"
+fi
+
 # ── 5. Patcha wrangler-konfigurationen ─────────────────────────────────────
 log "[5/8] Patchar wrangler-konfiguration med dina resurs-ID:n…"
+sed -i -E "0,/\"name\": \"[^\"]*\"/s//\"name\": \"$WORKER_NAME\"/" "$REPO_DIR/app/wrangler.jsonc"
 sed -i -E "s|\"database_name\": \"[^\"]*\"|\"database_name\": \"$DB_NAME\"|" "$REPO_DIR/app/wrangler.jsonc"
 sed -i -E "s|\"database_id\": \"[^\"]*\"|\"database_id\": \"$DB_ID\"|" "$REPO_DIR/app/wrangler.jsonc"
 # KV-id finns bara i app (enda raden med "id": där).
@@ -266,7 +276,7 @@ fi
 
 echo
 echo "=== Klar ==="
-APP_URL="${CUSTOM_DOMAIN:-politiker-app.workers.dev}"
+APP_URL="${CUSTOM_DOMAIN:-$WORKER_NAME.workers.dev}"
 echo "App: https://$APP_URL"
 [ "$NEW_DB" = "1" ] && echo "Glöm inte att importera politiker-data (se 'politiker-kontakter')."
 echo "Kör om denna fil när som helst för att uppdatera deployen."
