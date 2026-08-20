@@ -1,6 +1,6 @@
 name: Exportera politiker-data från D1
 
-# Läser politicians-tabellen i webappens D1 (read-only) och committar en
+# Läser politicians-tabellen i tjänstens D1 (read-only) och committar en
 # uppdaterad kontakter/data/-export via PR med auto-merge. Ingen extern
 # skrapning sker här — datan kommer från den redan publika D1:n som scrapern
 # matar.

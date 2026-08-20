@@ -4,7 +4,7 @@
 
 Repot innehåller två delar med olika riskprofil:
 
-- **Webappen** (`app/`, `sender/`, `campaign/`, `healthcheck/`, `shared/`) —
+- **Tjänsten** (`app/`, `sender/`, `campaign/`, `healthcheck/`, `shared/`) —
   hanterar användarkonton och användarnas egna SMTP-uppgifter. Det är här
   känslig data finns.
 - **Skrapan** (`kontakter/`) — hämtar publikt publicerade e-postadresser till

@@ -7,7 +7,7 @@ folkvalda — utan att plattformen själv blir avsändare. Live på
 politiker.denied.se.
 
 Repot rymmer hela datakedjan: `kontakter/` skrapar fram kontaktuppgifterna
-och skriver dem till D1, webappen serverar samma D1. De två låg tidigare i
+och skriver dem till D1, tjänsten serverar samma D1. De två låg tidigare i
 var sitt repo trots att de delar databas. Djupare detaljer om skraparen står
 i `kontakter/CLAUDE.md`.
 
@@ -83,26 +83,29 @@ som väntar.
   ikapp till 24.04 eller senare, alternativt om det dykt upp en
   26.04-variant som suffixet behöver bytas till.
 
-## Allowed
-- Create branches
-- Modify code
-- Run tests
-- Open PRs
+## Tillåtet
+- Skapa grenar
+- Ändra kod
+- Köra tester
+- Öppna ändringsförslag
 
-## Forbidden
-- Push directly to main/master
-- Merge PRs på eget initiativ (be uttryckligen så är det okej)
-- Delete branches
-- Disable workflows
-- Modify secrets
-- Change GitHub org settings
+## Förbjudet
+- Skicka ändringar direkt till `main` eller `master`
+- Radera grenar
+- Stänga av arbetsflöden
+- Ändra hemligheter
+- Ändra inställningar för GitHub-organisationen
 
-## Requirements
-- All tests must pass
-- Keep PRs focused
-- Never include unrelated changes
-- Never commit credentials
-- Never force push
+## Krav
+- Alla tester måste godkännas
+- Håll varje ändringsförslag avgränsat till en uppgift
+- Ta aldrig med orelaterade ändringar
+- Överlämna aldrig inloggningsuppgifter eller andra hemligheter till versionshistoriken
+- Tvinga aldrig igenom en skickning
+- Skapa ändringsförslag som klara för granskning, aldrig som utkast
+- Aktivera automatisk sammanfogning med en sammanfogningsöverlämning direkt efter att ändringsförslaget skapats
+- Automatisk sammanfogning får slutföras först när alla regelkrav och kontrollkörningar har godkänts
+- Om automatisk sammanfogning inte kan aktiveras: rapportera det exakta felet
 
 ## Svarsformat
 
