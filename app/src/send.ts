@@ -41,6 +41,38 @@ function effectiveJobDailyLimit(job: { daily_limit: number | null; next_daily_li
   return job.daily_limit;
 }
 
+export async function maySendQueuedRecipient(env: Env, sendJobId: string, recipientEmail: string): Promise<boolean> {
+  const job = await env.DB.prepare(
+    "SELECT daily_limit, next_daily_limit, limit_switch_at FROM send_jobs WHERE id = ?",
+  ).bind(sendJobId).first<{ daily_limit: number | null; next_daily_limit: number | null; limit_switch_at: number | null }>();
+  if (!job) return false;
+  const dailyLimit = effectiveJobDailyLimit(job);
+  if (dailyLimit == null) return true;
+
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+  const sent = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM send_log WHERE send_job_id = ? AND sent_at >= ? AND status = 'ok'",
+  ).bind(sendJobId, startOfDay.getTime()).first<{ n: number }>();
+  const available = Math.max(0, dailyLimit - (sent?.n ?? 0));
+  const allowed = available > 0
+    ? await env.DB.prepare(
+      `SELECT 1 AS allowed FROM (
+         SELECT recipient_email FROM send_job_recipients
+         WHERE send_job_id = ? AND status = 'queued'
+         ORDER BY queued_at, rowid LIMIT ?
+       ) WHERE recipient_email = ? COLLATE NOCASE`,
+    ).bind(sendJobId, available, recipientEmail).first<{ allowed: number }>()
+    : null;
+  if (allowed) return true;
+
+  await env.DB.prepare(
+    `UPDATE send_job_recipients SET status = 'pending', queued_at = NULL
+     WHERE send_job_id = ? AND recipient_email = ? AND status = 'queued'`,
+  ).bind(sendJobId, recipientEmail).run();
+  return false;
+}
+
 async function remainingQuotaForCredential(
   env: Env,
   accountId: string,
@@ -241,12 +273,19 @@ export async function createAndEnqueueSendJob(
 }
 
 export async function getSendJobsForAccount(env: Env, accountId: string) {
+  const now = Date.now();
   const { results } = await env.DB.prepare(
     `SELECT id, letter_id, total_recipients, sent_count, bounce_count, status,
-            daily_limit, next_daily_limit, limit_switch_at, created_at, finished_at
+            CASE WHEN next_daily_limit IS NOT NULL AND limit_switch_at <= ?
+                 THEN next_daily_limit ELSE daily_limit END AS daily_limit,
+            CASE WHEN next_daily_limit IS NOT NULL AND limit_switch_at <= ?
+                 THEN NULL ELSE next_daily_limit END AS next_daily_limit,
+            CASE WHEN next_daily_limit IS NOT NULL AND limit_switch_at <= ?
+                 THEN NULL ELSE limit_switch_at END AS limit_switch_at,
+            created_at, finished_at
      FROM send_jobs WHERE account_id = ? ORDER BY created_at DESC LIMIT 50`,
   )
-    .bind(accountId)
+    .bind(now, now, now, accountId)
     .all();
   return results;
 }

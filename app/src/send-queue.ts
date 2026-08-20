@@ -5,6 +5,7 @@ import type { SendJobMessage } from "../../shared/types";
 import { messagesPerMinuteFor } from "../../shared/provider-rates";
 import type { Env } from "./db";
 import { personalizeLetter } from "./personalize-letter";
+import { maySendQueuedRecipient } from "./send";
 
 // Kö-konsumenten låg i en egen Worker (politiker-sender) innan
 // sammanslagningen. Durable Object-klassen exporteras numera från index.ts,
@@ -145,6 +146,12 @@ async function processJobMessages(
     if (staged && staged.status !== "queued") {
       // Cloudflare Queues levererar minst en gång. Har mottagaren redan fått
       // ett slutstatus ska en återleverans kvitteras utan ett nytt mejl.
+      queueMsg.ack();
+      continue;
+    }
+    if (!(await maySendQueuedRecipient(env, sendJobId, m.recipientEmail))) {
+      // Taket kan ha sänkts efter köläggning eller automatiskt växlat. Flytta
+      // tillbaka överskottet till den beständiga kön innan något SMTP-anrop.
       queueMsg.ack();
       continue;
     }
