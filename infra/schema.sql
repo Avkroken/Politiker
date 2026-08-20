@@ -184,9 +184,11 @@ CREATE TABLE client_errors (
   count INTEGER NOT NULL DEFAULT 1,
   first_seen INTEGER NOT NULL,
   last_seen INTEGER NOT NULL,
+  email_notified_at INTEGER,
   github_issue_url TEXT
 );
 CREATE INDEX idx_client_errors_first_seen ON client_errors(first_seen);
+CREATE INDEX idx_client_errors_email_notified_at ON client_errors(email_notified_at);
 
 -- Spårar dagliga Anthropic API-anrop per UTC-dag för att hålla oss inom det
 -- konfigurerade månadslimitet (se shared/anthropic.ts, DAILY_CALL_BUDGET).

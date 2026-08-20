@@ -37,7 +37,7 @@ export async function reportClientError(
 
   const since24h = now - 24 * 60 * 60 * 1000;
   const day = await env.DB.prepare(
-    "SELECT COUNT(*) as n FROM client_errors WHERE first_seen >= ?",
+    "SELECT COUNT(*) as n FROM client_errors WHERE email_notified_at >= ?",
   )
     .bind(since24h)
     .first<{ n: number }>();
@@ -52,6 +52,9 @@ export async function reportClientError(
       stack ? `<pre>${escapeHtml(stack)}</pre>` : "",
     ].join("");
     await sendSystemMail(env, env.FEEDBACK_NOTIFY_EMAIL, subject, html);
+    await env.DB.prepare("UPDATE client_errors SET email_notified_at = ? WHERE signature = ?")
+      .bind(now, signature)
+      .run();
     if (env.ERROR_FIXER_INBOX) {
       await sendSystemMail(env, env.ERROR_FIXER_INBOX, subject, html).catch(() => {});
     }
