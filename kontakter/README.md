@@ -2,7 +2,7 @@
 
 Scraper som hämtar e-postadresser till förtroendevalda i svenska regioner och
 kommuner (samt EU-parlamentet, riksdagen och departementen), och synkar till
-D1-databasen som driver [politiker-webapp](https://politiker.denied.se).
+D1-databasen som driver [politiker](https://politiker.denied.se).
 
 ## Publicerad data
 
@@ -20,7 +20,7 @@ Filerna genereras direkt ur live-D1:n (read-only) av
 som veckovis öppnar en auto-mergad PR när datan ändrats. Ingen extern skrapning
 sker i den workflowen — den läser bara den redan publika databasen.
 
-Importera till en egen politiker-webapp-kopia (efter `infra/schema.sql`):
+Importera till en egen politiker-kopia (efter `infra/schema.sql`):
 
 ```bash
 wrangler d1 execute <din-db> --remote --file data/politiker.sql
@@ -99,7 +99,7 @@ Scrapern skriver till `OUTPUT_DIR`:
 - `scraper/sync_party_from_val.py` – matchar parti mot Valmyndighetens öppna data
   där det inte går att fastställa direkt vid skrapning
 - `scraper/sync_to_d1.py` – upsert av scraperns CSV-resultat till
-  politiker-webapps D1-databas (`politicians`-tabellen)
+  politikers D1-databas (`politicians`-tabellen)
 - `scraper/Dockerfile` – bygger scrapern
 - `docker-compose.yml` – kör allt
 

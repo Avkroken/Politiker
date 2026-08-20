@@ -3,7 +3,7 @@ import { escapeHtml } from "../../shared/html";
 import { sendSystemMail } from "./auth";
 import type { Env } from "./db";
 
-const FEEDBACK_REPO = "blixten85/politiker-webapp";
+const FEEDBACK_REPO = "blixten85/politiker";
 
 // Tak för hur många NYA auto-issues som får skapas per dygn — skyddar mot
 // issue-spam om en deploy felar för alla besökare samtidigt. Överskjutande
@@ -53,7 +53,7 @@ export async function reportClientError(
       headers: {
         Authorization: `Bearer ${env.GITHUB_FEEDBACK_TOKEN}`,
         Accept: "application/vnd.github+json",
-        "User-Agent": "politiker-webapp-autoreport",
+        "User-Agent": "politiker-autoreport",
       },
       body: JSON.stringify({
         title: `Auto: ${message.slice(0, 80)}`,
@@ -128,7 +128,7 @@ export async function submitFeedback(
         headers: {
           Authorization: `Bearer ${env.GITHUB_FEEDBACK_TOKEN}`,
           Accept: "application/vnd.github+json",
-          "User-Agent": "politiker-webapp-feedback",
+          "User-Agent": "politiker-feedback",
         },
         body: JSON.stringify({
           title: `Feedback: ${input.message.slice(0, 60)}${input.message.length > 60 ? "…" : ""}`,

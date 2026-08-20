@@ -5,7 +5,7 @@ import type { SendJobMessage } from "../../shared/types";
 import { messagesPerMinuteFor } from "../../shared/provider-rates";
 import type { Env } from "./db";
 
-// Kö-konsumenten låg i en egen Worker (politiker-webapp-sender) innan
+// Kö-konsumenten låg i en egen Worker (politiker-sender) innan
 // sammanslagningen. Durable Object-klassen exporteras numera från index.ts,
 // eftersom en DO-klass måste ligga i Workerns entrypoint.
 

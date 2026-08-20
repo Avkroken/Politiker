@@ -203,7 +203,7 @@ export async function exportAdminData(
   const date = new Date().toISOString().slice(0, 10);
   if (format === "json") {
     return {
-      filename: `politiker-webapp-${baseName}-${date}.json`,
+      filename: `politiker-${baseName}-${date}.json`,
       content: JSON.stringify(data, null, 2),
       contentType: "application/json",
     };
@@ -213,7 +213,7 @@ export async function exportAdminData(
   // för fullständig export rekommenderas JSON.
   const rows = Array.isArray(data) ? data : section === "all" ? ((data as { accounts: Record<string, unknown>[] }).accounts) : [data as Record<string, unknown>];
   return {
-    filename: `politiker-webapp-${baseName}-${date}.csv`,
+    filename: `politiker-${baseName}-${date}.csv`,
     content: toCsv(rows),
     contentType: "text/csv",
   };

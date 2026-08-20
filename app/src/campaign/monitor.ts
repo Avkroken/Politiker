@@ -44,7 +44,7 @@ async function itemId(url: string): Promise<string> {
 }
 
 async function fetchRss(url: string): Promise<string> {
-  const resp = await fetch(url, { headers: { "User-Agent": "politiker-webapp-monitor/1.0" }, signal: AbortSignal.timeout(15000) });
+  const resp = await fetch(url, { headers: { "User-Agent": "politiker-monitor/1.0" }, signal: AbortSignal.timeout(15000) });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   return resp.text();
 }

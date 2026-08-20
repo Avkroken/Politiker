@@ -1,4 +1,4 @@
--- Politiker-webapp D1-schema
+-- Politiker D1-schema
 
 CREATE TABLE accounts (
   id TEXT PRIMARY KEY,

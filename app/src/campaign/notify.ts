@@ -19,7 +19,7 @@ export async function notifyBudgetExhausted(env: Env, job: string, detail: strin
       },
       {
         to: env.GMAIL_EMAIL,
-        subject: `[politiker-webapp] Anthropic dagsbudget slut — ${job}`,
+        subject: `[politiker] Anthropic dagsbudget slut — ${job}`,
         html: `<p>Cron-jobbet <strong>${escapeHtml(job)}</strong> avbröts eftersom den dagliga Anthropic-budgeten tog slut.</p>
 <p>${escapeHtml(detail)}</p>
 <p>Ingen åtgärd krävs — jobbet körs automatiskt igen i nästa schemalagda slot.</p>`,

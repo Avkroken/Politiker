@@ -124,13 +124,13 @@ export default {
 
     return new Response(resp.body, { status: resp.status, headers });
     },
-    // Kö-konsument (f.d. politiker-webapp-sender): den faktiska SMTP-/Graph-
+    // Kö-konsument (f.d. politiker-sender): den faktiska SMTP-/Graph-
     // sändningen av användarnas brev.
     async queue(batch: MessageBatch<SendJobMessage>, env: Env): Promise<void> {
       await handleSendQueue(batch, env);
     },
 
-    // Cron (f.d. politiker-webapp-campaign): nyhetsbevakning, brevgenerering,
+    // Cron (f.d. politiker-campaign): nyhetsbevakning, brevgenerering,
     // utskick, bounce-sweep och kvartalsbrevet.
     async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
       await handleScheduled(event, env, ctx);
@@ -482,7 +482,7 @@ async function handleRequest(req: Request, env: Env, url: URL): Promise<Response
     }
 
     // --- OAuth-koppling för MAILSÄNDNING (Microsoft Graph) — kräver att man
-    // redan är inloggad på politiker-webapp (kopplar credential till befintligt konto). ---
+    // redan är inloggad på politiker (kopplar credential till befintligt konto). ---
     const oauthMailMatch = url.pathname.match(/^\/api\/oauth-mail\/microsoft\/(start|callback)$/);
     if (oauthMailMatch) {
       const [, step] = oauthMailMatch;

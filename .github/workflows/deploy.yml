@@ -1,6 +1,6 @@
 name: Deploy
 
-# Auto-deploy till Cloudflare. Repot har EN Worker (politiker-webapp-app) som
+# Auto-deploy till Cloudflare. Repot har EN Worker (politiker-app) som
 # bär allt: HTTP-appen, kö-konsumenten och cron-körningarna. Tidigare fanns
 # fyra fristående Workers med var sin wrangler.jsonc, och den här filen bar
 # maskineriet för att lista ut vilka av dem som ändrats — ett `select`-jobb som
@@ -18,7 +18,7 @@ name: Deploy
 #
 # Secrets (Repo → Settings → Environments → produktion) — MÅSTE läggas till, annars failar
 # deployen:
-#   POLITIKER_WEBAPP — Cloudflare API-token. Workers Scripts:Edit + D1, KV, Queues, R2.
+#   POLITIKER — Cloudflare API-token. Workers Scripts:Edit + D1, KV, Queues, R2.
 #     Environment secret på miljön produktion, inte på repo-nivå.
 #
 # Variables (Repo → Settings → Variables → Actions):
@@ -51,7 +51,7 @@ permissions:
 jobs:
   deploy:
     # Grinden för produktionsdeploy ligger i miljön, inte i den här filen:
-    # deployment branch policy släpper bara main, och POLITIKER_WEBAPP
+    # deployment branch policy släpper bara main, och POLITIKER
     # är ett environment secret. En körning på dev får därför ingen token.
     environment: produktion
     runs-on: ubuntu-latest
@@ -72,5 +72,5 @@ jobs:
       - name: Deploy
         run: npx wrangler deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER_WEBBAPP }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.POLITIKER }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

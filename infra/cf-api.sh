@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wrapper för alla Cloudflare API-anrop i politiker-webapp-projektet.
+# Wrapper för alla Cloudflare API-anrop i politiker-projektet.
 # Usage: cf-api.sh <METHOD> <path-efter-/client/v4> [data-fil]
 set -euo pipefail
 source ~/.claude/credentials.env

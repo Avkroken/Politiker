@@ -117,7 +117,7 @@ async function exchangeCodeForUserInfo(
   const tokenData = await tokenResp.json<{ access_token: string }>();
 
   const userResp = await fetch(cfg.userinfoUrl, {
-    headers: { Authorization: `Bearer ${tokenData.access_token}`, "User-Agent": "politiker-webapp" },
+    headers: { Authorization: `Bearer ${tokenData.access_token}`, "User-Agent": "politiker" },
   });
   if (!userResp.ok) throw new Error(`Kunde inte hämta användarinfo från ${provider}`);
   const userData = await userResp.json<Record<string, unknown>>();
@@ -128,7 +128,7 @@ async function exchangeCodeForUserInfo(
   // GitHub ger inte alltid email i /user — hämta från /user/emails om saknas
   if (!email && provider === "github") {
     const emailsResp = await fetch("https://api.github.com/user/emails", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}`, "User-Agent": "politiker-webapp" },
+      headers: { Authorization: `Bearer ${tokenData.access_token}`, "User-Agent": "politiker" },
     });
     if (emailsResp.ok) {
       const emails = await emailsResp.json<Array<{ email: string; primary: boolean }>>();
@@ -191,7 +191,7 @@ export async function handleOAuthLinkCallback(provider: string, env: Env, code: 
     .first<{ account_id: string }>();
   if (existingIdentity) {
     if (existingIdentity.account_id === currentAccountId) return; // redan länkat till samma konto, inget att göra
-    throw new Error(`Det här ${provider}-kontot är redan kopplat till ett annat politiker-webapp-konto`);
+    throw new Error(`Det här ${provider}-kontot är redan kopplat till ett annat politiker-konto`);
   }
 
   await env.DB.prepare("INSERT INTO oauth_identities (id, account_id, provider, provider_user_id, created_at) VALUES (?, ?, ?, ?, ?)")

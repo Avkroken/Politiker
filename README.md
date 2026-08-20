@@ -1,4 +1,4 @@
-# Politiker-webapp
+# Politiker
 
 Gratis verktyg där medborgare kan skapa konto, koppla sitt **eget** mailkonto
 (Gmail/Outlook/iCloud/Yahoo/generisk SMTP, eller logga in passwordlöst med
@@ -64,8 +64,8 @@ Hela stacken — Cloudflare-resurser, databas, secrets och alla tre Workers —
 sätts upp av `infra/setup.sh`. Du behöver bara ett Cloudflare-konto och Node 18+.
 
 ```bash
-git clone https://github.com/blixten85/politiker-webapp.git
-cd politiker-webapp
+git clone https://github.com/blixten85/politiker.git
+cd politiker
 bash infra/setup.sh
 ```
 
@@ -94,7 +94,7 @@ om du vill ändra dem.
 > som färdig SQL:
 >
 > ```bash
-> wrangler d1 execute politiker_webapp --remote --yes \
+> wrangler d1 execute politiker --remote --yes \
 >   --file kontakter/data/politiker.sql
 > ```
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# setup.sh — Provisionerar och deployar hela politiker-webapp i ETT kommando.
+# setup.sh — Provisionerar och deployar hela politiker i ETT kommando.
 #
-#   git clone … && cd politiker-webapp && bash infra/setup.sh
+#   git clone … && cd politiker && bash infra/setup.sh
 #
 # Skapar Cloudflare-resurser (D1/KV/Queue/R2) i ditt inloggade konto, patchar
 # wrangler-konfigurationen med dina resurs-ID:n, applicerar databasschemat,
@@ -20,10 +20,10 @@ WR="npx --yes wrangler"
 
 # Kanoniska resurs-ID:n i wrangler-filerna (ägarens konto). Patchas till dina.
 PLACEHOLDER_DB_ID="e9ecf94f-fa71-4004-a5b8-f9317eb4d4e9"
-DB_NAME="politiker_webapp"
-KV_TITLE="politiker_webapp_sessions"
+DB_NAME="politiker"
+KV_TITLE="politiker_sessions"
 QUEUE_NAME="politiker-send-jobs"
-R2_BUCKET="politiker-webapp-attachments"
+R2_BUCKET="politiker-attachments"
 OWNER_DOMAIN="politiker.denied.se"
 
 log()  { printf '\033[1;34m›\033[0m %s\n' "$*"; }
@@ -43,7 +43,7 @@ _set() {
   fi
 }
 
-echo "=== politiker-webapp setup ==="
+echo "=== politiker setup ==="
 echo "Repokatalog: $REPO_DIR"
 
 # ── 1. Beroenden ────────────────────────────────────────────────────────────
@@ -227,7 +227,7 @@ if command -v systemctl >/dev/null && [ -n "$GMAIL_EMAIL" ] && [ -n "$GMAIL_PASS
   for f in bounce-processor.service bounce-processor.timer; do
     sudo sed \
       -e "s|User=berduf|User=${CURRENT_USER}|g" \
-      -e "s|/home/berduf/GitHub/politiker-webapp|${REPO_DIR}|g" \
+      -e "s|/home/berduf/GitHub/politiker|${REPO_DIR}|g" \
       "$REPO_DIR/infra/$f" | sudo tee "$SERVICE_DIR/$f" > /dev/null
   done
   sudo systemctl daemon-reload
@@ -239,7 +239,7 @@ fi
 
 echo
 echo "=== Klar ==="
-APP_URL="${CUSTOM_DOMAIN:-politiker-webapp-app.workers.dev}"
+APP_URL="${CUSTOM_DOMAIN:-politiker-app.workers.dev}"
 echo "App: https://$APP_URL"
 [ "$NEW_DB" = "1" ] && echo "Glöm inte att importera politiker-data (se 'politiker-kontakter')."
 echo "Kör om denna fil när som helst för att uppdatera deployen."
