@@ -40,9 +40,8 @@ initI18n();
 initTheme();
 
 // Oväntade JS-fel (buggar) loggas till webbläsarkonsolen med en "[Auto-rapport]"-
-// markör OCH skickas till servern, som skapar en GitHub-issue (gratis via
-// GitHub API — ingen LLM/autofix inblandad, så ingen kostnad per rapport).
-// Servern deduplicerar och har ett dygnstak mot spam. Användarens egna
+// markör OCH skickas till servern, som sparar dem i D1 och mejlar nya unika
+// fel med ett dygnstak mot spam. Användarens egna
 // hanterade meddelanden (fel lösenord, validering m.m.) loggas inte här —
 // bara oväntade undantag.
 const reportedErrorSignatures = new Set();

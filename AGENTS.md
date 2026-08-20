@@ -50,6 +50,7 @@ forening/     # Föreningsdokument (stadgar, mötesmallar)
 - `socket.startTls()` kräver `.releaseLock()` på writer/reader innan anropet, inte `.close()` — annars kastar uppgraderingen fel
 - Aldrig logga eller exponera SMTP-lösenord, TOTP-secrets eller session-tokens
 - Alla databasfrågor filtrerar på `account_id` — konton är helt isolerade från varandra utom via `/api/admin/*` (kräver `is_admin = 1`)
+- Klientfel och användarnas felrapporter sparas i D1 och skickas som e-postnotiser; GitHub Issues används inte för felrapportering
 
 ## Versioner: flytande som standard
 

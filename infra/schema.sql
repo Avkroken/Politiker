@@ -139,7 +139,7 @@ CREATE TABLE feedback (
 );
 
 -- Serverfel (4xx/5xx) loggade per API-anrop — inkluderas automatiskt i
--- GitHub-issues när feedback skickas. Endpoint = pathname utan query-params
+-- e-postnotisen när feedback skickas. Endpoint = pathname utan query-params
 -- (query-params kan innehålla tokens). Rensas löpande i feedback-endpoint (>48h).
 CREATE TABLE worker_errors (
   id TEXT PRIMARY KEY,
@@ -176,7 +176,8 @@ CREATE INDEX idx_visits_visited_at ON visits(visited_at);
 CREATE INDEX idx_visits_hash ON visits(visitor_hash);
 
 -- Dedup/räkning av automatiskt rapporterade klientfel (oväntade JS-undantag).
--- En rad per unik signatur; github_issue_url sätts när en issue skapats.
+-- En rad per unik signatur. github_issue_url behålls som ett äldre fält för
+-- befintliga installationer men används inte för nya rapporter.
 CREATE TABLE client_errors (
   signature TEXT PRIMARY KEY,
   message TEXT NOT NULL,
