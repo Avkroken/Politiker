@@ -100,6 +100,9 @@ CREATE TABLE send_jobs (
   sent_count INTEGER NOT NULL DEFAULT 0,
   bounce_count INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'pending', -- pending | sending | done | aborted
+  daily_limit INTEGER, -- valfritt extra dygnstak för just detta utskick
+  next_daily_limit INTEGER, -- valfritt tak som tar över vid limit_switch_at
+  limit_switch_at INTEGER,
   created_at INTEGER NOT NULL,
   finished_at INTEGER
 );

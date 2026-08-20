@@ -830,6 +830,11 @@ function setSendProgress(fraction) {
   fill.style.width = `${Math.round(fraction * 100)}%`;
 }
 
+function optionalPositiveInteger(id) {
+  const raw = document.getElementById(id).value.trim();
+  return raw === "" ? null : Number(raw);
+}
+
 document.getElementById("send-btn").addEventListener("click", async () => {
   const msg = document.getElementById("send-msg");
   const sendBtn = document.getElementById("send-btn");
@@ -878,6 +883,9 @@ document.getElementById("send-btn").addEventListener("click", async () => {
         excludeEmails: [...excludedRecipients.keys()],
         includeRoles: [...includedRoles],
         includeEmails: [...includedRecipients.keys()],
+        dailyLimit: optionalPositiveInteger("send-daily-limit"),
+        switchAfterDays: optionalPositiveInteger("send-switch-days"),
+        nextDailyLimit: optionalPositiveInteger("send-next-daily-limit"),
         attachments: attachments.length > 0 ? attachments : undefined,
       }),
     });
@@ -906,6 +914,64 @@ async function loadSendJobs() {
       bounce: j.bounce_count,
       status: j.status,
     });
+    if (j.status === "pending" || j.status === "sending") {
+      const details = document.createElement("details");
+      details.className = "send-job-rate";
+      const summary = document.createElement("summary");
+      summary.textContent = t("send_rate_edit");
+      details.appendChild(summary);
+
+      const fields = document.createElement("div");
+      fields.className = "send-job-rate-fields";
+      const remainingDays = j.limit_switch_at == null
+        ? ""
+        : String(Math.max(1, Math.ceil((j.limit_switch_at - Date.now()) / (24 * 60 * 60 * 1000))));
+      const specs = [
+        [t("send_rate_now"), j.daily_limit ?? "", false],
+        [t("send_rate_switch_days"), remainingDays, true],
+        [t("send_rate_after"), j.next_daily_limit ?? "", false],
+      ];
+      const inputs = specs.map(([labelText, value, isDays]) => {
+        const label = document.createElement("label");
+        label.textContent = labelText;
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = "1";
+        input.max = isDays ? "365" : "10000";
+        input.value = value;
+        label.appendChild(input);
+        fields.appendChild(label);
+        return input;
+      });
+      const save = document.createElement("button");
+      save.type = "button";
+      save.textContent = t("send_rate_save");
+      const status = document.createElement("span");
+      save.addEventListener("click", async () => {
+        save.disabled = true;
+        status.textContent = t("send_rate_saving");
+        try {
+          const value = (input) => input.value.trim() === "" ? null : Number(input.value);
+          await api(`/api/send-jobs/${j.id}/rate`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              dailyLimit: value(inputs[0]),
+              switchAfterDays: value(inputs[1]),
+              nextDailyLimit: value(inputs[2]),
+            }),
+          });
+          status.textContent = t("send_rate_saved");
+          await loadSendJobs();
+        } catch (error) {
+          status.textContent = error.message;
+        } finally {
+          save.disabled = false;
+        }
+      });
+      fields.append(save, status);
+      details.appendChild(fields);
+      li.appendChild(details);
+    }
     if (j.status === "done" && j.letter_id) {
       const btn = document.createElement("button");
       btn.type = "button";
