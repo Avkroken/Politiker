@@ -84,10 +84,9 @@ som väntar.
   26.04-variant som suffixet behöver bytas till.
 
 ## Tillåtet
-- Skapa grenar
 - Ändra kod
 - Köra tester
-- Öppna ändringsförslag
+- Öppna ändringsförslag från `dev` till standardgrenen
 
 ## Förbjudet
 - Skicka ändringar direkt till `main` eller `master`
@@ -97,6 +96,7 @@ som väntar.
 - Ändra inställningar för GitHub-organisationen
 
 ## Krav
+- Överlämna kodändringar endast på `dev`
 - Alla tester måste godkännas
 - Håll varje ändringsförslag avgränsat till en uppgift
 - Ta aldrig med orelaterade ändringar
