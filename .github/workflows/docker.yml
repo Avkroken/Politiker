@@ -1,13 +1,9 @@
 name: Docker build & Trivy
 
-# Bygger kontakter/scraper-imagen och skannar den med Trivy. Imagen publiceras
-# INTE: den körs bara lokalt via kontakter/docker-compose.yml, och ingenting
-# hämtar den från ett register. Bygget finns här enbart för att kunna skanna
-# den — basen är playwright/python på Ubuntu 22.04 (jammy), och utan en
-# skanning syns aldrig vad den bär med sig.
-#
-# Skanningen rapporterar till code scanning men fäller inte bygget, se
-# .github/actions/trivy.
+# Bygger kontakter/scraper-imagen och skannar den med Trivy när Docker-underlaget
+# faktiskt påverkas. På övriga PR:er laddas en tom Trivy-SARIF upp så GitHubs
+# Code Scanning merge protection alltid får en analys för aktuell PR-head utan
+# att vi behöver göra ett dyrt, irrelevant Dockerbygge.
 
 on:
   push:
@@ -17,14 +13,9 @@ on:
       - kontakter/scraper/requirements.txt
       - .github/workflows/docker.yml
       - .github/actions/trivy/**
+  # Måste skapas för VARJE PR eftersom Protect main kräver en Trivy-analysis.
+  # Relevans avgörs i impact-jobbet i stället för med workflow-level paths.
   pull_request:
-    paths:
-      - kontakter/scraper/Dockerfile
-      - kontakter/scraper/requirements.txt
-      - .github/workflows/docker.yml
-      - .github/actions/trivy/**
-  # Basimagen får nya CVE:er utan att repot ändras — en veckoskanning fångar
-  # det som annars bara syns när någon råkar röra Dockerfilen.
   schedule:
     - cron: '20 5 * * 1' # måndagar 05:20 UTC
   workflow_dispatch:
@@ -37,19 +28,46 @@ permissions:
   contents: read
 
 jobs:
-  # Den obligatoriska checken heter docker och sätts av aggregatet längst ned —
-  # ett namn som inte ändras när en image läggs till eller tas bort.
+  impact:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.detect.outputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Detect Docker impact
+        id: detect
+        shell: bash
+        run: |
+          # Schemalagd/manuell/main-körning ska alltid göra riktig skanning.
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" > /tmp/changed.txt
+          if grep -Eq '^(kontakter/scraper/(Dockerfile|requirements\.txt)|\.github/workflows/docker\.yml|\.github/actions/trivy/)' /tmp/changed.txt; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=false" >> "$GITHUB_OUTPUT"
+          fi
+
   image:
+    needs: [impact]
+    if: needs.impact.outputs.image == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write # Trivy-resultat till code scanning
+      security-events: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Short SHA
         id: sha
-        run: echo "short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
@@ -64,13 +82,48 @@ jobs:
           image-ref: politiker-kontakter-scraper:sha-${{ steps.sha.outputs.short }}
           category: trivy-kontakter-scraper
 
+  trivy-not-applicable:
+    needs: [impact]
+    if: needs.impact.outputs.image != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Create empty Trivy SARIF
+        run: |
+          cat > trivy-not-applicable.sarif <<'EOF'
+          {
+            "version": "2.1.0",
+            "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+            "runs": [{
+              "tool": {
+                "driver": {
+                  "name": "Trivy",
+                  "informationUri": "https://github.com/aquasecurity/trivy",
+                  "rules": []
+                }
+              },
+              "results": []
+            }]
+          }
+          EOF
+      - name: Upload not-applicable Trivy analysis
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-not-applicable.sarif
+          category: trivy-kontakter-scraper
+
+  # Stabil required status check oavsett om image byggdes eller var N/A.
   docker:
     if: always()
-    needs: [image]
+    needs: [impact, image, trivy-not-applicable]
     runs-on: ubuntu-latest
     steps:
       - run: |
+          echo "impact: ${{ needs.impact.result }}"
           echo "image: ${{ needs.image.result }}"
-          case "${{ needs.image.result }}" in
-            failure|cancelled) echo "::error::Imagebygget misslyckades."; exit 1 ;;
+          echo "trivy-not-applicable: ${{ needs.trivy-not-applicable.result }}"
+          case "${{ needs.impact.result }} ${{ needs.image.result }} ${{ needs.trivy-not-applicable.result }}" in
+            *failure*|*cancelled*) echo "::error::Docker/Trivy-flödet misslyckades."; exit 1 ;;
           esac
