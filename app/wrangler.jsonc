@@ -18,6 +18,11 @@
       "head_sampling_rate": 0.05
     }
   },
+  "tail_consumers": [
+    {
+      "service": "politiker-log-archive"
+    }
+  ],
   // Exponera inte på *.workers.dev — appen nås bara via politiker.denied.se
   // (custom domain). Stänger workers.dev-attackytan (Security Center-fynd).
   "workers_dev": false,
