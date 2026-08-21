@@ -68,7 +68,8 @@
         "queue": "politiker-send-jobs",
         "max_batch_size": 10,
         "max_retries": 10,
-        "max_concurrency": 5
+        "max_concurrency": 5,
+        "dead_letter_queue": "politiker-send-jobs-dlq"
       }
     ]
   },
