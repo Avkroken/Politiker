@@ -6,7 +6,7 @@
 -- (public_letters, source='campaign') som ett dagligt digest till alla
 -- bekräftade prenumeranter. Avregistrering via token-länk i varje utskick.
 
-CREATE TABLE newsletter_subscribers (
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   token TEXT NOT NULL,             -- bekräftelse- OCH avregistreringstoken
@@ -15,7 +15,7 @@ CREATE TABLE newsletter_subscribers (
   unsubscribed_at INTEGER          -- satt = avregistrerad (får inga utskick)
 );
 
-CREATE TABLE newsletter_sends (
+CREATE TABLE IF NOT EXISTS newsletter_sends (
   id TEXT PRIMARY KEY,
   letter_id TEXT NOT NULL,         -- public_letters.id (source='campaign')
   subscriber_id TEXT NOT NULL,
@@ -25,4 +25,4 @@ CREATE TABLE newsletter_sends (
   UNIQUE(letter_id, subscriber_id)
 );
 
-CREATE INDEX idx_newsletter_sends_status ON newsletter_sends(status);
+CREATE INDEX IF NOT EXISTS idx_newsletter_sends_status ON newsletter_sends(status);
