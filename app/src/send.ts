@@ -5,6 +5,8 @@ import type { SendJobMessage } from "../../shared/types";
 
 const STAGE_CHUNK_SIZE = 500;
 
+type SendJobAction = "cancel" | "retry" | "delete";
+
 interface StagedRecipient {
   email: string;
   name: string;
@@ -14,6 +16,7 @@ interface SendRateInput {
   dailyLimit?: number | null;
   switchAfterDays?: number | null;
   nextDailyLimit?: number | null;
+  action?: SendJobAction;
 }
 
 function parseRateInput(input: SendRateInput, now = Date.now()) {
@@ -79,22 +82,16 @@ async function prioritizeRecipients(env: Env, sendJobId: string, recipients: Sta
     const aPriority = priorityByEmail.get(aKey) ?? 7;
     const bPriority = priorityByEmail.get(bKey) ?? 7;
     if (aPriority !== bPriority) return aPriority - bPriority;
-
-    // Kommunpolitiker ska få en jämn spridning över landet i stället för att
-    // stora kommuner eller alfabetisk ordning alltid töms först. Hashen är
-    // stabil per utskick så retries/omstarter aldrig kastar om kön.
-    if (aPriority === 6) {
-      return stableRecipientHash(sendJobId, aKey) - stableRecipientHash(sendJobId, bKey);
-    }
+    if (aPriority === 6) return stableRecipientHash(sendJobId, aKey) - stableRecipientHash(sendJobId, bKey);
     return aKey.localeCompare(bKey, "sv-SE");
   });
 }
 
 export async function maySendQueuedRecipient(env: Env, sendJobId: string, recipientEmail: string): Promise<boolean> {
   const job = await env.DB.prepare(
-    "SELECT daily_limit, next_daily_limit, limit_switch_at FROM send_jobs WHERE id = ?",
-  ).bind(sendJobId).first<{ daily_limit: number | null; next_daily_limit: number | null; limit_switch_at: number | null }>();
-  if (!job) return false;
+    "SELECT daily_limit, next_daily_limit, limit_switch_at, status FROM send_jobs WHERE id = ?",
+  ).bind(sendJobId).first<{ daily_limit: number | null; next_daily_limit: number | null; limit_switch_at: number | null; status: string }>();
+  if (!job || !["pending", "sending"].includes(job.status)) return false;
   const dailyLimit = effectiveJobDailyLimit(job);
   if (dailyLimit == null) return true;
 
@@ -148,8 +145,6 @@ async function remainingQuotaForCredential(
     };
   }
 
-  // Okänd/generisk leverantör saknar ett säkert leverantörstak. Där används
-  // kontots försiktiga reservgräns i stället.
   const sentToday = await countSentToday(env.DB, accountId);
   const queued = await env.DB.prepare(
     `SELECT COUNT(*) AS n FROM send_job_recipients r
@@ -325,19 +320,75 @@ export async function createAndEnqueueSendJob(
 export async function getSendJobsForAccount(env: Env, accountId: string) {
   const now = Date.now();
   const { results } = await env.DB.prepare(
-    `SELECT id, letter_id, total_recipients, sent_count, bounce_count, status,
-            CASE WHEN next_daily_limit IS NOT NULL AND limit_switch_at <= ?
-                 THEN next_daily_limit ELSE daily_limit END AS daily_limit,
-            CASE WHEN next_daily_limit IS NOT NULL AND limit_switch_at <= ?
-                 THEN NULL ELSE next_daily_limit END AS next_daily_limit,
-            CASE WHEN next_daily_limit IS NOT NULL AND limit_switch_at <= ?
-                 THEN NULL ELSE limit_switch_at END AS limit_switch_at,
-            created_at, finished_at
-     FROM send_jobs WHERE account_id = ? ORDER BY created_at DESC LIMIT 50`,
+    `SELECT sj.id, sj.letter_id, sj.total_recipients, sj.sent_count, sj.bounce_count, sj.status,
+            CASE WHEN sj.next_daily_limit IS NOT NULL AND sj.limit_switch_at <= ?
+                 THEN sj.next_daily_limit ELSE sj.daily_limit END AS daily_limit,
+            CASE WHEN sj.next_daily_limit IS NOT NULL AND sj.limit_switch_at <= ?
+                 THEN NULL ELSE sj.next_daily_limit END AS next_daily_limit,
+            CASE WHEN sj.next_daily_limit IS NOT NULL AND sj.limit_switch_at <= ?
+                 THEN NULL ELSE sj.limit_switch_at END AS limit_switch_at,
+            sj.created_at, sj.finished_at,
+            (SELECT COUNT(*) FROM send_job_recipients r WHERE r.send_job_id = sj.id AND r.status = 'pending') AS pending_count,
+            (SELECT COUNT(*) FROM send_job_recipients r WHERE r.send_job_id = sj.id AND r.status = 'queued') AS queued_count,
+            (SELECT error FROM send_job_recipients r WHERE r.send_job_id = sj.id AND r.error IS NOT NULL ORDER BY r.finished_at DESC LIMIT 1) AS last_error
+     FROM send_jobs sj WHERE sj.account_id = ? ORDER BY sj.created_at DESC LIMIT 50`,
   )
     .bind(now, now, now, accountId)
     .all();
   return results;
+}
+
+async function handleSendJobAction(
+  env: Env,
+  accountId: string,
+  sendJobId: string,
+  action: SendJobAction,
+): Promise<Record<string, unknown>> {
+  const job = await env.DB.prepare(
+    "SELECT id, letter_id, mail_credential_id, status, bounce_count FROM send_jobs WHERE id = ? AND account_id = ?",
+  ).bind(sendJobId, accountId).first<{ id: string; letter_id: string; mail_credential_id: string; status: string; bounce_count: number }>();
+  if (!job) throw new Error("Utskicket hittades inte");
+
+  if (action === "cancel") {
+    if (!["pending", "sending"].includes(job.status)) throw new Error("Bara ett pågående utskick kan avbrytas");
+    const now = Date.now();
+    await env.DB.batch([
+      env.DB.prepare("UPDATE send_jobs SET status = 'cancelled', finished_at = ? WHERE id = ? AND account_id = ?").bind(now, sendJobId, accountId),
+      env.DB.prepare("UPDATE send_job_recipients SET status = 'cancelled', finished_at = ?, queued_at = NULL WHERE send_job_id = ? AND status IN ('pending', 'queued')").bind(now, sendJobId),
+    ]);
+    return { ok: true, status: "cancelled" };
+  }
+
+  if (action === "retry") {
+    const retryable = job.status === "aborted" || job.status === "cancelled" || job.bounce_count > 0;
+    if (!retryable) throw new Error("Det finns inget misslyckat eller avbrutet att försöka igen");
+
+    // Gamla queue-meddelanden kan fortfarande levereras minst en gång. Genom att
+    // flytta queued -> pending gör konsumenten ack på de gamla leveranserna och
+    // endast de nyköade meddelandena får status queued igen.
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE send_job_recipients
+         SET status = 'pending', queued_at = NULL, finished_at = NULL, error = NULL
+         WHERE send_job_id = ? AND status IN ('bounce', 'cancelled', 'queued')`,
+      ).bind(sendJobId),
+      env.DB.prepare("UPDATE send_jobs SET status = 'pending', bounce_count = 0, finished_at = NULL WHERE id = ? AND account_id = ?")
+        .bind(sendJobId, accountId),
+    ]);
+
+    const quota = await remainingQuotaForCredential(env, accountId, job.mail_credential_id);
+    const queued = quota.remaining > 0 ? await enqueueWithinLimits(env, sendJobId, quota.remaining) : 0;
+    return { ok: true, status: queued > 0 ? "sending" : "pending", queued };
+  }
+
+  // Radera historiken för själva utskicket men behåll letters-raden så själva
+  // brevet inte försvinner ur eventuell annan funktionalitet. send_log måste
+  // bort först eftersom dess FK inte har ON DELETE CASCADE.
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM send_log WHERE send_job_id = ? AND account_id = ?").bind(sendJobId, accountId),
+    env.DB.prepare("DELETE FROM send_jobs WHERE id = ? AND account_id = ?").bind(sendJobId, accountId),
+  ]);
+  return { ok: true, deleted: true };
 }
 
 export async function updateSendJobRate(
@@ -345,7 +396,9 @@ export async function updateSendJobRate(
   accountId: string,
   sendJobId: string,
   input: SendRateInput,
-): Promise<{ dailyLimit: number | null; nextDailyLimit: number | null; limitSwitchAt: number | null }> {
+): Promise<Record<string, unknown>> {
+  if (input.action) return handleSendJobAction(env, accountId, sendJobId, input.action);
+
   const job = await env.DB.prepare(
     "SELECT id, mail_credential_id, status FROM send_jobs WHERE id = ? AND account_id = ?",
   ).bind(sendJobId, accountId).first<{ id: string; mail_credential_id: string; status: string }>();
