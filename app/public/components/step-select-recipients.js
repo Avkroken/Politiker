@@ -1,4 +1,4 @@
-// Steg 1: de 5 övergripande mottagarkorten (EU/Riksdag/Regering/Region/
+// Steg 1: de 5 övergripande mottagarkorten (EU/Regering/Riksdag/Region/
 // Kommun). Den detaljerade per-område-listan, befattningsfiltret,
 // parti-/individuell exkludering ligger kvar i app.js (oförändrad,
 // befintlig logik) inne i en "Avancerat"-sektion — bara dessa kort är nya.
@@ -6,7 +6,8 @@
 // Rent presentationslager: tar emot redan summerad data + en toggle-
 // callback, äger ingen egen state.
 
-const TYPE_ORDER = ["eu", "riksdag", "regering", "region", "kommun", "kyrka"];
+const POLITICAL_TYPE_ORDER = ["eu", "regering", "riksdag", "region", "kommun"];
+const TYPE_ORDER = [...POLITICAL_TYPE_ORDER, "kyrka"];
 
 export function renderAreaTypeCards(container, { areasByType, selectedAreas, onToggleType, t }) {
   container.innerHTML = "";
@@ -18,15 +19,35 @@ export function renderAreaTypeCards(container, { areasByType, selectedAreas, onT
     (a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b),
   );
 
+  const allAreas = POLITICAL_TYPE_ORDER.flatMap((areaType) => areasByType.get(areaType) ?? []);
+  const allSelected = allAreas.length > 0 && allAreas.every((a) => selectedAreas.has(a.area_name));
+  const someSelected = !allSelected && allAreas.some((a) => selectedAreas.has(a.area_name));
+  const allCard = document.createElement("button");
+  allCard.type = "button";
+  allCard.className = "area-type-card" + (allSelected ? " selected" : "") + (someSelected ? " partial" : "");
+
+  const allLabel = document.createElement("div");
+  allLabel.className = "area-type-card-label";
+  allLabel.textContent = "Alla politiker";
+  allCard.appendChild(allLabel);
+
+  const allCount = document.createElement("div");
+  allCount.className = "area-type-card-count";
+  allCount.textContent = t("area_type_card_count", { count: allAreas.reduce((sum, a) => sum + a.count, 0) });
+  allCard.appendChild(allCount);
+
+  allCard.addEventListener("click", () => onToggleType("all", allAreas, !allSelected));
+  grid.appendChild(allCard);
+
   for (const areaType of types) {
     const areas = areasByType.get(areaType);
     const totalCount = areas.reduce((sum, a) => sum + a.count, 0);
-    const allSelected = areas.every((a) => selectedAreas.has(a.area_name));
-    const someSelected = !allSelected && areas.some((a) => selectedAreas.has(a.area_name));
+    const typeAllSelected = areas.every((a) => selectedAreas.has(a.area_name));
+    const typeSomeSelected = !typeAllSelected && areas.some((a) => selectedAreas.has(a.area_name));
 
     const card = document.createElement("button");
     card.type = "button";
-    card.className = "area-type-card" + (allSelected ? " selected" : "") + (someSelected ? " partial" : "");
+    card.className = "area-type-card" + (typeAllSelected ? " selected" : "") + (typeSomeSelected ? " partial" : "");
 
     const label = document.createElement("div");
     label.className = "area-type-card-label";
@@ -38,7 +59,7 @@ export function renderAreaTypeCards(container, { areasByType, selectedAreas, onT
     count.textContent = t("area_type_card_count", { count: totalCount });
     card.appendChild(count);
 
-    card.addEventListener("click", () => onToggleType(areaType, areas, !allSelected));
+    card.addEventListener("click", () => onToggleType(areaType, areas, !typeAllSelected));
     grid.appendChild(card);
   }
 

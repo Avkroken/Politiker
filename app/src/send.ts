@@ -41,6 +41,54 @@ function effectiveJobDailyLimit(job: { daily_limit: number | null; next_daily_li
   return job.daily_limit;
 }
 
+function stableRecipientHash(seed: string, email: string): number {
+  let hash = 2166136261;
+  const value = `${seed}:${email.toLocaleLowerCase("sv-SE")}`;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+async function prioritizeRecipients(env: Env, sendJobId: string, recipients: StagedRecipient[]): Promise<StagedRecipient[]> {
+  const priorityByEmail = new Map<string, number>();
+  for (let i = 0; i < recipients.length; i += STAGE_CHUNK_SIZE) {
+    const emails = recipients.slice(i, i + STAGE_CHUNK_SIZE).map((r) => r.email.trim().toLocaleLowerCase("sv-SE"));
+    const { results } = await env.DB.prepare(`
+      SELECT lower(trim(email)) AS email_key,
+             MIN(CASE area_type
+               WHEN 'eu' THEN 1
+               WHEN 'regering' THEN 2
+               WHEN 'riksdag' THEN 3
+               WHEN 'region' THEN 4
+               WHEN 'kommun' THEN 5
+               ELSE 6
+             END) AS priority
+      FROM politicians
+      WHERE lower(trim(email)) IN (SELECT lower(trim(value)) FROM json_each(?))
+      GROUP BY lower(trim(email))
+    `).bind(JSON.stringify(emails)).all<{ email_key: string; priority: number }>();
+    for (const row of results) priorityByEmail.set(row.email_key, Number(row.priority));
+  }
+
+  return [...recipients].sort((a, b) => {
+    const aKey = a.email.trim().toLocaleLowerCase("sv-SE");
+    const bKey = b.email.trim().toLocaleLowerCase("sv-SE");
+    const aPriority = priorityByEmail.get(aKey) ?? 6;
+    const bPriority = priorityByEmail.get(bKey) ?? 6;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+
+    // Kommunpolitiker ska få en jämn spridning över landet i stället för att
+    // stora kommuner eller alfabetisk ordning alltid töms först. Hashen är
+    // stabil per utskick så retries/omstarter aldrig kastar om kön.
+    if (aPriority === 5) {
+      return stableRecipientHash(sendJobId, aKey) - stableRecipientHash(sendJobId, bKey);
+    }
+    return aKey.localeCompare(bKey, "sv-SE");
+  });
+}
+
 export async function maySendQueuedRecipient(env: Env, sendJobId: string, recipientEmail: string): Promise<boolean> {
   const job = await env.DB.prepare(
     "SELECT daily_limit, next_daily_limit, limit_switch_at FROM send_jobs WHERE id = ?",
@@ -254,6 +302,7 @@ export async function createAndEnqueueSendJob(
   if (recipients.length === 0) throw new Error("Inga mottagare matchar valda filter — välj område, befattning eller enskilda politiker");
 
   const sendJobId = randomId();
+  const orderedRecipients = await prioritizeRecipients(env, sendJobId, recipients);
   const rate = parseRateInput(input);
   await env.DB.prepare(
     `INSERT INTO send_jobs
@@ -265,7 +314,7 @@ export async function createAndEnqueueSendJob(
       rate.dailyLimit, rate.nextDailyLimit, rate.limitSwitchAt, Date.now())
     .run();
 
-  await stageRecipients(env, sendJobId, recipients, input.subject);
+  await stageRecipients(env, sendJobId, orderedRecipients, input.subject);
   const quota = await remainingQuotaForCredential(env, accountId, input.mailCredentialId);
   await enqueueWithinLimits(env, sendJobId, quota.remaining);
 
@@ -300,7 +349,7 @@ export async function updateSendJobRate(
     "SELECT id, mail_credential_id, status FROM send_jobs WHERE id = ? AND account_id = ?",
   ).bind(sendJobId, accountId).first<{ id: string; mail_credential_id: string; status: string }>();
   if (!job) throw new Error("Utskicket hittades inte");
-  if (!['pending', 'sending'].includes(job.status)) throw new Error("Takt kan bara ändras för ett pågående utskick");
+  if (!["pending", "sending"].includes(job.status)) throw new Error("Takt kan bara ändras för ett pågående utskick");
 
   const rate = parseRateInput(input);
   await env.DB.prepare(
