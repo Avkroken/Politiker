@@ -17,24 +17,16 @@
 FROM mcr.microsoft.com/playwright/python:v1.62.0-noble
 WORKDIR /app
 
-# Basimagen är en ögonblicksbild och kan därför innehålla paket som hunnit få
-# säkerhetsfixar efter att Microsoft publicerade taggen. Trivy kör med
-# ignore-unfixed=true, så kvarvarande OS-fynd har en tillgänglig fix. Installera
-# Nobles aktuella uppdateringar vid varje imagebuild i stället för att pinna
-# dussintals transitiva apt-paket en och en.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-# pip innehåller egna vendorerade kopior av bl.a. setuptools 70.3.0 och
-# msgpack 1.1.2. De används bara av installationsverktyget men inventeras ändå
-# av image-scanners som runtime-paket. Installera först appens riktiga, patchade
-# beroenden och avinstallera sedan pip självt; runtime behöver varken pip eller
-# dess privata vendor-träd. setuptools/msgpack som appen faktiskt kan importera
-# ligger kvar på versionerna från requirements.txt.
 RUN python -m pip install --no-cache-dir -r requirements.txt \
-    && python -m pip uninstall --yes pip
+    && python -m pip uninstall --yes pip \
+    && echo '--- kvarvarande vendor-manifest/cacheträffar ---' \
+    && (grep -RIl -E 'setuptools==70\.3\.0|msgpack==1\.1\.2' \
+         /usr/local/lib /usr/lib /root/.cache /opt 2>/dev/null || true)
 COPY scraper.py politiker_common.py regioner.json ./
 COPY entrypoint.sh .
 ENTRYPOINT ["/app/entrypoint.sh"]
