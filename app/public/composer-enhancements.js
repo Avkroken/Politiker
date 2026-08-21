@@ -11,6 +11,7 @@
     if (!subjectInput || !bodyInput) return;
     subjectInput.value = subject;
     bodyInput.value = body;
+    bodyInput.dataset.contentFormat = 'html';
     subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
     bodyInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
@@ -31,6 +32,17 @@
     throw new Error('Använd DOCX, HTML eller TXT för att fylla brevtexten automatiskt. PDF kan fortfarande bifogas.');
   }
 
+  function ensurePreview(body) {
+    let preview = $('#letter-html-preview');
+    if (preview) return preview;
+    preview = document.createElement('div');
+    preview.id = 'letter-html-preview';
+    preview.className = 'letter-html-preview';
+    preview.hidden = true;
+    body.insertAdjacentElement('afterend', preview);
+    return preview;
+  }
+
   function injectComposerTools() {
     const fileInput = $('#letter-files');
     if (!fileInput || fileInput.dataset.enhanced === '1') return;
@@ -42,9 +54,9 @@
     tools.innerHTML = `
       <div class="button-row">
         <button type="button" class="secondary" id="use-file-as-letter">Använd filen som brev</button>
-        <button type="button" class="secondary" id="toggle-html-mode">HTML-läge</button>
+        <button type="button" class="secondary" id="preview-html" disabled>Förhandsvisa brevet</button>
       </div>
-      <p class="attachment-mode-note">DOCX/HTML/TXT kan fylla ämnesrad och brevtext. Filen ligger fortfarande kvar som bilaga tills du väljer bort den.</p>
+      <p class="attachment-mode-note">DOCX, HTML och TXT konverteras automatiskt till HTML när du använder filen som brev. Du behöver inte välja HTML-läge själv. Originalfilen ligger kvar som bilaga tills du väljer bort den.</p>
       <div id="attachment-tool-status" class="hint"></div>`;
     host.append(tools);
 
@@ -62,12 +74,13 @@
         const html = await fileToHtml(file);
         if (!html.trim()) throw new Error('Dokumentet innehöll ingen läsbar text.');
         setDraft(subjectFromFilename(file.name), html);
-        status.textContent = 'Ämnesrad och brevtext fylldes från dokumentet.';
+        status.textContent = 'Ämnesrad och brevtext fylldes från dokumentet och skickas automatiskt som HTML.';
         const badge = document.createElement('span');
         badge.className = 'html-mode-badge';
         badge.textContent = 'HTML från bilaga';
         const bodyLabel = $('#letter-body')?.closest('.field')?.querySelector('span');
         if (bodyLabel && !bodyLabel.querySelector('.html-mode-badge')) bodyLabel.append(badge);
+        $('#preview-html').disabled = false;
       } catch (err) {
         status.textContent = err instanceof Error ? err.message : String(err);
       } finally {
@@ -75,16 +88,21 @@
       }
     };
 
-    $('#toggle-html-mode').onclick = () => {
+    $('#preview-html').onclick = () => {
       const body = $('#letter-body');
       if (!body) return;
-      const enabled = body.dataset.htmlMode === '1';
-      body.dataset.htmlMode = enabled ? '0' : '1';
-      $('#toggle-html-mode').textContent = enabled ? 'HTML-läge' : 'Vanlig textvy';
-      const status = $('#attachment-tool-status');
-      status.textContent = enabled
-        ? 'Vanligt redigeringsläge. HTML som redan finns i brevet bevaras.'
-        : 'HTML-läge aktivt. Innehållet skickas som HTML precis som det står i rutan.';
+      const preview = ensurePreview(body);
+      const showingPreview = !preview.hidden;
+      if (showingPreview) {
+        preview.hidden = true;
+        body.hidden = false;
+        $('#preview-html').textContent = 'Förhandsvisa brevet';
+        return;
+      }
+      preview.innerHTML = body.value;
+      body.hidden = true;
+      preview.hidden = false;
+      $('#preview-html').textContent = 'Visa HTML-kod';
     };
   }
 
