@@ -155,7 +155,7 @@ async function remainingQuotaForCredential(
     `SELECT COUNT(*) AS n FROM send_job_recipients r
      JOIN send_jobs j ON j.id = r.send_job_id
      WHERE j.account_id = ? AND r.status = 'queued'`,
-    ).bind(accountId).first<{ n: number }>();
+  ).bind(accountId).first<{ n: number }>();
   return {
     remaining: Math.max(0, account.daily_send_cap - sentToday - (queued?.n ?? 0)),
     label: `kontots dygnsgräns (${account.daily_send_cap}/dygn)`,
