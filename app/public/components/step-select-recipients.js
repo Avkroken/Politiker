@@ -18,15 +18,35 @@ export function renderAreaTypeCards(container, { areasByType, selectedAreas, onT
     (a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b),
   );
 
+  const allAreas = types.flatMap((areaType) => areasByType.get(areaType) ?? []);
+  const allSelected = allAreas.length > 0 && allAreas.every((a) => selectedAreas.has(a.area_name));
+  const someSelected = !allSelected && allAreas.some((a) => selectedAreas.has(a.area_name));
+  const allCard = document.createElement("button");
+  allCard.type = "button";
+  allCard.className = "area-type-card" + (allSelected ? " selected" : "") + (someSelected ? " partial" : "");
+
+  const allLabel = document.createElement("div");
+  allLabel.className = "area-type-card-label";
+  allLabel.textContent = "Alla politiker";
+  allCard.appendChild(allLabel);
+
+  const allCount = document.createElement("div");
+  allCount.className = "area-type-card-count";
+  allCount.textContent = t("area_type_card_count", { count: allAreas.reduce((sum, a) => sum + a.count, 0) });
+  allCard.appendChild(allCount);
+
+  allCard.addEventListener("click", () => onToggleType("all", allAreas, !allSelected));
+  grid.appendChild(allCard);
+
   for (const areaType of types) {
     const areas = areasByType.get(areaType);
     const totalCount = areas.reduce((sum, a) => sum + a.count, 0);
-    const allSelected = areas.every((a) => selectedAreas.has(a.area_name));
-    const someSelected = !allSelected && areas.some((a) => selectedAreas.has(a.area_name));
+    const typeAllSelected = areas.every((a) => selectedAreas.has(a.area_name));
+    const typeSomeSelected = !typeAllSelected && areas.some((a) => selectedAreas.has(a.area_name));
 
     const card = document.createElement("button");
     card.type = "button";
-    card.className = "area-type-card" + (allSelected ? " selected" : "") + (someSelected ? " partial" : "");
+    card.className = "area-type-card" + (typeAllSelected ? " selected" : "") + (typeSomeSelected ? " partial" : "");
 
     const label = document.createElement("div");
     label.className = "area-type-card-label";
@@ -38,7 +58,7 @@ export function renderAreaTypeCards(container, { areasByType, selectedAreas, onT
     count.textContent = t("area_type_card_count", { count: totalCount });
     card.appendChild(count);
 
-    card.addEventListener("click", () => onToggleType(areaType, areas, !allSelected));
+    card.addEventListener("click", () => onToggleType(areaType, areas, !typeAllSelected));
     grid.appendChild(card);
   }
 
