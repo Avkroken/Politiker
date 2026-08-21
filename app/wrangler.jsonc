@@ -5,7 +5,18 @@
   "compatibility_date": "2026-08-21",
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "persist": true,
+      "head_sampling_rate": 0.05
+    }
   },
   // Exponera inte på *.workers.dev — appen nås bara via politiker.denied.se
   // (custom domain). Stänger workers.dev-attackytan (Security Center-fynd).
@@ -62,10 +73,9 @@
     ]
   },
 
-  // Token bucket per mailkoppling, från f.d. sender-Workern. Klassen måste
-  // exporteras från main (src/index.ts). Namnrymden är ny på den här Workern
-  // — den gamla försvann med sender-scriptet, och tillståndet är ändå bara
-  // ett kortlivat token-bucket-saldo som byggs upp igen på en minut.
+  // Token bucket per mailkoppling, från f.d. sender-Workern. Klassen exporteras
+  // från main (src/index.ts). Deklarativ exports ersätter den äldre v1-
+  // migrationsposten och beskriver det aktuella DO-tillståndet direkt.
   "durable_objects": {
     "bindings": [
       {
@@ -74,12 +84,12 @@
       }
     ]
   },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["CredentialRateLimiter"]
+  "exports": {
+    "CredentialRateLimiter": {
+      "type": "durable-object",
+      "storage": "sqlite"
     }
-  ],
+  },
 
   // Cron-körningarna från f.d. politiker-campaign (UTC):
   //   05 monitor · 06 brevgenerering · 07 utskick · 08 bounce-sweep
