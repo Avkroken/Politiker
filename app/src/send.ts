@@ -61,9 +61,10 @@ async function prioritizeRecipients(env: Env, sendJobId: string, recipients: Sta
                WHEN 'eu' THEN 1
                WHEN 'regering' THEN 2
                WHEN 'riksdag' THEN 3
-               WHEN 'region' THEN 4
-               WHEN 'kommun' THEN 5
-               ELSE 6
+               WHEN 'media' THEN 4
+               WHEN 'region' THEN 5
+               WHEN 'kommun' THEN 6
+               ELSE 7
              END) AS priority
       FROM politicians
       WHERE lower(trim(email)) IN (SELECT lower(trim(value)) FROM json_each(?))
@@ -75,14 +76,14 @@ async function prioritizeRecipients(env: Env, sendJobId: string, recipients: Sta
   return [...recipients].sort((a, b) => {
     const aKey = a.email.trim().toLocaleLowerCase("sv-SE");
     const bKey = b.email.trim().toLocaleLowerCase("sv-SE");
-    const aPriority = priorityByEmail.get(aKey) ?? 6;
-    const bPriority = priorityByEmail.get(bKey) ?? 6;
+    const aPriority = priorityByEmail.get(aKey) ?? 7;
+    const bPriority = priorityByEmail.get(bKey) ?? 7;
     if (aPriority !== bPriority) return aPriority - bPriority;
 
     // Kommunpolitiker ska få en jämn spridning över landet i stället för att
     // stora kommuner eller alfabetisk ordning alltid töms först. Hashen är
     // stabil per utskick så retries/omstarter aldrig kastar om kön.
-    if (aPriority === 5) {
+    if (aPriority === 6) {
       return stableRecipientHash(sendJobId, aKey) - stableRecipientHash(sendJobId, bKey);
     }
     return aKey.localeCompare(bKey, "sv-SE");
