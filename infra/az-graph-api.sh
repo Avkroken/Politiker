@@ -2,7 +2,7 @@
 # Wrapper för Microsoft Graph API-anrop via politiker-management
 # service principal (client-credentials, ingen interaktiv inloggning behövs).
 # Behörighet: Application.ReadWrite.OwnedBy — kan bara hantera apparna den
-# själv äger (Politiker-webbapp, AZURE_POLITIKER_APP_OBJECT_ID i .env).
+# själv äger (politiker, AZURE_POLITIKER_APP_OBJECT_ID i .env).
 #
 # Usage: az-graph-api.sh <METHOD> <path-efter-/v1.0> [data-fil]
 set -euo pipefail
