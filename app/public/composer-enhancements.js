@@ -1,0 +1,94 @@
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+
+  function subjectFromFilename(name) {
+    return name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function setDraft(subject, body) {
+    const subjectInput = $('#letter-subject');
+    const bodyInput = $('#letter-body');
+    if (!subjectInput || !bodyInput) return;
+    subjectInput.value = subject;
+    bodyInput.value = body;
+    subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+    bodyInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  async function fileToHtml(file) {
+    const ext = file.name.toLowerCase().split('.').pop();
+    if (ext === 'docx') {
+      if (!window.mammoth) throw new Error('DOCX-konverteraren kunde inte laddas. Försök igen.');
+      const buffer = await file.arrayBuffer();
+      const result = await window.mammoth.convertToHtml({ arrayBuffer: buffer });
+      return result.value || '';
+    }
+    if (ext === 'html' || ext === 'htm') return await file.text();
+    if (ext === 'txt') {
+      const text = await file.text();
+      return text.split(/\n{2,}/).map(p => `<p>${p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</p>`).join('\n');
+    }
+    throw new Error('Använd DOCX, HTML eller TXT för att fylla brevtexten automatiskt. PDF kan fortfarande bifogas.');
+  }
+
+  function injectComposerTools() {
+    const fileInput = $('#letter-files');
+    if (!fileInput || fileInput.dataset.enhanced === '1') return;
+    fileInput.dataset.enhanced = '1';
+
+    const host = fileInput.closest('details') || fileInput.parentElement;
+    const tools = document.createElement('div');
+    tools.className = 'attachment-tools';
+    tools.innerHTML = `
+      <div class="button-row">
+        <button type="button" class="secondary" id="use-file-as-letter">Använd filen som brev</button>
+        <button type="button" class="secondary" id="toggle-html-mode">HTML-läge</button>
+      </div>
+      <p class="attachment-mode-note">DOCX/HTML/TXT kan fylla ämnesrad och brevtext. Filen ligger fortfarande kvar som bilaga tills du väljer bort den.</p>
+      <div id="attachment-tool-status" class="hint"></div>`;
+    host.append(tools);
+
+    $('#use-file-as-letter').onclick = async () => {
+      const file = fileInput.files?.[0];
+      const status = $('#attachment-tool-status');
+      if (!file) {
+        status.textContent = 'Välj en fil först.';
+        return;
+      }
+      const button = $('#use-file-as-letter');
+      button.disabled = true;
+      status.textContent = 'Läser dokumentet…';
+      try {
+        const html = await fileToHtml(file);
+        if (!html.trim()) throw new Error('Dokumentet innehöll ingen läsbar text.');
+        setDraft(subjectFromFilename(file.name), html);
+        status.textContent = 'Ämnesrad och brevtext fylldes från dokumentet.';
+        const badge = document.createElement('span');
+        badge.className = 'html-mode-badge';
+        badge.textContent = 'HTML från bilaga';
+        const bodyLabel = $('#letter-body')?.closest('.field')?.querySelector('span');
+        if (bodyLabel && !bodyLabel.querySelector('.html-mode-badge')) bodyLabel.append(badge);
+      } catch (err) {
+        status.textContent = err instanceof Error ? err.message : String(err);
+      } finally {
+        button.disabled = false;
+      }
+    };
+
+    $('#toggle-html-mode').onclick = () => {
+      const body = $('#letter-body');
+      if (!body) return;
+      const enabled = body.dataset.htmlMode === '1';
+      body.dataset.htmlMode = enabled ? '0' : '1';
+      $('#toggle-html-mode').textContent = enabled ? 'HTML-läge' : 'Vanlig textvy';
+      const status = $('#attachment-tool-status');
+      status.textContent = enabled
+        ? 'Vanligt redigeringsläge. HTML som redan finns i brevet bevaras.'
+        : 'HTML-läge aktivt. Innehållet skickas som HTML precis som det står i rutan.';
+    };
+  }
+
+  const observer = new MutationObserver(injectComposerTools);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  injectComposerTools();
+})();
