@@ -30,11 +30,7 @@ runs:
         image-ref: ${{ inputs.image-ref }}
         format: sarif
         output: trivy-results.sarif
-        # ignore-unfixed är brusfiltret: det som saknar patch faller bort.
-        # Det som blir kvar går per definition att åtgärda.
         ignore-unfixed: true
-        # Alla nivåer, inte bara HIGH/CRITICAL: allt som går att åtgärda ska
-        # synas och åtgärdas.
         severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
         limit-severities-for-sarif: true
         exit-code: '0'
@@ -47,20 +43,26 @@ runs:
         echo "Trivy-fynd: $count"
         echo "Trivy-fynd: **$count**" >> "$GITHUB_STEP_SUMMARY"
 
-    # Tillfällig diagnostik för den aktiva Trivy-fixuppgiften. Själva
-    # sårbarhetsdetaljerna skrivs inte i den publika Actions-loggen, utan läggs
-    # kortlivat som artifact så de kan läsas och åtgärdas i samma PR.
-    - name: Spara Trivy-SARIF för diagnostik
+    # JSON innehåller även paketets sökväg/lager, vilket behövs för att skilja
+    # appens uppgraderade pip-paket från äldre kopior som redan finns i basimagen.
+    - name: Skapa detaljerad diagnostik
+      shell: bash
+      run: |
+        set -euo pipefail
+        trivy image --format json --ignore-unfixed \
+          --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
+          --output trivy-results.json "${{ inputs.image-ref }}"
+
+    - name: Spara Trivy-diagnostik
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
-        name: trivy-sarif-${{ inputs.category }}
-        path: trivy-results.sarif
+        name: trivy-diagnostics-${{ inputs.category }}
+        path: |
+          trivy-results.sarif
+          trivy-results.json
         retention-days: 1
         if-no-files-found: error
 
-    # Håll fix-PR:n öppen tills alla fixbara fynd är borta. Den här grinden
-    # tas bort igen innan merge så den normala policyn (rapportera, inte blockera
-    # dokumentations-/orelaterade PR:er) återställs.
     - name: Kräv tom Trivy-backlog under fixen
       shell: bash
       run: |
@@ -71,7 +73,6 @@ runs:
           exit 1
         fi
 
-    # always() så fynden når code scanning även om diagnostikgrinden ovan fäller.
     - name: Ladda upp resultatet
       uses: github/codeql-action/upload-sarif@18420e3271f74589575af831a523c833acda327f # codeql-bundle-v2.26.2
       if: always()
