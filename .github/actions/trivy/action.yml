@@ -1,8 +1,7 @@
 name: Trivy
 description: >-
   Skannar en redan byggd, lokalt laddad image och laddar upp fynden till code
-  scanning. Normalt fäller fynd inte bygget; den tillfälliga diagnostikgrinden
-  längst ned håller just denna fix-PR öppen tills backloggen är tom.
+  scanning. Fäller ALDRIG bygget — se exit-code nedan.
 
 # Composite action, inte en reusable workflow (`workflow_call`): en reusable
 # workflow kör som ett EGET jobb på en EGEN runner, och imagen finns bara i den
@@ -30,11 +29,23 @@ runs:
         image-ref: ${{ inputs.image-ref }}
         format: sarif
         output: trivy-results.sarif
+        # ignore-unfixed är brusfiltret: det som saknar patch faller bort.
+        # Det som blir kvar går per definition att åtgärda.
         ignore-unfixed: true
+        # Alla nivåer, inte bara HIGH/CRITICAL: allt som går att åtgärda ska
+        # synas och åtgärdas.
         severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
         limit-severities-for-sarif: true
+        # Fäller INTE bygget. Fynden kommer nästan alltid från basimagen, och
+        # att blockera en dokumentationsfix för en CVE som Debian patchar i
+        # nästa uppdatering hjälper ingen. Allt rapporteras till code scanning,
+        # där det syns och kan åtgärdas — Dependabot och basimage-bumparna gör
+        # sedan jobbet.
         exit-code: '0'
 
+    # Logga bara ANTAL resultat, aldrig detaljer. Det gör det möjligt att
+    # verifiera att en fix faktiskt minskar backloggen utan att publicera
+    # säkerhetsinformationen i Actions-loggen.
     - name: Sammanfatta antal fynd
       shell: bash
       run: |
@@ -43,36 +54,7 @@ runs:
         echo "Trivy-fynd: $count"
         echo "Trivy-fynd: **$count**" >> "$GITHUB_STEP_SUMMARY"
 
-    # JSON innehåller även paketets sökväg/lager, vilket behövs för att skilja
-    # appens uppgraderade pip-paket från äldre kopior som redan finns i basimagen.
-    - name: Skapa detaljerad diagnostik
-      shell: bash
-      run: |
-        set -euo pipefail
-        trivy image --format json --ignore-unfixed \
-          --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
-          --output trivy-results.json "${{ inputs.image-ref }}"
-
-    - name: Spara Trivy-diagnostik
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-      with:
-        name: trivy-diagnostics-${{ inputs.category }}
-        path: |
-          trivy-results.sarif
-          trivy-results.json
-        retention-days: 1
-        if-no-files-found: error
-
-    - name: Kräv tom Trivy-backlog under fixen
-      shell: bash
-      run: |
-        set -euo pipefail
-        count=$(jq '[.runs[]?.results[]?] | length' trivy-results.sarif)
-        if [ "$count" -ne 0 ]; then
-          echo "::error::Trivy har $count fixbara fynd; se diagnostik-artifacten."
-          exit 1
-        fi
-
+    # always() så fynden når code scanning även om skanningssteget avbryts.
     - name: Ladda upp resultatet
       uses: github/codeql-action/upload-sarif@18420e3271f74589575af831a523c833acda327f # codeql-bundle-v2.26.2
       if: always()
