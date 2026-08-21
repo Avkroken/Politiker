@@ -24,12 +24,20 @@
           <div class="stack">
             <div><span class="hint">Återkoppling</span><br><strong>${canReply?'Önskas':'Inte begärd eller saknas på äldre post'}</strong></div>
             ${f.reply_to?`<div><span class="hint">E-post</span><br><a href="${mailto}">${esc(f.reply_to)}</a></div>`:''}
-            ${f.account_id?`<div><span class="hint">Konto-ID</span><br><code>${esc(f.account_id)}</code></div>`:''}
+            ${f.account_id?`<div><span class="hint">Konto-ID</span><br><button type="button" class="ghost feedback-account-link" data-account-id="${esc(f.account_id)}"><code>${esc(f.account_id)}</code></button></div>`:''}
             <div><span class="hint">Ärende-ID</span><br><code>${esc(f.id)}</code></div>
           </div>
         </div>
         ${canReply?`<a class="primary feedback-reply-link" href="${mailto}">Svara via e-post</a>`:'<div class="notice">Det finns ingen sparad svarsadress för detta ärende.</div>'}
       </div>`);
+    const accountButton=document.querySelector('.feedback-account-link');
+    if(accountButton){
+      accountButton.addEventListener('click',()=>{
+        sessionStorage.setItem('admin:accountSearch',accountButton.dataset.accountId||'');
+        document.querySelector('#modal')?.classList.remove('open');
+        location.hash='#admin/accounts';
+      });
+    }
   }
 
   async function enhance(){
