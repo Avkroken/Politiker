@@ -1,10 +1,8 @@
-// Steg 1: de 6 övergripande mottagarkorten (EU/Regering/Riksdag/Media/Region/
-// Kommun). Den detaljerade per-område-listan, befattningsfiltret,
-// parti-/individuell exkludering ligger kvar i app.js (oförändrad,
-// befintlig logik) inne i en "Avancerat"-sektion — bara dessa kort är nya.
-//
-// Rent presentationslager: tar emot redan summerad data + en toggle-
-// callback, äger ingen egen state.
+import "./app-shell.js";
+
+// Steg 1: de övergripande mottagarkorten (EU/Regering/Riksdag/Media/Region/
+// Kommun). Den detaljerade per-område-listan, befattningsfiltret och
+// parti-/individuell exkludering ligger i appens state-controller.
 
 const POLITICAL_TYPE_ORDER = ["eu", "regering", "riksdag", "media", "region", "kommun"];
 const TYPE_ORDER = [...POLITICAL_TYPE_ORDER, "kyrka"];
