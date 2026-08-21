@@ -1,3 +1,5 @@
+import "./ui-refresh.js";
+
 // Steg 0: landningsvy efter inloggning, innan wizarden startas.
 // Rent presentationslager — ingen egen state, bara DOM-uppbyggnad + en
 // callback. All faktisk data/state ägs av app.js.
