@@ -24,7 +24,6 @@ export async function reportClientError(
     .bind(signature)
     .first();
   if (existing) {
-    // Känd bugg — räkna bara upp förekomsten, skapa ingen ny issue.
     await env.DB.prepare("UPDATE client_errors SET count = count + 1, last_seen = ? WHERE signature = ?")
       .bind(now, signature)
       .run();
@@ -82,11 +81,14 @@ export async function submitFeedback(
     type?: "bug" | "contact";
     replyTo?: string;
   },
-): Promise<{ received: true }> {
+): Promise<{ received: true; id: string }> {
   const isContact = input.type === "contact";
+  const replyTo = input.replyTo?.trim() || null;
+  const wantsReply = replyTo ? 1 : 0;
+  const feedbackId = randomId();
 
-  // Hämta serverfel för kontot (senaste 48h) — ger auto-triage-boten
-  // serverkontext utan att exponera hemligheter (endpoint=pathname, ingen body).
+  // Hämta serverfel för kontot (senaste 48h) — ger administratören relevant
+  // felsammanhang utan att exponera request-body eller hemligheter.
   const since48h = Date.now() - 48 * 60 * 60 * 1000;
   const serverErrors: WorkerError[] = [];
   if (input.accountId) {
@@ -98,19 +100,19 @@ export async function submitFeedback(
     serverErrors.push(...results);
   }
 
-  // Rensa gamla rader (>48h) — best effort, piggybacks på befintlig skrivning.
   env.DB.prepare("DELETE FROM worker_errors WHERE created_at < ?").bind(since48h).run().catch(() => {});
 
   await env.DB.prepare(
-    "INSERT INTO feedback (id, account_id, message, github_issue_url, created_at) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO feedback (id, account_id, message, github_issue_url, created_at, reply_to, wants_reply, kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   )
-    .bind(randomId(), input.accountId, input.message, null, Date.now())
+    .bind(feedbackId, input.accountId, input.message, null, Date.now(), replyTo, wantsReply, isContact ? "contact" : "feedback")
     .run();
 
   const mailSubject = isContact ? "Ny kontaktfråga — politiker.denied.se" : "Ny feedback — politiker.denied.se";
   const mailHtml = [
-    input.replyTo ? `<p>Svar önskas till: ${escapeHtml(input.replyTo)}</p>` : "",
+    replyTo ? `<p>Svar önskas till: ${escapeHtml(replyTo)}</p>` : "<p>Ingen återkoppling via e-post begärd.</p>",
     `<p>${escapeHtml(input.message)}</p>`,
+    `<p><strong>Ärende:</strong> ${escapeHtml(feedbackId)}</p>`,
     `<p><strong>Konto:</strong> ${escapeHtml(input.accountId ?? "ej inloggad")}</p>`,
     input.context ? `<p><strong>Klientkontext:</strong></p><pre>${escapeHtml(JSON.stringify(input.context, null, 2))}</pre>` : "",
     serverErrors.length > 0
@@ -122,10 +124,9 @@ export async function submitFeedback(
   ].join("");
 
   await sendSystemMail(env, env.FEEDBACK_NOTIFY_EMAIL, mailSubject, mailHtml);
-  // Skicka även till felrättningsinkorgen så att automatiseringen kan agera.
   if (!isContact && env.ERROR_FIXER_INBOX) {
     await sendSystemMail(env, env.ERROR_FIXER_INBOX, mailSubject, mailHtml).catch(() => {});
   }
 
-  return { received: true };
+  return { received: true, id: feedbackId };
 }
