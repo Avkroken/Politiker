@@ -1,4 +1,4 @@
-import "./ui-refresh.js";
+import "./app-shell.js";
 
 // Steg 0: landningsvy efter inloggning, innan wizarden startas.
 // Rent presentationslager — ingen egen state, bara DOM-uppbyggnad + en
