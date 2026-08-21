@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Cloudflare Worker & D1 migrations
 
 # Auto-deploy till Cloudflare. Repot har EN Worker (politiker) som bär allt:
 # HTTP-appen, kö-konsumenten och cron-körningarna.

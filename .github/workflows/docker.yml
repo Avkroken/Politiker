@@ -1,4 +1,4 @@
-name: Docker
+name: Docker build & Trivy
 
 # Bygger kontakter/scraper-imagen och skannar den med Trivy. Imagen publiceras
 # INTE: den körs bara lokalt via kontakter/docker-compose.yml, och ingenting
