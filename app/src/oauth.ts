@@ -199,11 +199,15 @@ export async function handleOAuthLinkCallback(provider: string, env: Env, code: 
     .run();
 }
 
-export async function getOAuthIdentities(env: Env, accountId: string): Promise<string[]> {
-  const { results } = await env.DB.prepare("SELECT provider FROM oauth_identities WHERE account_id = ?")
+export interface OAuthIdentitySummary {
+  provider: string;
+}
+
+export async function getOAuthIdentities(env: Env, accountId: string): Promise<OAuthIdentitySummary[]> {
+  const { results } = await env.DB.prepare("SELECT provider FROM oauth_identities WHERE account_id = ? ORDER BY created_at ASC")
     .bind(accountId)
-    .all<{ provider: string }>();
-  return results.map((r) => r.provider);
+    .all<OAuthIdentitySummary>();
+  return results;
 }
 
 // Tar bort en länkad leverantör — men aldrig den SISTA inloggningsvägen ett
