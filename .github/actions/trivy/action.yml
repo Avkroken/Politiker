@@ -1,7 +1,8 @@
 name: Trivy
 description: >-
   Skannar en redan byggd, lokalt laddad image och laddar upp fynden till code
-  scanning. Fäller ALDRIG bygget — se exit-code nedan.
+  scanning. Normalt fäller fynd inte bygget; den tillfälliga diagnostikgrinden
+  längst ned håller just denna fix-PR öppen tills backloggen är tom.
 
 # Composite action, inte en reusable workflow (`workflow_call`): en reusable
 # workflow kör som ett EGET jobb på en EGEN runner, och imagen finns bara i den
@@ -36,16 +37,8 @@ runs:
         # synas och åtgärdas.
         severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
         limit-severities-for-sarif: true
-        # Fäller INTE bygget. Fynden kommer nästan alltid från basimagen, och
-        # att blockera en dokumentationsfix för en CVE som Debian patchar i
-        # nästa uppdatering hjälper ingen. Allt rapporteras till code scanning,
-        # där det syns och kan åtgärdas — Dependabot och basimage-bumparna gör
-        # sedan jobbet.
         exit-code: '0'
 
-    # Logga bara ANTAL resultat, aldrig detaljer. Det gör det möjligt att
-    # verifiera att en fix faktiskt minskar backloggen utan att publicera
-    # säkerhetsinformationen i Actions-loggen.
     - name: Sammanfatta antal fynd
       shell: bash
       run: |
@@ -54,7 +47,31 @@ runs:
         echo "Trivy-fynd: $count"
         echo "Trivy-fynd: **$count**" >> "$GITHUB_STEP_SUMMARY"
 
-    # always() så fynden når code scanning även om skanningssteget avbryts.
+    # Tillfällig diagnostik för den aktiva Trivy-fixuppgiften. Själva
+    # sårbarhetsdetaljerna skrivs inte i den publika Actions-loggen, utan läggs
+    # kortlivat som artifact så de kan läsas och åtgärdas i samma PR.
+    - name: Spara Trivy-SARIF för diagnostik
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: trivy-sarif-${{ inputs.category }}
+        path: trivy-results.sarif
+        retention-days: 1
+        if-no-files-found: error
+
+    # Håll fix-PR:n öppen tills alla fixbara fynd är borta. Den här grinden
+    # tas bort igen innan merge så den normala policyn (rapportera, inte blockera
+    # dokumentations-/orelaterade PR:er) återställs.
+    - name: Kräv tom Trivy-backlog under fixen
+      shell: bash
+      run: |
+        set -euo pipefail
+        count=$(jq '[.runs[]?.results[]?] | length' trivy-results.sarif)
+        if [ "$count" -ne 0 ]; then
+          echo "::error::Trivy har $count fixbara fynd; se diagnostik-artifacten."
+          exit 1
+        fi
+
+    # always() så fynden når code scanning även om diagnostikgrinden ovan fäller.
     - name: Ladda upp resultatet
       uses: github/codeql-action/upload-sarif@18420e3271f74589575af831a523c833acda327f # codeql-bundle-v2.26.2
       if: always()
