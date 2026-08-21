@@ -10,7 +10,6 @@ function loadMammoth() {
     mammothPromise = new Promise((resolve, reject) => {
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/mammoth@1.12.1/mammoth.browser.min.js";
-      script.integrity = "sha384-"; // lämnas tom av webbläsaren; src är versionspinnad
       script.crossOrigin = "anonymous";
       script.onload = () => window.mammoth ? resolve(window.mammoth) : reject(new Error("Mammoth kunde inte laddas."));
       script.onerror = () => reject(new Error("Kunde inte ladda DOCX-konverteraren."));
@@ -48,22 +47,18 @@ async function importAsLetterText(file, row) {
     const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
     html = result.value;
   } else if (ext === "txt") {
-    const text = await file.text();
-    html = text;
+    html = await file.text();
   } else {
     throw new Error(`Direkt förhandsvisning av .${ext} stöds inte ännu.`);
   }
 
-  // "Använd som brevtext" ska ersätta ett tomt brev, men inte radera text
-  // användaren redan skrivit. Om det finns text läggs dokumentet efter den.
   body.value = body.value.trim() ? `${body.value}\n\n${html}` : html;
   if (!subject.value.trim()) subject.value = filenameSubject(file.name);
   body.dispatchEvent(new Event("input", { bubbles: true }));
   subject.dispatchEvent(new Event("input", { bubbles: true }));
 
-  // Filen är nu konsumerad som brevtext och ska inte skickas vidare till
-  // /api/send som extract igen — annars skulle backend lägga till samma
-  // dokument en andra gång. Övriga valda bilagor lämnas orörda.
+  // Dokumentet är nu själva brevtexten och tas därför bort ur FileList innan
+  // /api/send byggs; annars skulle backend konvertera och lägga till det igen.
   removeFileFromInput(file);
   row.dataset.importedAsText = "true";
 }
