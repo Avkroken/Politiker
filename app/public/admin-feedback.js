@@ -1,0 +1,62 @@
+(()=>{
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt=v=>{try{return new Date(Number(v)).toLocaleString('sv-SE')}catch{return String(v??'')}};
+
+  function modal(title, html){
+    const m=document.querySelector('#modal'), t=document.querySelector('#modal-title'), b=document.querySelector('#modal-body');
+    if(!m||!t||!b)return;
+    t.textContent=title;
+    b.innerHTML=html;
+    m.classList.add('open');
+  }
+
+  function openItem(f){
+    const canReply=Boolean(f.wants_reply&&f.reply_to);
+    const subject=`Angående din kontakt med Politikerkontakt`;
+    const mailto=canReply?`mailto:${encodeURIComponent(f.reply_to)}?subject=${encodeURIComponent(subject)}`:'';
+    modal('Feedbackärende', `
+      <div class="stack">
+        <div class="panel feedback-detail">
+          <div class="credential-head"><strong>${f.kind==='contact'?'Kontaktfråga':'Feedback'}</strong><span class="hint">${esc(fmt(f.created_at))}</span></div>
+          <p style="white-space:pre-wrap">${esc(f.message)}</p>
+        </div>
+        <div class="panel">
+          <div class="stack">
+            <div><span class="hint">Återkoppling</span><br><strong>${canReply?'Önskas':'Inte begärd eller saknas på äldre post'}</strong></div>
+            ${f.reply_to?`<div><span class="hint">E-post</span><br><a href="${mailto}">${esc(f.reply_to)}</a></div>`:''}
+            ${f.account_id?`<div><span class="hint">Konto-ID</span><br><code>${esc(f.account_id)}</code></div>`:''}
+            <div><span class="hint">Ärende-ID</span><br><code>${esc(f.id)}</code></div>
+          </div>
+        </div>
+        ${canReply?`<a class="primary feedback-reply-link" href="${mailto}">Svara via e-post</a>`:'<div class="notice">Det finns ingen sparad svarsadress för detta ärende.</div>'}
+      </div>`);
+  }
+
+  async function enhance(){
+    const list=document.querySelector('#admin-feedback');
+    if(!list||list.dataset.feedbackEnhanced==='1')return;
+    list.dataset.feedbackEnhanced='loading';
+    try{
+      const r=await fetch('/api/admin/feedback',{headers:{Accept:'application/json'}});
+      if(!r.ok)throw new Error(`HTTP ${r.status}`);
+      const rows=await r.json();
+      list.innerHTML='';
+      if(!rows.length){list.innerHTML='<div class="empty">Ingen feedback.</div>';list.dataset.feedbackEnhanced='1';return}
+      for(const f of rows){
+        const item=document.createElement('button');
+        item.type='button';
+        item.className='admin-row feedback-ticket';
+        item.innerHTML=`<div class="credential-head"><div><strong>${esc((f.message||'').slice(0,90))}${(f.message||'').length>90?'…':''}</strong><div class="hint">${esc(fmt(f.created_at))}${f.reply_to?' · '+esc(f.reply_to):''}</div></div><span class="feedback-chevron" aria-hidden="true">›</span></div>${f.wants_reply?'<div class="feedback-badge">Svar önskas</div>':''}`;
+        item.addEventListener('click',()=>openItem(f));
+        list.append(item);
+      }
+      list.dataset.feedbackEnhanced='1';
+    }catch(e){
+      list.dataset.feedbackEnhanced='0';
+    }
+  }
+
+  const observer=new MutationObserver(()=>queueMicrotask(enhance));
+  observer.observe(document.documentElement,{subtree:true,childList:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',enhance);else enhance();
+})();
