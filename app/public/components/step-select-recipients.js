@@ -1,4 +1,4 @@
-// Steg 1: de 5 övergripande mottagarkorten (EU/Riksdag/Regering/Region/
+// Steg 1: de 5 övergripande mottagarkorten (EU/Regering/Riksdag/Region/
 // Kommun). Den detaljerade per-område-listan, befattningsfiltret,
 // parti-/individuell exkludering ligger kvar i app.js (oförändrad,
 // befintlig logik) inne i en "Avancerat"-sektion — bara dessa kort är nya.
@@ -6,7 +6,8 @@
 // Rent presentationslager: tar emot redan summerad data + en toggle-
 // callback, äger ingen egen state.
 
-const TYPE_ORDER = ["eu", "riksdag", "regering", "region", "kommun", "kyrka"];
+const POLITICAL_TYPE_ORDER = ["eu", "regering", "riksdag", "region", "kommun"];
+const TYPE_ORDER = [...POLITICAL_TYPE_ORDER, "kyrka"];
 
 export function renderAreaTypeCards(container, { areasByType, selectedAreas, onToggleType, t }) {
   container.innerHTML = "";
@@ -18,7 +19,7 @@ export function renderAreaTypeCards(container, { areasByType, selectedAreas, onT
     (a, b) => TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b),
   );
 
-  const allAreas = types.flatMap((areaType) => areasByType.get(areaType) ?? []);
+  const allAreas = POLITICAL_TYPE_ORDER.flatMap((areaType) => areasByType.get(areaType) ?? []);
   const allSelected = allAreas.length > 0 && allAreas.every((a) => selectedAreas.has(a.area_name));
   const someSelected = !allSelected && allAreas.some((a) => selectedAreas.has(a.area_name));
   const allCard = document.createElement("button");
