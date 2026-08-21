@@ -27,7 +27,14 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# pip innehåller egna vendorerade kopior av bl.a. setuptools 70.3.0 och
+# msgpack 1.1.2. De används bara av installationsverktyget men inventeras ändå
+# av image-scanners som runtime-paket. Installera först appens riktiga, patchade
+# beroenden och avinstallera sedan pip självt; runtime behöver varken pip eller
+# dess privata vendor-träd. setuptools/msgpack som appen faktiskt kan importera
+# ligger kvar på versionerna från requirements.txt.
+RUN python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip uninstall --yes pip
 COPY scraper.py politiker_common.py regioner.json ./
 COPY entrypoint.sh .
 ENTRYPOINT ["/app/entrypoint.sh"]
