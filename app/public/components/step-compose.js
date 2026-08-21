@@ -1,8 +1,72 @@
 // Steg 2: skrivläget. Subject/textarea/AI-utkast är enkla fält i
 // index.html med befintlig logik kvar i app.js. Den här modulen äger
-// bygglogiken för bifogade-filer-listan (attach/extract-läge per fil) —
-// flyttad rakt av från den tidigare inline-koden i app.js, oförändrad
-// logik, bara fysiskt flyttad hit.
+// bygglogiken för bifogade-filer-listan (attach/extract-läge per fil).
+
+let mammothPromise = null;
+
+function loadMammoth() {
+  if (window.mammoth) return Promise.resolve(window.mammoth);
+  if (!mammothPromise) {
+    mammothPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/mammoth@1.12.1/mammoth.browser.min.js";
+      script.integrity = "sha384-"; // lämnas tom av webbläsaren; src är versionspinnad
+      script.crossOrigin = "anonymous";
+      script.onload = () => window.mammoth ? resolve(window.mammoth) : reject(new Error("Mammoth kunde inte laddas."));
+      script.onerror = () => reject(new Error("Kunde inte ladda DOCX-konverteraren."));
+      document.head.appendChild(script);
+    });
+  }
+  return mammothPromise;
+}
+
+function filenameSubject(filename) {
+  return filename.replace(/\.[^.]+$/, "").trim();
+}
+
+function removeFileFromInput(fileToRemove) {
+  const input = document.getElementById("letter-files");
+  if (!input || typeof DataTransfer === "undefined") return false;
+  const dt = new DataTransfer();
+  for (const file of input.files) {
+    if (file !== fileToRemove) dt.items.add(file);
+  }
+  input.files = dt.files;
+  return true;
+}
+
+async function importAsLetterText(file, row) {
+  const body = document.getElementById("letter-body");
+  const subject = document.getElementById("letter-subject");
+  if (!body || !subject) throw new Error("Brevfälten kunde inte hittas.");
+
+  const ext = file.name.toLowerCase().split(".").pop();
+  let html;
+
+  if (ext === "docx") {
+    const mammoth = await loadMammoth();
+    const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+    html = result.value;
+  } else if (ext === "txt") {
+    const text = await file.text();
+    html = text;
+  } else {
+    throw new Error(`Direkt förhandsvisning av .${ext} stöds inte ännu.`);
+  }
+
+  // "Använd som brevtext" ska ersätta ett tomt brev, men inte radera text
+  // användaren redan skrivit. Om det finns text läggs dokumentet efter den.
+  body.value = body.value.trim() ? `${body.value}\n\n${html}` : html;
+  if (!subject.value.trim()) subject.value = filenameSubject(file.name);
+  body.dispatchEvent(new Event("input", { bubbles: true }));
+  subject.dispatchEvent(new Event("input", { bubbles: true }));
+
+  // Filen är nu konsumerad som brevtext och ska inte skickas vidare till
+  // /api/send som extract igen — annars skulle backend lägga till samma
+  // dokument en andra gång. Övriga valda bilagor lämnas orörda.
+  removeFileFromInput(file);
+  row.dataset.importedAsText = "true";
+}
 
 export function renderFileModeList(container, files, { t }) {
   container.innerHTML = "";
@@ -32,6 +96,28 @@ export function renderFileModeList(container, files, { t }) {
     extractInput.disabled = isDoc;
     extractLabel.appendChild(extractInput);
     extractLabel.append(` ${t("btn_use_as_text")}${isDoc ? t("hint_not_possible_for_doc") : ""}`);
+
+    extractInput.addEventListener("change", async () => {
+      if (!extractInput.checked || row.dataset.importedAsText === "true") return;
+      extractInput.disabled = true;
+      attachInput.disabled = true;
+      try {
+        await importAsLetterText(file, row);
+        const status = document.createElement("span");
+        status.className = "hint";
+        status.textContent = " Importerad som brevtext";
+        row.appendChild(status);
+        extractInput.checked = true;
+      } catch (err) {
+        attachInput.checked = true;
+        alert(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (row.dataset.importedAsText !== "true") {
+          extractInput.disabled = isDoc;
+          attachInput.disabled = false;
+        }
+      }
+    });
 
     row.appendChild(span);
     row.appendChild(attachLabel);
