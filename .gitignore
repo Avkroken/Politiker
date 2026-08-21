@@ -1,6 +1,7 @@
 node_modules/
 .wrangler/
 .dev.vars
+app/worker-configuration.d.ts
 *.log
 infra/cf_*.json
 infra/cloudflare-resources.json

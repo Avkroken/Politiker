@@ -4,6 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --remote",
+    "types": "wrangler types",
+    "typecheck": "wrangler types && tsc --noEmit",
+    "validate": "wrangler types && tsc --noEmit && wrangler deploy --dry-run",
     "deploy": "wrangler deploy --outdir dist",
     "versions:upload": "wrangler versions upload --outdir dist",
     "secret:set-mail-key": "wrangler secret put MAIL_CRED_KEY"

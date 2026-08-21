@@ -50,12 +50,17 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
 
       - name: Installera beroenden
-        run: npm install
+        run: npm ci
 
-      - name: Typkontroll
-        run: npx tsc --noEmit
+      - name: Generera Worker-typer och typkontrollera
+        run: npm run typecheck
+
+      - name: Validera Wrangler-deployment
+        run: npx wrangler deploy --dry-run
 
   python:
     needs: impact
