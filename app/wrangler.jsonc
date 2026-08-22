@@ -47,7 +47,7 @@
     "CredentialRateLimiter": { "type": "durable-object", "storage": "sqlite" }
   },
   "triggers": {
-    "crons": ["0 5 * * *", "0 6 * * *", "0 7 * * *", "0 8 * * *", "30 6 1 1,4,7,10 *"]
+    "crons": ["0 5 * * *", "0 6 * * SAT", "0 7 * * *", "0 8 * * *", "30 6 1 1,4,7,10 *"]
   },
   "r2_buckets": [{ "binding": "ATTACHMENTS", "bucket_name": "politiker-attachments" }],
   "send_email": [{
