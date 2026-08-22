@@ -35,6 +35,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: main
+          fetch-depth: 0
+      - name: Verifiera att checkout är aktuell main
+        working-directory: .
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          checked_out="$(git rev-parse HEAD)"
+          current_main="$(git rev-parse origin/main)"
+          if [ "$checked_out" != "$current_main" ]; then
+            echo "::error::Deploy stoppad: checkout ($checked_out) är inte aktuell origin/main ($current_main)."
+            exit 1
+          fi
+          echo "Verifierad main-commit: $checked_out"
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version: 24
