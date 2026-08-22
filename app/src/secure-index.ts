@@ -3,12 +3,12 @@ import { getSessionContext, writeSession } from "./auth";
 import { pruneVisits } from "./visits";
 import type { Env } from "./db";
 import type { SendJobMessage } from "../../shared/types";
-import { encryptLetterData, enforceLetterRetention, protectStoredLetterData } from "./letter-privacy";
+import { enforceLetterRetention, protectStoredLetterData } from "./letter-privacy";
 
 export { CredentialRateLimiter } from "./rate-limiter";
 
 const FRESH_AUTH_MS = 15 * 60 * 1000;
-const ALLOWED_RETENTION_MS = new Set([300000, 86400000, 259200000, 604800000]);
+const MAX_SEND_REQUEST_BYTES = 30 * 1024 * 1024;
 
 const SECURITY_HEADERS: Record<string, string> = {
   "Content-Security-Policy": [
@@ -66,8 +66,7 @@ async function allowPublicWrite(req: Request, env: Env, pathname: string): Promi
 async function upgradeOAuthSession(req: Request, env: Env, response: Response): Promise<void> {
   const pathname = new URL(req.url).pathname;
   if (req.method !== "GET" || !/^\/api\/oauth\/[a-z]+\/callback$/.test(pathname) || response.status !== 302) return;
-  const setCookie = response.headers.get("Set-Cookie") ?? "";
-  const token = setCookie.match(/(?:^|;\s*)session=([^;]+)/)?.[1];
+  const token = (response.headers.get("Set-Cookie") ?? "").match(/(?:^|;\s*)session=([^;]+)/)?.[1];
   if (!token) return;
   const raw = await env.SESSIONS.get(`session:${token}`);
   if (!raw || raw.startsWith("{")) return;
@@ -79,30 +78,9 @@ function withSecurityHeaders(response: Response): Response {
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
-function requestedRetentionMs(req: Request): number {
-  const raw = req.headers.get("X-Letter-Retention-Ms") ?? getCookie(req, "letter_retention_ms") ?? "300000";
-  const value = Number(raw);
-  return ALLOWED_RETENTION_MS.has(value) ? value : 300000;
-}
-async function protectCreatedSendJob(req: Request, env: Env, response: Response): Promise<void> {
-  if (!response.ok) return;
-  const data: { sendJobId?: string } = await response.clone().json<{ sendJobId?: string }>().catch(() => ({ sendJobId: undefined }));
-  if (!data.sendJobId) return;
-  const row = await env.DB.prepare("SELECT l.id,l.html_body,sj.status,sj.finished_at FROM letters l JOIN send_jobs sj ON sj.letter_id=l.id WHERE sj.id=?").bind(data.sendJobId).first<{ id:string; html_body:string; status:string; finished_at:number|null }>();
-  if (!row) return;
-  const retentionMs = requestedRetentionMs(req);
-  await env.DB.batch([
-    env.DB.prepare("UPDATE letters SET html_body=? WHERE id=?").bind(await encryptLetterData(env, row.html_body), row.id),
-    env.DB.prepare("UPDATE send_jobs SET content_retention_ms=?, content_delete_at=CASE WHEN finished_at IS NOT NULL AND status IN ('done','aborted','cancelled') THEN finished_at+? ELSE content_delete_at END WHERE id=?").bind(retentionMs, retentionMs, data.sendJobId),
-  ]);
-}
 
 async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(req.url);
-  // Den tidigare publika/autonoma brevfunktionen är avvecklad. Gamla länkar ska inte återaktivera den.
-  if (/^\/api\/(?:public\/letters|civic-letter)(?:\/|$)/.test(url.pathname) || /^\/api\/letters\/[^/]+\/publish$/.test(url.pathname)) {
-    return withSecurityHeaders(json({ error: "Funktionen finns inte längre" }, 404));
-  }
   const bearer = req.headers.get("Authorization")?.startsWith("Bearer ") === true;
   if (bearer && url.pathname.startsWith("/api/") && !apiKeyRouteAllowed(req.method, url.pathname)) {
     const session = await getSessionContext(env, getCookie(req, "session"));
@@ -119,10 +97,15 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
     if (Number.isFinite(contentLength) && contentLength > maxBytes) return withSecurityHeaders(json({ error: "För stor begäran" }, 413));
     if (!(await allowPublicWrite(req, env, url.pathname))) return withSecurityHeaders(json({ error: "För många anrop — försök igen senare" }, 429));
   }
+  if (req.method === "POST" && url.pathname === "/api/send") {
+    const contentLength = Number(req.headers.get("Content-Length") ?? 0);
+    if (Number.isFinite(contentLength) && contentLength > MAX_SEND_REQUEST_BYTES) {
+      return withSecurityHeaders(json({ error: "Utskicket innehåller för mycket data" }, 413));
+    }
+  }
   const response = await baseApp.fetch(req, env, ctx);
   try { await upgradeOAuthSession(req, env, response); }
   catch { return withSecurityHeaders(json({ error: "Kontot kunde inte skapa en giltig session" }, 403)); }
-  if (req.method === "POST" && url.pathname === "/api/send") await protectCreatedSendJob(req, env, response);
   return withSecurityHeaders(response);
 }
 

@@ -1,6 +1,6 @@
 -- Politiker D1-schema
 --
--- Detta är den kanoniska baslinjen efter migrations-squashen 2026-08-22.
+-- Kanonisk baslinje efter migrations-squashen 2026-08-22.
 -- Nya installationer applicerar denna fil direkt. Framtida schemaändringar
 -- läggs som nya filer i infra/migrations/ och bakas in här vid nästa squash.
 
@@ -27,10 +27,7 @@ CREATE TRIGGER disable_totp_after_password_reset
 AFTER UPDATE OF reset_token ON accounts
 WHEN OLD.reset_token IS NOT NULL AND NEW.reset_token IS NULL
 BEGIN
-  UPDATE accounts
-  SET totp_enabled = 0,
-      totp_secret = NULL
-  WHERE id = NEW.id;
+  UPDATE accounts SET totp_enabled = 0, totp_secret = NULL WHERE id = NEW.id;
 END;
 
 CREATE TABLE oauth_identities (
@@ -62,8 +59,7 @@ CREATE TABLE mail_credentials (
   revoked_at INTEGER,
   created_at INTEGER NOT NULL
 );
-CREATE INDEX idx_mail_credentials_account_active
-  ON mail_credentials(account_id, revoked_at, created_at);
+CREATE INDEX idx_mail_credentials_account_active ON mail_credentials(account_id, revoked_at, created_at);
 
 CREATE TABLE politicians (
   id TEXT PRIMARY KEY,
@@ -165,17 +161,6 @@ CREATE TABLE send_log (
 );
 CREATE INDEX idx_send_log_account_date ON send_log(account_id, sent_at);
 
-CREATE TABLE civic_letter_drafts (
-  id TEXT PRIMARY KEY,
-  subject TEXT NOT NULL,
-  html_body TEXT NOT NULL,
-  topic_source_url TEXT,
-  status TEXT NOT NULL DEFAULT 'pending',
-  approve_token TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  approved_at INTEGER
-);
-
 CREATE TABLE feedback (
   id TEXT PRIMARY KEY,
   account_id TEXT,
@@ -228,37 +213,8 @@ CREATE TABLE client_errors (
 CREATE INDEX idx_client_errors_first_seen ON client_errors(first_seen);
 CREATE INDEX idx_client_errors_email_notified_at ON client_errors(email_notified_at);
 
-CREATE TABLE daily_api_usage (
-  date TEXT PRIMARY KEY,
-  call_count INTEGER NOT NULL DEFAULT 0
-);
-
--- Historiska nyhetsbrevstabeller ingår i baslinjen eftersom de finns i fullt
--- migrerade installationer. De kan tas bort separat först efter en uttrycklig
--- databasstädning som även hanterar befintliga produktionsdata.
-CREATE TABLE newsletter_subscribers (
-  id TEXT PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
-  token TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  confirmed_at INTEGER,
-  unsubscribed_at INTEGER
-);
-
-CREATE TABLE newsletter_sends (
-  id TEXT PRIMARY KEY,
-  letter_id TEXT NOT NULL,
-  subscriber_id TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
-  sent_at INTEGER,
-  error TEXT,
-  UNIQUE(letter_id, subscriber_id)
-);
-CREATE INDEX idx_newsletter_sends_status ON newsletter_sends(status);
-
 CREATE TABLE schema_migrations (
   filename TEXT PRIMARY KEY,
   applied_at INTEGER NOT NULL
 );
-INSERT INTO schema_migrations (filename, applied_at)
-VALUES ('baseline_2026-08-22', 0);
+INSERT INTO schema_migrations (filename, applied_at) VALUES ('baseline_2026-08-22', 0);

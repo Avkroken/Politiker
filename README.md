@@ -9,8 +9,7 @@ Projektets grundprincip är enkel: politiker och andra offentliga aktörer har m
 ## Vad tjänsten gör
 
 - Låter användaren välja mottagare bland offentligt publicerade politiska kontaktuppgifter.
-- Låter användaren skriva sitt eget brev eller frivilligt använda AI som skrivhjälp.
-- Ett AI-utkast granskas och redigeras av användaren och skickas aldrig automatiskt.
+- Låter användaren skriva och redigera sitt eget brev.
 - Skickar användarens brev genom ett e-postkonto som användaren själv har kopplat.
 - Hanterar stora utskick med kö, dygnstak, leverantörsgränser och studs-/felhantering.
 - Ger användaren historik och status för sina egna utskick.
@@ -36,10 +35,6 @@ Tjänsten är byggd för att behandla så lite användardata som möjligt.
 - Brevtext och temporära bilagor raderas efter retentionstiden. Minimal metadata om status, antal skickade/studsade meddelanden och tidpunkter kan behållas för historik, statistik och drift.
 - Cloudflare D1 används som databas och R2 för temporära bilagor.
 
-## AI-skrivhjälp
-
-AI är en valfri hjälp för **användarens eget brev**. Plattformen använder inte AI för att själv välja politiska frågor, skapa kampanjer eller skicka egna ställningstaganden. Användaren ansvarar för att läsa och godkänna sitt utkast före utskick. Text som skickas till en vald AI-leverantör behandlas även av den leverantören enligt dess villkor.
-
 ## Utskick
 
 Utskick går via användarens egen mailkoppling, exempelvis SMTP eller Microsoft Graph. `noreply@denied.se` används endast för tekniska systemmail som verifiering och lösenordsåterställning. `politiker@denied.se` är projektets kontaktadress.
@@ -50,12 +45,12 @@ Kösystemet använder Cloudflare Queues och D1. En Durable Object per mailkoppli
 
 | Katalog | Innehåll |
 | --- | --- |
-| `app/` | Cloudflare Worker, API, kökonsument, schemalagda jobb och frontend |
+| `app/` | Cloudflare Worker, API, kökonsument, retention och frontend |
 | `shared/` | Delad TypeScript-kod, bland annat SMTP, kryptering och typer |
 | `kontakter/` | Insamling och uppdatering av offentliga kontaktuppgifter |
 | `infra/` | D1-schema, migrationer och provisioneringsverktyg |
 
-Viktiga delar i `app/src/` är `send-queue.ts` för faktisk sändning, `rate-limiter.ts` för sändningstakt, `letter-privacy.ts` för skydd/retention, `draft-letter.ts` för frivillig AI-skrivhjälp och auth/OAuth-modulerna för kontoåtkomst.
+Viktiga delar i `app/src/` är `send-queue.ts` för faktisk sändning, `rate-limiter.ts` för sändningstakt, `letter-privacy.ts` för skydd/retention och auth/OAuth-modulerna för kontoåtkomst.
 
 ## Köra en egen kopia
 

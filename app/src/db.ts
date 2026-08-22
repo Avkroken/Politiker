@@ -22,22 +22,11 @@ export interface Env {
   OAUTH_GITHUB_CLIENT_SECRET?: string;
   OAUTH_MICROSOFT_CLIENT_ID?: string;
   OAUTH_MICROSOFT_CLIENT_SECRET?: string;
-  CIVIC_OUTLOOK_PASSWORD?: string;
-  ANTHROPIC_API_KEY?: string;
   VISITOR_SALT?: string;
-  TURNSTILE_SECRET?: string; // Turnstile siteverify-hemlighet (wrangler secret)
-  EMAIL?: EmailSendBinding; // Cloudflare Email Service — primär kanal för nyhetsbrevsmail
-  RESEND_API_KEY?: string; // Resend — fallback (wrangler secret)
-
-  // Från f.d. politiker-sender (kö-konsumenten). Token bucket per
-  // mailkoppling, delad mellan alla jobb mot samma konto.
+  TURNSTILE_SECRET?: string;
+  EMAIL?: EmailSendBinding;
+  RESEND_API_KEY?: string;
   RATE_LIMITER: DurableObjectNamespace;
-
-  // Från f.d. politiker-campaign (cron-körningarna).
-  GMAIL_EMAIL: string;
-  GMAIL_PASSWORD: string;
-  SENDER_NAME: string;
-  GITHUB_REPO: string;
 }
 
 export async function getAccountByEmail(db: D1Database, email: string) {
@@ -48,22 +37,13 @@ export async function getAccountById(db: D1Database, id: string) {
   return db.prepare("SELECT * FROM accounts WHERE id = ?").bind(id).first();
 }
 
-// Permanent, oåterkallelig radering av ett konto och ALL dess kopplade data.
-// Diagnostik-/feedback-rader (nullbara account_id) anonymiseras istället för
-// att raderas — de är inte personlig kontodata och behålls avidentifierade.
-// Besöksstatistiken (visits) är redan anonym och rör inte enskilda konton.
-// Sessionskakor i KV kan inte räknas upp, men blir verkningslösa direkt:
-// getAccountFromSession slår upp kontot som nu är borta och returnerar null.
 export async function deleteAccount(env: Env, accountId: string): Promise<void> {
-  // Skydda mot att radera det SISTA admin-kontot — annars går det inte längre
-  // att administrera plattformen (gäller både självbetjäning och adminvyn).
   const target = await env.DB.prepare("SELECT is_admin FROM accounts WHERE id = ?").bind(accountId).first<{ is_admin: number }>();
   if (target?.is_admin) {
     const row = await env.DB.prepare("SELECT COUNT(*) as n FROM accounts WHERE is_admin = 1").first<{ n: number }>();
     if ((row?.n ?? 0) <= 1) throw new Error("Kan inte radera det sista admin-kontot — utse en annan administratör först");
   }
 
-  // R2-objekt (brevbilagor) städas separat — batchen nedan tar bara D1-rader.
   const { results: attachmentRows } = await env.DB.prepare(
     "SELECT r2_key FROM letter_attachments WHERE letter_id IN (SELECT id FROM letters WHERE account_id = ?)",
   ).bind(accountId).all<{ r2_key: string }>();
@@ -72,7 +52,6 @@ export async function deleteAccount(env: Env, accountId: string): Promise<void> 
     env.DB.prepare("DELETE FROM letter_attachments WHERE letter_id IN (SELECT id FROM letters WHERE account_id = ?)").bind(accountId),
     env.DB.prepare("DELETE FROM send_log WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM send_jobs WHERE account_id = ?").bind(accountId),
-    env.DB.prepare("DELETE FROM public_letters WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM letters WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM mail_credentials WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM oauth_identities WHERE account_id = ?").bind(accountId),
@@ -83,12 +62,10 @@ export async function deleteAccount(env: Env, accountId: string): Promise<void> 
   ]);
 
   if (attachmentRows.length > 0) {
-    // Best-effort: kvarlämnade R2-objekt är föräldralösa men oåtkomliga utan
-    // letter_attachments-raden, så ett misslyckande här läcker ingen data.
     try {
       await env.ATTACHMENTS.delete(attachmentRows.map((r) => r.r2_key));
     } catch {
-      /* föräldralösa objekt städas vid behov manuellt — blockerar inte raderingen */
+      /* Ett föräldralöst R2-objekt är inte längre åtkomligt från appen. */
     }
   }
 }
@@ -99,7 +76,7 @@ export async function createAccount(
 ) {
   const id = randomId();
   const now = Date.now();
-  const expires = now + 30 * 60 * 1000; // 30 min
+  const expires = now + 30 * 60 * 1000;
   await db
     .prepare(
       `INSERT INTO accounts (id, email, password_hash, password_salt, password_set_by_user, email_verified, verification_code, verification_expires_at, created_at)
@@ -124,16 +101,11 @@ export async function verifyAccountEmail(db: D1Database, accountId: string, code
 
 export async function listAreas(db: D1Database) {
   const { results } = await db
-    .prepare(
-      "SELECT area_name, area_type, COUNT(*) as count FROM politicians GROUP BY area_name, area_type ORDER BY area_type, area_name",
-    )
+    .prepare("SELECT area_name, area_type, COUNT(*) as count FROM politicians GROUP BY area_name, area_type ORDER BY area_type, area_name")
     .all();
   return results;
 }
 
-// Distinkta partier per område — bara rader där parti faktiskt är känt
-// (idag bara EU-parlamentariker). Används för att låta användaren
-// exkludera ett parti ur en annars bred kategori-markering.
 export async function listParties(db: D1Database) {
   const { results } = await db
     .prepare(
@@ -144,16 +116,9 @@ export async function listParties(db: D1Database) {
   return results;
 }
 
-// Distinkta befattningar (globalt) för mottagarfiltret — bara rader där
-// befattning faktiskt är känd. Varje skrapad variant slås ihop till en kanonisk
-// baskategori (se roles.ts): "Ordf"/"1:e vice ordförande"/… → "Ordförande" osv.
-// Returnerar en post per baskategori med totalantal, sorterad efter antal.
 export async function listRoles(db: D1Database) {
   const { results } = await db
-    .prepare(
-      `SELECT role, COUNT(*) as count FROM politicians
-       WHERE role IS NOT NULL AND TRIM(role) != '' GROUP BY role`,
-    )
+    .prepare(`SELECT role, COUNT(*) as count FROM politicians WHERE role IS NOT NULL AND TRIM(role) != '' GROUP BY role`)
     .all<{ role: string; count: number }>();
 
   const merged = new Map<string, { role_key: string; role: string; count: number }>();
@@ -166,9 +131,6 @@ export async function listRoles(db: D1Database) {
   return [...merged.values()].sort((a, b) => b.count - a.count);
 }
 
-// Vilka RÅA rollsträngar som mappar till de valda kanoniska nycklarna. Håller
-// canonicalRole som enda sanningskälla (ingen dubblerad SQL-synonymlogik) och
-// låter ändå urvalet ske med ett effektivt `role IN (...)` i SQL.
 async function rawRolesForCanonicalKeys(db: D1Database, canonicalKeys: string[]): Promise<string[]> {
   if (canonicalKeys.length === 0) return [];
   const wanted = new Set(canonicalKeys);
@@ -178,25 +140,16 @@ async function rawRolesForCanonicalKeys(db: D1Database, canonicalKeys: string[])
   return results.filter((r) => wanted.has(canonicalRole(r.role).key)).map((r) => r.role);
 }
 
-// En sökträff = EN person (grupperad på e-post — samma adress = samma person;
-// olika personer med samma namn har olika adresser) med ALLA sina
-// befattningar/anknytningar samlade, så besökaren ser vem hen riktar sig till.
 export interface PoliticianSearchHit {
   name: string;
   email: string;
   affiliations: { role: string | null; area_name: string; party: string | null }[];
 }
 
-// CHAR(30)/CHAR(31) = ASCII record-/unit-separator. Förekommer aldrig i namn,
-// områden eller partier, så de är säkra fält-/radavgränsare i GROUP_CONCAT.
 const AFF_SEP = "\x1e";
 const FIELD_SEP = "\x1f";
 
-// Sökning bland politiker — global, eller begränsad till valda områden.
-// Används för att låta användaren hitta, rikta till eller exkludera enskilda.
 export async function searchPoliticiansInAreas(db: D1Database, areaNames: string[], query: string): Promise<PoliticianSearchHit[]> {
-  // Tomt areaNames = sök bland ALLA politiker (global individsökning) — så
-  // användaren kan rikta till / exkludera enskilda utan att först välja område.
   let sql = `SELECT email, MAX(name) as name,
        GROUP_CONCAT(
          COALESCE(NULLIF(TRIM(role), ''), '') || CHAR(31) || area_name || CHAR(31) || COALESCE(party, ''),
@@ -219,7 +172,7 @@ export async function searchPoliticiansInAreas(db: D1Database, areaNames: string
     const seen = new Set<string>();
     const affiliations: PoliticianSearchHit["affiliations"] = [];
     for (const part of (r.affiliations ?? "").split(AFF_SEP)) {
-      if (seen.has(part)) continue; // dedupa identiska (roll, område, parti)
+      if (seen.has(part)) continue;
       seen.add(part);
       const [role, area_name, party] = part.split(FIELD_SEP);
       affiliations.push({ role: role || null, area_name: area_name ?? "", party: party || null });
@@ -236,23 +189,9 @@ export async function getRecipientsForAreas(
   includeRoles: string[] = [],
   includeEmails: string[] = [],
 ) {
-  // Oberoende filter, valfri ordning:
-  //  - "pool" = politiker som matchar valda områden OCH valda befattningar
-  //    (tomt område = alla områden, tom roll = alla roller). Poolen tas bara
-  //    med om användaren faktiskt valt minst ett område eller en befattning —
-  //    annars skickar vi inte oavsiktligt till hela landet.
-  //  - includeEmails = enskilt utvalda ("rikta till"), alltid med oavsett pool.
-  //  - excludeParties drabbar bara poolen, inte de enskilt utvalda.
-  //  - excludeEmails plockas bort sist (vinner över allt).
-  // Dedupar på e-post så ingen får dubbla brev (samma person kan ligga i
-  // flera områden, t.ex. både kommun och region).
   const byEmail = new Map<string, { name: string; email: string; area_name: string }>();
-
   const hasPoolIntent = areaNames.length > 0 || includeRoles.length > 0;
   if (hasPoolIntent) {
-    // includeRoles = kanoniska baskategori-nycklar (se listRoles). Översätt till
-    // de råa rollsträngar de omfattar och matcha på dem. Är rollfilter satt men
-    // inget matchar -> tom pool (men enskilt utvalda nedan gäller ändå).
     const rawRoles = includeRoles.length > 0 ? await rawRolesForCanonicalKeys(db, includeRoles) : [];
     const roleFilterExcludesAll = includeRoles.length > 0 && rawRoles.length === 0;
     if (!roleFilterExcludesAll) {
@@ -304,9 +243,6 @@ export async function countSentToday(db: D1Database, accountId: string): Promise
   return row?.n ?? 0;
 }
 
-// Räknar sänt per SPECIFIK mailkoppling, inte hela kontot — skyddar
-// leverantörskontot (t.ex. Gmail) från att bli av-rate-limitat/bannat,
-// oberoende av kontots övergripande dygnsgräns mot tjänsten.
 export async function countSentTodayForCredential(db: D1Database, mailCredentialId: string): Promise<number> {
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);

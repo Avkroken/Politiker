@@ -24,17 +24,18 @@ i `kontakter/CLAUDE.md`.
 cd app && npm install && cp .dev.vars.example .dev.vars  # fyll i riktiga värden
 
 npx wrangler dev --remote   # i app/
+npm test                    # snabba enhetstester
 npx tsc --noEmit            # typecheck
 ```
 
 ## Project Structure
 
 ```
-app/          # Hela Workern: fetch (frontend + API), queue (utskick), scheduled (kampanj)
-  src/campaign/   # Cron-körningarna: nyhetsbevakning, brevgenerering, utskick, kvartalsbrev
+app/          # Hela Workern: fetch (frontend + API), queue (utskick), scheduled (kö/retention)
   src/send-queue.ts  # Kö-konsumenten: SMTP-/Graph-sändning av användarnas brev
   src/rate-limiter.ts # Durable Object, token bucket per mailkoppling
-shared/       # Delad kod (kryptering, SMTP-klient, TOTP, typer)
+  src/letter-privacy.ts # Kryptering och retention för brevdata
+shared/       # Delad kod (kryptering, SMTP-klient, validering, TOTP, typer)
 infra/        # Cloudflare-provisionering (cf-api.sh, schema.sql)
 kontakter/    # Python-skrapan som fyller D1:n, plus export-/verifieringsskript
 forening/     # Föreningsdokument (stadgar, mötesmallar)
@@ -42,25 +43,23 @@ forening/     # Föreningsdokument (stadgar, mötesmallar)
 
 ## Conventions
 
-- **En Worker, tre handlers.** `politiker` bär `fetch`, `queue` och `scheduled`. Tidigare var det fyra Workers (app, sender, campaign, healthcheck); de slogs ihop för att bindings, secrets och deploypipeline hölls synkade för hand mellan dem. Healthchecken togs bort helt.
+- **En Worker, tre handlers.** `politiker` bär `fetch`, `queue` och `scheduled`. `scheduled` fyller på användarinitierade flerdagarsutskick och kör dataminimering/retention. Tidigare autonoma kampanj- och publiceringsfunktioner är borttagna.
 - **Kön tillåter en konsument.** `politiker-send-jobs` konsumeras av appen. Ett andra script som deklarerar samma konsument avvisas av Cloudflare.
 - **Stora användarutskick är beständiga.** Alla deduplicerade mottagare sparas i `send_job_recipients`; bara den del som ryms inom kontots och mailkopplingens dygnskvot läggs på Cloudflare Queue. Schemakörningarna fyller på nästa del tills jobbet är klart.
-- **Utskickstakten är data, inte kod.** `send_jobs` kan ha ett eget aktuellt dygnstak och ett schemalagt nästa tak. Värdena sätts vid skapandet eller ändras via utskickets API; hårdkoda aldrig kampanjspecifika antal eller datum.
+- **Utskickstakten är data, inte kod.** `send_jobs` kan ha ett eget aktuellt dygnstak och ett schemalagt nästa tak. Värdena sätts vid skapandet eller ändras via utskickets API; hårdkoda aldrig tillfälliga antal eller datum.
 - **Durable Object-klassen exporteras från `src/index.ts`** — Workers kräver att DO-klasser ligger i entrypointen.
-- `MAIL_CRED_KEY` (AES-nyckel för krypterade SMTP-lösenord) sätts via `wrangler secret put`, aldrig hårdkodad — appen både krypterar och dekrypterar sedan sammanslagningen
-- Lösenord hashas med PBKDF2 via Web Crypto — **max 100 000 iterationer**, Workers' runtime tillåter inte mer
-- `socket.startTls()` kräver `.releaseLock()` på writer/reader innan anropet, inte `.close()` — annars kastar uppgraderingen fel
-- Aldrig logga eller exponera SMTP-lösenord, TOTP-secrets eller session-tokens
-- Alla databasfrågor filtrerar på `account_id` — konton är helt isolerade från varandra utom via `/api/admin/*` (kräver `is_admin = 1`)
-- Klientfel och användarnas felrapporter sparas i D1 och skickas som e-postnotiser; GitHub Issues används inte för felrapportering
+- `MAIL_CRED_KEY` (AES-nyckel för krypterade SMTP-lösenord och brevdata) sätts via `wrangler secret put`, aldrig hårdkodad.
+- Lösenord hashas med PBKDF2 via Web Crypto — **max 100 000 iterationer**, Workers' runtime tillåter inte mer.
+- `socket.startTls()` kräver `.releaseLock()` på writer/reader innan anropet, inte `.close()` — annars kastar uppgraderingen fel.
+- Aldrig logga eller exponera SMTP-lösenord, TOTP-secrets eller session-tokens.
+- Alla databasfrågor filtrerar på `account_id` — konton är helt isolerade från varandra utom via `/api/admin/*` (kräver `is_admin = 1`).
+- Klientfel och användarnas felrapporter sparas i D1 och skickas som e-postnotiser; GitHub Issues används inte för felrapportering.
 
 ## Versioner: flytande som standard
 
 Pinna aldrig ett versionsnummer, en release-flavor eller en digest om det inte
-är ett absolut måste. En pinne som ingen revideras sitter kvar långt efter att
-den blivit fel — basimagen här satt på Ubuntu 22.04 långt efter att 24.04 fanns,
-just för att OS-generationen låg inbakad i taggnamnet och Dependabot aldrig
-rör sig mellan taggfamiljer.
+är ett absolut måste. En pinne som ingen reviderar sitter kvar långt efter att
+den blivit fel.
 
 Gäller basimager, pip- och npm-beroenden, och allt annat med en version.
 
@@ -72,19 +71,16 @@ som väntar.
 ### Nuvarande undantag
 
 - **GitHub Actions pinnas till commit-SHA.** En tagg som `@v4` är föränderlig
-  och kan pekas om till annan kod; en SHA kan den inte. Det är en
-  leverantörskedjekontroll, inte versionshantering, och Dependabot bumpar dem
-  ändå automatiskt.
+och kan pekas om till annan kod; en SHA kan den inte. Det är en
+leverantörskedjekontroll, inte versionshantering, och Dependabot bumpar dem
+automatiskt.
 
-- **`kontakter/scraper/Dockerfile` pinnas till `v1.62.0-noble`.** Regeln säger
-  flytande, och det var också vad som stod här — men `:latest` pekar
-  fortfarande på Ubuntu 22.04 hos Microsoft. Uppmätt 2026-08-17: 856
-  åtgärdbara CVE:er på `:latest` mot 39 på `v1.62.0-noble`, alltså 96 procent
-  av code scanning-bruset i det här repot. Dependabot bumpar inom
-  `-noble`-familjen, men flyttar aldrig till nästa Ubuntu-generation — så
-  **det som måste kontrolleras för att släppa pinnen** är om `:latest` hunnit
-  ikapp till 24.04 eller senare, alternativt om det dykt upp en
-  26.04-variant som suffixet behöver bytas till.
+- **`kontakter/scraper/Dockerfile` pinnas till `v1.62.0-noble`.** `:latest`
+pekar fortfarande på Ubuntu 22.04 hos Microsoft. Uppmätt 2026-08-17: 856
+åtgärdbara CVE:er på `:latest` mot 39 på `v1.62.0-noble`. Dependabot bumpar
+inom `-noble`-familjen men flyttar aldrig till nästa Ubuntu-generation. Kontrollera
+om `:latest` hunnit ikapp till 24.04 eller senare, alternativt om en 26.04-variant
+finns, innan pinnen släpps.
 
 ## Arbetsflöde: exakt en uppgift åt gången
 
