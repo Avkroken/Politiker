@@ -3,23 +3,9 @@ import { testSmtpAuth } from "../../shared/smtp";
 import { exchangeMicrosoftMailCode } from "../../shared/graph-mail";
 import type { Env } from "./db";
 
-// Microsoft Graph har egen throttling, separat från SMTP-gränsen för
-// Outlook.com — vi har inga verifierade Graph-specifika siffror, så vi
-// återanvänder samma leverantörsgräns som outlook-SMTP-presetet tills vidare.
 export const MICROSOFT_GRAPH_DAILY_LIMIT = 300;
-
-// HARDCODED_CEILING_PCT: taket vi tillåter är alltid exakt 10% under
-// leverantörens kända verkliga gräns, oavsett leverantör — så att personens
-// egen vanliga mailanvändning på samma konto aldrig trängs ut helt, och så
-// att vi har marginal om leverantören räknar något striktare än vi tror.
-// Detta är inte justerbart per leverantör; det är en medveten, enhetlig
-// säkerhetsmarginal. Användaren kan därutöver själv välja att använda en
-// LÄGRE andel av detta tak (se user_cap_pct), men aldrig en högre.
 export const HARDCODED_CEILING_PCT = 0.9;
 
-// providerDailyLimit = leverantörens kända verkliga gräns (mottagare/dygn) per
-// juni 2026 — kan ändras av leverantören utan att vi får besked, se README
-// för påminnelse om periodisk omkontroll.
 export const PROVIDER_PRESETS: Record<
   string,
   { host: string; port: number; helpUrl: string; providerDailyLimit: number | null }
@@ -51,6 +37,29 @@ export const PROVIDER_PRESETS: Record<
   generic: { host: "", port: 587, helpUrl: "", providerDailyLimit: null },
 };
 
+const ALLOWED_GENERIC_SMTP_PORTS = new Set([465, 587]);
+const BLOCKED_HOST_SUFFIXES = [".localhost", ".local", ".internal", ".home.arpa", ".lan"];
+
+function validateGenericSmtpEndpoint(hostInput: string | undefined, portInput: number | undefined): { host: string; port: number } {
+  const host = (hostInput ?? "").trim().toLowerCase().replace(/\.$/, "");
+  const port = Number(portInput);
+
+  if (!ALLOWED_GENERIC_SMTP_PORTS.has(port)) throw new Error("Generisk SMTP tillåter bara port 465 eller 587");
+  if (!host || host.length > 253) throw new Error("Ogiltigt SMTP-värdnamn");
+  if (host === "localhost" || host === "metadata.google.internal" || BLOCKED_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix))) {
+    throw new Error("Lokala eller interna SMTP-värdar är inte tillåtna");
+  }
+  // IP-literals (IPv4/IPv6) är inte tillåtna. Ett publikt FQDN krävs så
+  // funktionen inte blir en generell portanslutning mot godtyckliga adresser.
+  if (/^\[.*\]$/.test(host) || host.includes(":") || /^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)) {
+    throw new Error("Ange ett publikt DNS-namn för SMTP-servern, inte en IP-adress");
+  }
+  if (!/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(host)) {
+    throw new Error("Ogiltigt publikt SMTP-värdnamn");
+  }
+  return { host, port };
+}
+
 export function getCeiling(provider: string): number | null {
   const limit = provider === "microsoft_graph" ? MICROSOFT_GRAPH_DAILY_LIMIT : PROVIDER_PRESETS[provider]?.providerDailyLimit;
   if (limit === null || limit === undefined) return null;
@@ -71,12 +80,23 @@ export async function addMailCredential(
 ): Promise<{ id: string; dailyCap: number | null }> {
   const preset = PROVIDER_PRESETS[input.provider];
   if (!preset) throw new Error("Okänd leverantör");
-  const host = input.provider === "generic" ? input.host! : preset.host;
-  const port = input.provider === "generic" ? input.port! : preset.port;
-  if (!host || !port) throw new Error("Host/port saknas");
+
+  let host: string;
+  let port: number;
+  if (input.provider === "generic") {
+    ({ host, port } = validateGenericSmtpEndpoint(input.host, input.port));
+  } else {
+    host = preset.host;
+    port = preset.port;
+  }
+
+  const user = (input.user ?? "").trim();
+  const fromAddress = (input.fromAddress ?? "").trim();
+  if (!user || user.length > 320 || !fromAddress || fromAddress.length > 320) throw new Error("Ogiltigt användarnamn eller avsändaradress");
+  if (!input.password || input.password.length > 4096) throw new Error("Ogiltigt SMTP-lösenord");
 
   // Verifiera mot leverantören innan vi sparar något — direkt feedback till användaren.
-  await testSmtpAuth({ host, port, user: input.user, password: input.password, fromAddress: input.fromAddress });
+  await testSmtpAuth({ host, port, user, password: input.password, fromAddress });
 
   const id = randomId();
   const encryptedPassword = await encryptSecret(input.password, env.MAIL_CRED_KEY);
@@ -86,7 +106,7 @@ export async function addMailCredential(
     `INSERT INTO mail_credentials (id, account_id, provider, smtp_host, smtp_port, smtp_user, encrypted_password, from_address, verified_at, daily_cap, user_cap_pct, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
-    .bind(id, accountId, input.provider, host, port, input.user, encryptedPassword, input.fromAddress, Date.now(), dailyCap, userCapPct, Date.now())
+    .bind(id, accountId, input.provider, host, port, user, encryptedPassword, fromAddress, Date.now(), dailyCap, userCapPct, Date.now())
     .run();
 
   return { id, dailyCap };
@@ -147,10 +167,6 @@ export async function deleteMailCredential(env: Env, accountId: string, credenti
   if (!credential) return;
 
   const now = Date.now();
-
-  // Historiska send_jobs har en FK till credential-raden. Hårdradering skulle
-  // därför bryta referensintegriteten. Revokera i stället credentialen, ta bort
-  // alla hemligheter och stoppa aktiva jobb som fortfarande använder den.
   await env.DB.batch([
     env.DB.prepare(
       `UPDATE send_jobs
