@@ -1,36 +1,57 @@
 import { randomId } from "../../shared/crypto";
 import type { Env } from "./db";
 
-// Salt för besökarhashen. Behöver inte vara hemligt på samma sätt som t.ex.
-// MAIL_CRED_KEY — det enda det skyddar är att en läckt visits-tabell inte
-// trivialt ska kunna kopplas till en IP. Hashen är ändå irreversibel utan
-// både IP och user-agent (som aldrig lagras). Sätt env.VISITOR_SALT för att
-// rotera vid behov; annars används denna konstant.
-const DEFAULT_SALT = "politiker-visit-v1";
+const VISIT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 async function visitorHash(env: Env, req: Request): Promise<string> {
   const ip = req.headers.get("CF-Connecting-IP") ?? req.headers.get("X-Forwarded-For") ?? "okänd";
   const ua = req.headers.get("User-Agent") ?? "okänd";
-  const salt = env.VISITOR_SALT ?? DEFAULT_SALT;
-  const data = new TextEncoder().encode(`${salt}|${ip}|${ua}`);
-  const digest = await crypto.subtle.digest("SHA-256", data);
+  const day = new Date().toISOString().slice(0, 10);
+
+  // Hashen är medvetet dagsbunden: samma besökare får en annan identifierare
+  // nästa UTC-dag och kan därför inte följas långsiktigt via visits-tabellen.
+  // Nyckeln är hemlig (VISITOR_SALT om satt, annars den redan existerande
+  // MAIL_CRED_KEY) och HMAC används i stället för en publik saltssträng.
+  const secret = env.VISITOR_SALT ?? env.MAIL_CRED_KEY;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${day}|${ip}|${ua}`));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Spelar in en sidladdning. Best-effort: anropas via ctx.waitUntil och får
-// aldrig blockera eller fälla svaret. Lagrar bara hash + tidpunkt.
+// Spelar in högst en rad per besökare och UTC-dag. Det gör adminstatistiken
+// användbar utan att varje refresh/page-load växer D1-tabellen. Best-effort:
+// anropas via ctx.waitUntil och får aldrig blockera eller fälla svaret.
 export async function recordVisit(env: Env, req: Request): Promise<void> {
   try {
     const hash = await visitorHash(env, req);
-    // Cloudflare fyller req.cf.country med ISO-3166-1 alpha-2 (t.ex. "SE").
-    // Saknas i lokal dev och kan vara "T1"/"XX" för Tor/okänt — lagra som null.
+    const existing = await env.DB.prepare("SELECT 1 FROM visits WHERE visitor_hash = ? LIMIT 1").bind(hash).first();
+    if (existing) return;
+
     const cf = (req as unknown as { cf?: { country?: string } }).cf;
     const country = cf?.country && cf.country !== "XX" ? cf.country : null;
     await env.DB.prepare("INSERT INTO visits (id, visitor_hash, visited_at, country) VALUES (?, ?, ?, ?)")
       .bind(randomId(), hash, Date.now(), country)
       .run();
   } catch {
-    // Tabellen kan saknas innan migrationen körts, eller skrivningen kan fela —
-    // besöksloggning ska aldrig påverka sidladdningen.
+    // Statistik får aldrig påverka sidladdningen.
+  }
+}
+
+// Körs från secure-index.ts tillsammans med befintliga cron-körningar. Råa
+// pseudonyma besöksrader är kortlivade och tabellstorleken får ett hårt
+// tidsmässigt tak i stället för att växa under tjänstens hela livstid.
+export async function pruneVisits(env: Env): Promise<void> {
+  try {
+    await env.DB.prepare("DELETE FROM visits WHERE visited_at < ?")
+      .bind(Date.now() - VISIT_RETENTION_MS)
+      .run();
+  } catch {
+    // Äldre installationer kan sakna tabellen under migration/deploy.
   }
 }
