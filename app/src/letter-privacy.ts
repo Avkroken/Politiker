@@ -3,9 +3,8 @@ import type { Env } from "./db";
 
 const PREFIX = "enc:v1:";
 const REDACTED = "redacted:v1";
-const USER_CONTENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const CIVIC_DRAFT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
-const PUBLIC_LETTER_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+const PUBLIC_LETTER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const BACKFILL_BATCH = 50;
 type PrivacyEnv = Env & { LETTER_DATA_KEY?: string };
 
@@ -20,8 +19,7 @@ async function backfillTable(env: PrivacyEnv, table: "letters"|"civic_letter_dra
 }
 
 async function redactFinishedUserLetters(env: PrivacyEnv, now:number):Promise<void>{
-  const cutoff=now-USER_CONTENT_RETENTION_MS;
-  const {results}=await env.DB.prepare(`SELECT DISTINCT l.id FROM letters l JOIN send_jobs sj ON sj.letter_id=l.id WHERE sj.status IN ('done','aborted') AND sj.finished_at IS NOT NULL AND sj.finished_at < ? AND l.html_body != ? LIMIT 100`).bind(cutoff,REDACTED).all<{id:string}>();
+  const {results}=await env.DB.prepare(`SELECT DISTINCT l.id FROM letters l JOIN send_jobs sj ON sj.letter_id=l.id WHERE sj.status IN ('done','aborted','cancelled') AND sj.content_delete_at IS NOT NULL AND sj.content_delete_at <= ? AND l.html_body != ? LIMIT 100`).bind(now,REDACTED).all<{id:string}>();
   for(const row of results){const {results:attachments}=await env.DB.prepare("SELECT r2_key FROM letter_attachments WHERE letter_id=?").bind(row.id).all<{r2_key:string}>();if(attachments.length){try{await env.ATTACHMENTS.delete(attachments.map(a=>a.r2_key));}catch(error){console.warn("letter-retention: R2 cleanup failed",{letterId:row.id,error:String(error)});continue;}}await env.DB.batch([env.DB.prepare("DELETE FROM letter_attachments WHERE letter_id=?").bind(row.id),env.DB.prepare("UPDATE letters SET html_body=? WHERE id=?").bind(REDACTED,row.id)]);}
 }
 async function redactOldCivicDrafts(env:PrivacyEnv,now:number):Promise<void>{await env.DB.prepare(`UPDATE civic_letter_drafts SET html_body=? WHERE status IN ('done','rejected') AND created_at < ? AND html_body != ?`).bind(REDACTED,now-CIVIC_DRAFT_RETENTION_MS,REDACTED).run();}
