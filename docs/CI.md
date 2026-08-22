@@ -1,33 +1,41 @@
-# CI och branchflöde
+# CI, deploy och release
 
-## Grundmodell
+## Branchflöde
 
 Repositoryt använder endast `dev` och `main`.
 
 1. Arbete görs på `dev`.
 2. PR öppnas från `dev` till `main`.
-3. PR-CI verifierar ändringen.
-4. Auto-merge får merga när required checks är gröna.
-5. Efter uppdatering av `main` fast-forwardar `.github/workflows/sync-dev.yml` automatiskt `dev` till `main`.
-6. Synken använder aldrig force-push och avbryter om `dev` har omergat arbete.
+3. PR-CI verifierar ändringen och required checks måste bli gröna.
+4. Auto-merge sammanfogar PR:n när reglerna tillåter det.
+5. Efter uppdatering av `main` fast-forwardar `.github/workflows/sync-dev.yml` automatiskt `dev` till `main` när `dev` saknar omergat arbete.
 
-Vanlig CI ska inte köras både som `push` till `dev` och `pull_request` för samma commit. CI körs därför på PR och på `push` till `main`.
+Vanlig CI körs på `pull_request` och på `push` till `main`, inte dessutom på varje push till `dev`.
 
 ## Selektiv CI
 
-Repo:t har två tydliga språk-/komponentgränser:
+- `app/**` och Node/TypeScript-konfiguration påverkar appens TypeScript-CI.
+- `kontakter/**` och Python-konfiguration påverkar Python-CI.
+- Gemensam CI-/dependency-konfiguration eller okänd påverkan kör båda.
+- Dokumentation och agent/processmetadata behöver normalt inte starta dyra språkjobb.
 
-- `app/**` och Node/TypeScript-konfiguration => appens TypeScript-CI.
-- `kontakter/**` och Python-konfiguration => Python-CI.
-- gemensam CI/dependency-konfiguration eller okänd påverkan => båda.
-- dokumentation och agent/processmetadata => inga dyra språkjobb.
+Required checks filtreras inte bort på workflow-nivå med `paths:`. Ett impact-jobb klassificerar diffen och efterföljande jobb använder job-level `if:`. Routing ska vara fail-open: om påverkan inte kan avgöras säkert körs mer CI, inte mindre.
 
-Required checks filtreras inte bort på workflow-nivå med `paths:`. Ett billigt impact-jobb klassificerar diffen och de befintliga required jobben använder job-level `if:`. Därmed behålls deras stabila checknamn samtidigt som irrelevant arbete kan hoppas över.
+## Deploy
 
-Routing ska fail-open: om påverkan inte kan avgöras säkert körs mer CI i stället för mindre.
+`.github/workflows/deploy.yml` kör produktion från `main`. Före Worker-deploy körs `infra/apply-migrations.sh`, som applicerar endast migrationsfiler som ännu inte finns registrerade i D1-tabellen `schema_migrations`.
 
-## Deploy och säkerhet
+## Automatisk release
 
-Deploy sker från `main`, inte från `dev`. Säkerhetsskanning ska behålla stabila check-/Code Scanning-identiteter över namnbyten och refaktoreringar.
+`.github/workflows/release.yml` kör på uppdateringar av `main` och bestämmer nästa SemVer-version från commitmeddelanden sedan senaste `vX.Y.Z`-taggen.
 
-Målet är minsta säkra CI-mängd, inte minsta möjliga antal checks.
+- `BREAKING CHANGE:`, `type!:` eller `major:` → major.
+- `feat:` eller `minor:` → minor.
+- `fix:`, `perf:` eller `patch:` → patch.
+- Övriga commits, exempelvis `docs:` och `chore:`, skapar ingen release om det inte också finns en release-utlösande commit sedan senaste taggen.
+
+När en bump behövs skapas nästa GitHub Release och tagg automatiskt med genererade release notes. Versionsnummer ska alltså inte taggas manuellt i normalfallet.
+
+## Säkerhet
+
+Säkerhetsskanning ska behålla stabila check- och Code Scanning-identiteter över namnbyten och refaktoreringar. Målet är minsta säkra CI-mängd, inte minsta möjliga antal checks.

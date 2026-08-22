@@ -2,36 +2,26 @@
 
 ## Omfattning
 
-Repot innehåller två delar med olika riskprofil:
+Repot består huvudsakligen av två delar med olika riskprofil:
 
-- **Tjänsten** (`app/`, `sender/`, `campaign/`, `healthcheck/`, `shared/`) —
-  hanterar användarkonton och användarnas egna SMTP-uppgifter. Det är här
-  känslig data finns.
-- **Skrapan** (`kontakter/`) — hämtar publikt publicerade e-postadresser till
-  förtroendevalda från kommuners och regioners egna webbplatser. Hanterar
-  inga inloggningsuppgifter och inga personuppgifter utöver redan offentligt
-  publicerad kontaktinformation.
+- **Tjänsten** (`app/` och `shared/`) — en Cloudflare Worker som hanterar HTTP/API, kökonsument och schemalagda jobb. Den hanterar användarkonton, sessioner, mailkopplingar och användarnas brev.
+- **Kontaktinsamlingen** (`kontakter/`) — hämtar redan offentligt publicerade kontaktuppgifter till förtroendevalda och synkar dem till D1.
+
+Drift- och provisioneringskod finns i `infra/`. De tidigare separata Workers-delarna `sender/`, `campaign/` och `healthcheck/` finns inte längre; funktionerna som återstår är samlade i `app/`.
 
 ## Rapportera en säkerhetsbrist
 
-Om du upptäcker en säkerhetsbrist, **öppna inte ett publikt issue**.
+Öppna inte ett publikt issue för en misstänkt säkerhetsbrist. Rapportera den privat via [GitHub Security Advisories](https://github.com/blixten85/politiker/security/advisories/new).
 
-Rapportera den i stället privat via
-[GitHub Security Advisories](https://github.com/blixten85/politiker/security/advisories/new).
+## Skydd av känslig data
 
-Du bör få svar inom 48 timmar. Om bristen bekräftas släpps en rättning så
-snart som möjligt.
+- Hemligheter ska ligga i GitHub/Cloudflare-miljöer eller Wrangler secrets, aldrig i versionshistoriken.
+- Mailuppgifter och andra lagrade hemligheter krypteras med AES-GCM innan de skrivs till D1; krypteringsnyckeln lagras separat som secret.
+- Kontolösenord hashas med PBKDF2 och lagras aldrig i klartext.
+- Kontoägda databasoperationer ska avgränsas med `account_id`; administrativa vägar kräver uttrycklig adminbehörighet.
+- Temporärt brevinnehåll och bilagor omfattas av retention och rensas efter vald lagringstid.
+- Publika skrivvägar skyddas med relevanta kontroller som rate limiting och Turnstile där det behövs.
 
-## Så skyddas känslig data
+## Beroenden och scanning
 
-- Hemligheter sätts som miljövariabler eller Wrangler-secrets — aldrig i koden
-- Användarnas SMTP-lösenord krypteras (AES-GCM) innan de lagras i D1 —
-  nyckeln finns aldrig i koden
-- Kontolösenord hashas med PBKDF2, aldrig i klartext
-- Alla databasfrågor filtrerar på `account_id`
-
-## Beroenden
-
-Säkerhetsuppdateringar av tredjepartsbibliotek hanteras via Dependabot, för
-både npm-delarna och skrapans Python-beroenden (Playwright, pypdf, m.fl.).
-Öppna gärna ett issue om du ser en känd CVE som inte redan flaggats.
+Dependabot hanterar uppdateringar för bland annat npm, Python, Docker och GitHub Actions. CI och separata säkerhetsworkflows används för typkontroll, beroendeskanning och code scanning.

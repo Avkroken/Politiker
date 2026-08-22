@@ -20,7 +20,7 @@ Politikerkontakt producerar, publicerar eller skickar **inte egna politiska brev
 
 ## Mottagare
 
-Databasen byggs från offentliga källor och omfattar bland annat Europaparlamentet, Riksdagen, regeringen/departement, Sveriges 21 regioner, Sveriges 290 kommuner och relevanta valda organ inom Svenska kyrkan. Insamlings- och uppdateringslogiken finns i `kontakter/`.
+Databasen byggs från offentliga källor och omfattar bland annat Europaparlamentet, Riksdagen, regeringen/departement, Sveriges regioner och kommuner samt relevanta valda organ inom Svenska kyrkan. Insamlings- och uppdateringslogiken finns i `kontakter/`.
 
 ## Integritet och dataminimering
 
@@ -36,8 +36,6 @@ Tjänsten är byggd för att behandla så lite användardata som möjligt.
 - Brevtext och temporära bilagor raderas efter retentionstiden. Minimal metadata om status, antal skickade/studsade meddelanden och tidpunkter kan behållas för historik, statistik och drift.
 - Cloudflare D1 används som databas och R2 för temporära bilagor.
 
-Officiell GDPR-dokumentation: https://www.imy.se/verksamhet/dataskydd/det-har-galler-enligt-gdpr/introduktion-till-gdpr/dataskyddsforordningen-i-fulltext/ och https://eur-lex.europa.eu/eli/reg/2016/679/oj
-
 ## AI-skrivhjälp
 
 AI är en valfri hjälp för **användarens eget brev**. Plattformen använder inte AI för att själv välja politiska frågor, skapa kampanjer eller skicka egna ställningstaganden. Användaren ansvarar för att läsa och godkänna sitt utkast före utskick. Text som skickas till en vald AI-leverantör behandlas även av den leverantören enligt dess villkor.
@@ -52,7 +50,7 @@ Kösystemet använder Cloudflare Queues och D1. En Durable Object per mailkoppli
 
 | Katalog | Innehåll |
 | --- | --- |
-| `app/` | Cloudflare Worker, API och frontend |
+| `app/` | Cloudflare Worker, API, kökonsument, schemalagda jobb och frontend |
 | `shared/` | Delad TypeScript-kod, bland annat SMTP, kryptering och typer |
 | `kontakter/` | Insamling och uppdatering av offentliga kontaktuppgifter |
 | `infra/` | D1-schema, migrationer och provisioneringsverktyg |
@@ -61,7 +59,7 @@ Viktiga delar i `app/src/` är `send-queue.ts` för faktisk sändning, `rate-lim
 
 ## Köra en egen kopia
 
-Förutsättningar: Cloudflare-konto och Node.js 18+.
+Förutsättningar: Cloudflare-konto och Node.js 24.
 
 ```bash
 git clone https://github.com/blixten85/politiker.git
@@ -73,7 +71,7 @@ För lokal utveckling:
 
 ```bash
 cd app
-npm install
+npm ci
 cp .dev.vars.example .dev.vars
 npx wrangler dev --remote
 ```
@@ -85,9 +83,13 @@ cd app
 npm run validate
 ```
 
+## CI, deploy och release
+
+Arbete går via `dev` → PR → `main`. CI kör relevanta Node-/Pythonkontroller, deploy sker från `main`, och D1-migrationer appliceras före Worker-deploy. GitHub Releases versionssätts automatiskt från commitmeddelanden; se `docs/CI.md` för reglerna.
+
 ## Säkerhet
 
-SMTP-/mailhemligheter och temporärt brevinnehåll skyddas med applikationskryptering. Säkerhetskänsliga kontoändringar kräver en färsk webbsession, API-nycklar har begränsade operationer och publika skrivvägar skyddas med bland annat Turnstile/rate limiting där det behövs.
+SMTP-/mailhemligheter och temporärt brevinnehåll skyddas med applikationskryptering. Säkerhetskänsliga kontoändringar kräver en färsk webbsession, API-nycklar har begränsade operationer och publika skrivvägar skyddas med bland annat Turnstile/rate limiting där det behövs. Säkerhetsbrister rapporteras enligt `SECURITY.md`.
 
 ## Kontakt och källkod
 
