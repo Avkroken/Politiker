@@ -15,7 +15,6 @@ export interface Env {
   SYSTEM_SMTP_PASSWORD: string;
   SYSTEM_FROM_ADDRESS: string;
   FEEDBACK_NOTIFY_EMAIL: string;
-  ERROR_FIXER_INBOX?: string;
   OAUTH_GOOGLE_CLIENT_ID?: string;
   OAUTH_GOOGLE_CLIENT_SECRET?: string;
   OAUTH_GITHUB_CLIENT_ID?: string;
@@ -109,8 +108,14 @@ export async function listAreas(db: D1Database) {
 export async function listParties(db: D1Database) {
   const { results } = await db
     .prepare(
-      `SELECT area_type, area_name, party, COUNT(*) as count FROM politicians
-       WHERE party IS NOT NULL GROUP BY area_type, area_name, party ORDER BY area_type, area_name, party`,
+      `SELECT area_type, area_name, TRIM(party) AS party, COUNT(*) as count FROM politicians
+       WHERE party IS NOT NULL
+         AND TRIM(party) NOT IN ('', '-', '--')
+         AND LOWER(TRIM(party)) NOT LIKE 'fd %'
+         AND LOWER(TRIM(party)) NOT LIKE '% fd %'
+         AND LOWER(TRIM(party)) NOT LIKE '%, fd %'
+       GROUP BY area_type, area_name, TRIM(party)
+       ORDER BY area_type, area_name, TRIM(party)`,
     )
     .all();
   return results;
@@ -208,7 +213,7 @@ export async function getRecipientsForAreas(
         params.push(JSON.stringify(rawRoles));
       }
       if (excludeParties.length > 0) {
-        sql += ` AND (party IS NULL OR party NOT IN (SELECT value FROM json_each(?)))`;
+        sql += ` AND (party IS NULL OR TRIM(party) NOT IN (SELECT value FROM json_each(?)))`;
         params.push(JSON.stringify(excludeParties));
       }
       const { results } = await db

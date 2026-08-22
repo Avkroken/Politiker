@@ -2,19 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Synkar skraparens resultat till D1-tabellen `politicians` i politiker-
-projektet. Körs som ett extra steg efter en skrapningskörning (inte en del av
-scraper.py självt — håller scraper-logiken oberörd).
-
-Läser den maskinläsbara CSV:en (Alla_kommuner_och_regioner.csv) som scrapern
-skriver just för det här steget. Den människoläsbara .txt:en parsas inte längre
-— den är till för att läsas av människor, inte round-trippas av maskiner.
-
-D1:s HTTP-API stödjer inte parametrar tillsammans med flera statements i
-samma anrop (verifierat 2026-06-22) — varje upsert skickas därför som ett
-eget POST, parallelliserat med en liten trådpool för rimlig hastighet.
-
-Miljövariabler: se d1.py (CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN_POLITIKER,
-D1_DATABASE_UUID).
+projektet. Körs som ett extra steg efter en skrapningskörning.
 """
 
 import csv
@@ -26,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 
 from d1 import D1Client
+from politiker_common import normalize_party, normalize_role
 
 RESULTAT_CSV = os.environ.get(
     "RESULTAT_CSV",
@@ -39,41 +28,14 @@ UPSERT_SQL = (
     "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, party = excluded.party, role = excluded.role, last_scraped_at = excluded.last_scraped_at"
 )
 
-# Sveriges 21 regioner. Tjugo heter "Region X" och fångas av prefixregeln
-# nedan — Västra Götalandsregionen gör inte det, och föll därför igenom
-# till "kommun". Uppmätt i produktion 2026-08-18: 497 VGR-ledamöter låg
-# med area_type='kommun' och syntes alltså inte för den som filtrerade på
-# region, samtidigt som en region dök upp i kommunlistan.
-#
-# Uppräkningen står här och inte som ett mönster: mängden är sluten och
-# ändras bara genom riksdagsbeslut. Ett prefix som stämmer för 20 av 21
-# är inte en regel, det är en slump med ett undantag.
-#
-# Prefixregeln är kvar som skyddsnät för namnvarianter ("Region Skåne" vs
-# "Region Skane" i en källa som tappat diakriterna).
 REGION_NAMES = frozenset(
     {
-        "Region Blekinge",
-        "Region Dalarna",
-        "Region Gotland",
-        "Region Gävleborg",
-        "Region Halland",
-        "Region Jämtland Härjedalen",
-        "Region Jönköpings län",
-        "Region Kalmar län",
-        "Region Kronoberg",
-        "Region Norrbotten",
-        "Region Skåne",
-        "Region Stockholm",
-        "Region Sörmland",
-        "Region Uppsala",
-        "Region Värmland",
-        "Region Västerbotten",
-        "Region Västernorrland",
-        "Region Västmanland",
-        "Region Örebro län",
-        "Region Östergötland",
-        "Västra Götalandsregionen",
+        "Region Blekinge", "Region Dalarna", "Region Gotland", "Region Gävleborg",
+        "Region Halland", "Region Jämtland Härjedalen", "Region Jönköpings län",
+        "Region Kalmar län", "Region Kronoberg", "Region Norrbotten", "Region Skåne",
+        "Region Stockholm", "Region Sörmland", "Region Uppsala", "Region Värmland",
+        "Region Västerbotten", "Region Västernorrland", "Region Västmanland",
+        "Region Örebro län", "Region Östergötland", "Västra Götalandsregionen",
     }
 )
 
@@ -89,8 +51,12 @@ def area_type_for(area_name: str) -> str:
 
 
 def parse_csv(path: str):
-    """Returnerar lista av (name, email, area_name, area_type, party, role) ur
-    den maskinläsbara CSV:en."""
+    """Returnerar normaliserade rader för D1.
+
+    Rå CSV får innehålla källans exakta roll-/partitext. Precis innan data blir
+    applikationsdata normaliseras partier och endast politiskt relevanta
+    huvudroller behålls.
+    """
     rows = []
     with open(path, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
@@ -103,8 +69,8 @@ def parse_csv(path: str):
                 email.lower(),
                 area,
                 area_type_for(area),
-                (r.get("party") or "").strip() or None,
-                (r.get("role") or "").strip() or None,
+                normalize_party(r.get("party")),
+                normalize_role(r.get("role")),
             ))
     return rows
 
@@ -130,7 +96,6 @@ def upsert_row(client: D1Client, row) -> tuple[bool, str]:
 
 def sync(rows) -> tuple[int, int]:
     client = D1Client()
-
     ok_count = 0
     fail_count = 0
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
@@ -144,7 +109,6 @@ def sync(rows) -> tuple[int, int]:
                 print(f"FEL: {info}", file=sys.stderr)
             if i % 200 == 0:
                 print(f"{i}/{len(rows)} klara ({ok_count} ok, {fail_count} fel)...")
-
     return ok_count, fail_count
 
 
