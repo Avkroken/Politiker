@@ -8,10 +8,15 @@ permissions:
 
 jobs:
   auto-merge:
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - run: gh pr merge --auto --merge "$PR_URL"
+      - name: Ingen åtgärd för vanliga PR:er
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        run: echo "Inte en Dependabot-PR; checken avslutas grönt utan merge."
+
+      - name: Aktivera auto-merge för Dependabot
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
