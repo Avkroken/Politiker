@@ -25,8 +25,28 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin dev
+
+          if [ "$(git rev-parse origin/dev)" = "$(git rev-parse HEAD)" ]; then
+            echo "dev är redan synkad med main."
+            exit 0
+          fi
+
           if ! git merge-base --is-ancestor origin/dev HEAD; then
             echo "::error::dev innehåller commits som inte finns i main; vägrar skriva över pågående arbete."
             exit 1
           fi
-          git push origin HEAD:dev
+
+          if git push origin HEAD:dev; then
+            exit 0
+          fi
+
+          # En parallell synk kan ha hunnit flytta dev mellan fetch och push.
+          # Hämta då refen igen och behandla redan synkad gren som success.
+          git fetch origin dev
+          if [ "$(git rev-parse origin/dev)" = "$(git rev-parse HEAD)" ]; then
+            echo "dev synkades parallellt och är redan identisk med main."
+            exit 0
+          fi
+
+          echo "::error::Kunde inte fast-forwarda dev till aktuell main."
+          exit 1
