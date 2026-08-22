@@ -7,10 +7,6 @@ import type { Env } from "./db";
 import { personalizeLetter } from "./personalize-letter";
 import { maySendQueuedRecipient } from "./send";
 
-// Kö-konsumenten låg i en egen Worker (politiker-sender) innan
-// sammanslagningen. Durable Object-klassen exporteras numera från index.ts,
-// eftersom en DO-klass måste ligga i Workerns entrypoint.
-
 interface CredentialRow {
   provider: string;
   smtp_host: string;
@@ -23,14 +19,11 @@ interface CredentialRow {
   oauth_token_expires_at: number | null;
 }
 
-const BOUNCE_ABORT_RATE = 25; // % — samma typ av kretsbrytare som send_daily_batch.sh
+type QueueMessage = MessageBatch<SendJobMessage>["messages"][number];
+
+const BOUNCE_ABORT_RATE = 25;
 const MIN_FOR_RATE_CHECK = 10;
 
-// Frågar credentialns Durable Object om det finns en "token" att skicka med
-// just nu — DELAD mellan ALLA jobb som använder samma mailkonto (oavsett
-// vilken kö-invocation som frågar, tack vare DO:ns serialisering), så två
-// jobb mot samma konto aldrig tillsammans överskrider leverantörens takt.
-// Olika mailkonton har varsin DO-instans och konkurrerar aldrig om samma kvot.
 async function acquireSendSlot(env: Env, credentialId: string, provider: string): Promise<{ granted: boolean; retryAfterMs?: number }> {
   const refillPerMinute = messagesPerMinuteFor(provider);
   const id = env.RATE_LIMITER.idFromName(credentialId);
@@ -41,20 +34,11 @@ async function acquireSendSlot(env: Env, credentialId: string, provider: string)
       body: JSON.stringify({ capacity: 1, refillPerMinute }),
     });
     return resp.json<{ granted: boolean; retryAfterMs?: number }>();
-  } catch (err) {
-    // DO-anrop eller parse misslyckades — neka slot så anroparen kan retrya
+  } catch {
     return { granted: false, retryAfterMs: 1000 };
   }
 }
 
-// MAX_WAIT_MS: hur länge EN meddelandebehandling väntar in-process på en
-// ledig token innan den ger upp och lämnar tillbaka meddelandet till kön.
-// Avsiktligt rymligt (4 min) eftersom queue()-invocations tillåts köra
-// betydligt längre än ett vanligt HTTP-svar, och varje gång vi istället
-// måste falla tillbaka på queueMsg.retry() förbrukar det en av meddelandets
-// begränsade max_retries-försök trots att inget faktiskt misslyckats —
-// ju mer vi kan absorbera här inne, desto mindre risk att ett legitimt
-// mejl ger upp permanent bara på grund av en tillfällig backlog.
 const MAX_WAIT_MS = 4 * 60 * 1000;
 const POLL_INTERVAL_CAP_MS = 15_000;
 
@@ -74,95 +58,97 @@ function sleep(ms: number): Promise<void> {
 }
 
 export async function handleSendQueue(batch: MessageBatch<SendJobMessage>, env: Env): Promise<void> {
-  // Gruppera per send_job så kretsbrytaren räknar per jobb, inte per hela batchen
-  const byJob = new Map<string, SendJobMessage[]>();
-  for (const msg of batch.messages) {
-    const arr = byJob.get(msg.body.sendJobId) ?? [];
-    arr.push(msg.body);
-    byJob.set(msg.body.sendJobId, arr);
+  // Behåll själva Queue-message-objekten grupperade per jobb. Då kan ett trasigt
+  // jobb aldrig ack:a eller retry:a meddelanden som tillhör ett annat jobb i
+  // samma Cloudflare-batch.
+  const byJob = new Map<string, QueueMessage[]>();
+  for (const message of batch.messages) {
+    const arr = byJob.get(message.body.sendJobId) ?? [];
+    arr.push(message);
+    byJob.set(message.body.sendJobId, arr);
   }
 
   for (const [sendJobId, messages] of byJob) {
-    await processJobMessages(env, sendJobId, messages, batch);
+    await processJobMessages(env, sendJobId, messages);
   }
 }
 
 async function processJobMessages(
   env: Env,
   sendJobId: string,
-  messages: SendJobMessage[],
-  batch: MessageBatch<SendJobMessage>,
+  messages: QueueMessage[],
 ): Promise<void> {
-  const credentialId = messages[0].mailCredentialId;
+  // Jobbraden är sanningskälla för credential. Queue-meddelanden kan vara
+  // gamla efter en manuell retry som bytt mailkonto; sådana stale messages
+  // ska kvitteras utan att nå SMTP/Graph.
+  const job = await env.DB.prepare(
+    `SELECT sj.letter_id, sj.mail_credential_id, l.html_body
+     FROM send_jobs sj JOIN letters l ON l.id = sj.letter_id
+     WHERE sj.id = ?`,
+  )
+    .bind(sendJobId)
+    .first<{ letter_id: string; mail_credential_id: string; html_body: string }>();
+
+  if (!job) {
+    for (const message of messages) message.ack();
+    return;
+  }
+
+  const credentialId = job.mail_credential_id;
   let credentialRow = await env.DB.prepare(
     `SELECT provider, smtp_host, smtp_port, smtp_user, encrypted_password, from_address,
             oauth_access_token, oauth_refresh_token, oauth_token_expires_at
-     FROM mail_credentials WHERE id = ?`,
+     FROM mail_credentials WHERE id = ? AND revoked_at IS NULL`,
   )
     .bind(credentialId)
     .first<CredentialRow>();
 
   if (!credentialRow) {
-    for (const m of batch.messages) m.ack(); // mailkonto borttaget — kan inte skickas, släpp jobbet
+    for (const message of messages) message.ack();
     await markJobAborted(env, sendJobId, "Mailkontot finns inte längre");
     return;
   }
 
-  // Förnya Microsoft-token i förväg om den snart går ut (inom 5 min) — undvik att göra det per mottagare.
-  if (credentialRow.provider === "microsoft_graph" && credentialRow.oauth_token_expires_at! < Date.now() + 5 * 60 * 1000) {
+  if (credentialRow.provider === "microsoft_graph" && (credentialRow.oauth_token_expires_at ?? 0) < Date.now() + 5 * 60 * 1000) {
     credentialRow = await refreshAndPersistMicrosoftToken(env, credentialId, credentialRow);
   }
 
-  // Hämta brevkropp + ev. bilagor en gång per utskick (inte en gång per
-  // mottagare) — letter_id ligger på send_jobs, samma brev och bilagor gäller
-  // alla mottagare i jobbet. html_body skickas medvetet inte i kömeddelandet
-  // (skulle dupliceras per mottagare), utan hämtas härifrån.
-  const job = await env.DB.prepare(
-    "SELECT sj.letter_id, l.html_body FROM send_jobs sj JOIN letters l ON l.id = sj.letter_id WHERE sj.id = ?",
-  )
-    .bind(sendJobId)
-    .first<{ letter_id: string; html_body: string }>();
-  if (!job) {
-    for (const m of batch.messages) m.ack(); // brevet finns inte längre — kan inte skickas
-    await markJobAborted(env, sendJobId, "Brevet finns inte längre");
-    return;
-  }
   const attachments = await fetchAttachments(env, job.letter_id);
-
   let bounceCount = 0;
   let attempted = 0;
   let aborted = false;
 
-  for (const m of messages) {
-    const queueMsg = batch.messages.find((qm) => qm.body === m)!;
+  for (const queueMsg of messages) {
+    const m = queueMsg.body;
+
+    if (m.mailCredentialId !== credentialId) {
+      // Gammalt meddelande från före ett credential-byte. Den beständiga
+      // recipient-raden har redan återställts/omköats av retry-flödet.
+      queueMsg.ack();
+      continue;
+    }
+
     if (aborted) {
-      queueMsg.retry(); // låt resten vänta till nästa batch / manuell granskning
+      queueMsg.retry();
       continue;
     }
 
     const staged = await env.DB.prepare(
       "SELECT status FROM send_job_recipients WHERE send_job_id = ? AND recipient_email = ?",
     ).bind(sendJobId, m.recipientEmail).first<{ status: string }>();
-    if (staged && staged.status !== "queued") {
-      // Cloudflare Queues levererar minst en gång. Har mottagaren redan fått
-      // ett slutstatus ska en återleverans kvitteras utan ett nytt mejl.
+    if (!staged || staged.status !== "queued") {
+      // At-least-once delivery: bara den beständiga statusen "queued" får
+      // initiera ett faktiskt utskick. Slutbehandlat/missing ackas tyst.
       queueMsg.ack();
       continue;
     }
+
     if (!(await maySendQueuedRecipient(env, sendJobId, m.recipientEmail))) {
-      // Taket kan ha sänkts efter köläggning eller automatiskt växlat. Flytta
-      // tillbaka överskottet till den beständiga kön innan något SMTP-anrop.
       queueMsg.ack();
       continue;
     }
 
     if (!(await waitForSendSlot(env, credentialId, credentialRow.provider))) {
-      // Väntat förbi taket utan att få en token — ovanligt (stor backlog +
-      // låg takt). queueMsg.retry() här (inte ack) så meddelandet kommer
-      // tillbaka senare istället för att tappas, men det förbrukar tyvärr en
-      // av meddelandets max_retries trots att inget faktiskt misslyckades —
-      // se MAX_WAIT_MS-kommentaren ovanför waitForSendSlot för varför taket
-      // satts generöst för att göra detta sällsynt.
       queueMsg.retry({ delaySeconds: 30 });
       continue;
     }
@@ -177,7 +163,7 @@ async function processJobMessages(
       bounceCount++;
       const errorMsg = err instanceof SmtpError || err instanceof Error ? err.message : "Okänt fel";
       await logSend(env, m, "bounce", errorMsg);
-      queueMsg.ack(); // permanent fel (fel uppgifter etc.) — inte meningsfullt att retrya om och om igen
+      queueMsg.ack();
 
       if (bounceCount >= 5 && attempted >= MIN_FOR_RATE_CHECK) {
         const rate = (bounceCount / attempted) * 100;
@@ -189,12 +175,14 @@ async function processJobMessages(
     }
   }
 
-  await env.DB.prepare(
-    `UPDATE send_jobs SET sent_count = sent_count + ?, bounce_count = bounce_count + ?, status = ?
-     WHERE id = ?`,
-  )
-    .bind(attempted - bounceCount, bounceCount, aborted ? "aborted" : "sending", sendJobId)
-    .run();
+  if (attempted > 0 || aborted) {
+    await env.DB.prepare(
+      `UPDATE send_jobs SET sent_count = sent_count + ?, bounce_count = bounce_count + ?, status = ?
+       WHERE id = ?`,
+    )
+      .bind(attempted - bounceCount, bounceCount, aborted ? "aborted" : "sending", sendJobId)
+      .run();
+  }
 
   await maybeFinishJob(env, sendJobId);
 }
@@ -209,7 +197,7 @@ async function sendOneMail(
 ): Promise<void> {
   if (credentialRow.provider === "microsoft_graph") {
     const accessToken = await decryptSecret(credentialRow.oauth_access_token!, env.MAIL_CRED_KEY);
-    await sendGraphMail(accessToken, { to, html, subject, attachments }); // JSON-API — ingen RFC2047-kodning behövs, UTF-8 funkar direkt
+    await sendGraphMail(accessToken, { to, html, subject, attachments });
     return;
   }
 
@@ -239,20 +227,21 @@ async function fetchAttachments(
   const attachments: Array<{ filename: string; contentType: string; bytes: ArrayBuffer }> = [];
   for (const row of results) {
     const obj = await env.ATTACHMENTS.get(row.r2_key);
-    if (!obj) continue; // borttagen — skippa snarare än att krascha hela utskicket
+    if (!obj) continue;
     attachments.push({ filename: row.filename, contentType: row.content_type, bytes: await obj.arrayBuffer() });
   }
   return attachments;
 }
 
 async function refreshAndPersistMicrosoftToken(env: Env, credentialId: string, credentialRow: CredentialRow): Promise<CredentialRow> {
-  const refreshToken = await decryptSecret(credentialRow.oauth_refresh_token!, env.MAIL_CRED_KEY);
+  if (!credentialRow.oauth_refresh_token) throw new Error("Microsoft-kopplingen saknar refresh token");
+  const refreshToken = await decryptSecret(credentialRow.oauth_refresh_token, env.MAIL_CRED_KEY);
   const fresh = await refreshMicrosoftToken(env.OAUTH_MICROSOFT_CLIENT_ID!, env.OAUTH_MICROSOFT_CLIENT_SECRET!, refreshToken);
 
   const encryptedAccessToken = await encryptSecret(fresh.accessToken, env.MAIL_CRED_KEY);
   const encryptedRefreshToken = await encryptSecret(fresh.refreshToken, env.MAIL_CRED_KEY);
   await env.DB.prepare(
-    "UPDATE mail_credentials SET oauth_access_token = ?, oauth_refresh_token = ?, oauth_token_expires_at = ? WHERE id = ?",
+    "UPDATE mail_credentials SET oauth_access_token = ?, oauth_refresh_token = ?, oauth_token_expires_at = ? WHERE id = ? AND revoked_at IS NULL",
   )
     .bind(encryptedAccessToken, encryptedRefreshToken, fresh.expiresAt, credentialId)
     .run();
@@ -274,9 +263,6 @@ async function logSend(env: Env, m: SendJobMessage, status: "ok" | "bounce", err
      WHERE send_job_id = ? AND recipient_email = ?`,
   ).bind(status, now, error, m.sendJobId, m.recipientEmail).run();
 
-  // Riktiga utskick är samtidigt det mest tillförlitliga sättet att verifiera
-  // att en politiker-adress fortfarande är levande — uppdatera direkt, ingen
-  // separat batch-körning eller probing mot leverantörer behövs.
   await env.DB.prepare("UPDATE politicians SET verification_status = ?, last_verified_at = ? WHERE email = ?")
     .bind(status === "ok" ? "valid_via_send" : "dead_via_send", now, m.recipientEmail)
     .run();
@@ -292,8 +278,7 @@ async function maybeFinishJob(env: Env, sendJobId: string): Promise<void> {
   const job = await env.DB.prepare("SELECT total_recipients, sent_count, bounce_count, status FROM send_jobs WHERE id = ?")
     .bind(sendJobId)
     .first<{ total_recipients: number; sent_count: number; bounce_count: number; status: string }>();
-  if (!job) return;
-  if (job.status === "aborted") return;
+  if (!job || job.status === "aborted") return;
   if (job.sent_count + job.bounce_count >= job.total_recipients) {
     await env.DB.prepare("UPDATE send_jobs SET status = 'done', finished_at = ? WHERE id = ?").bind(Date.now(), sendJobId).run();
   }
