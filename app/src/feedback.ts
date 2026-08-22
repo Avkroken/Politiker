@@ -3,13 +3,11 @@ import { escapeHtml } from "../../shared/html";
 import { sendSystemMail } from "./auth";
 import type { Env } from "./db";
 
-// Tak för hur många NYA automatiska felnotiser som får mejlas per dygn.
-// Överskjutande fel sparas och räknas fortfarande i D1.
 const MAX_NEW_AUTO_ERROR_EMAILS_PER_DAY = 20;
+const MAX_FEEDBACK_CHARS = 5_000;
+const MAX_CONTEXT_CHARS = 12_000;
+const MAX_REPLY_TO_CHARS = 254;
 
-// Automatiskt rapporterat klientfel → D1 + e-postnotis. Deduplicerar på en
-// signatur (felmeddelande + fil:rad) så återkommande fel räknas upp på samma
-// rad och har ett dygnstak mot mejlspam. Best effort: får aldrig kasta vidare.
 export async function reportClientError(
   env: Env,
   input: { message: string; stack?: string; url?: string },
@@ -40,14 +38,14 @@ export async function reportClientError(
   )
     .bind(since24h)
     .first<{ n: number }>();
-  if ((day?.n ?? 0) > MAX_NEW_AUTO_ERROR_EMAILS_PER_DAY) return { reported: false };
+  if ((day?.n ?? 0) >= MAX_NEW_AUTO_ERROR_EMAILS_PER_DAY) return { reported: false };
 
   try {
     const subject = `Automatiskt klientfel — ${message.slice(0, 80)}`;
     const html = [
       "<p>Automatiskt rapporterat JavaScript-fel i produktion.</p>",
       `<p><strong>Fel:</strong> ${escapeHtml(message)}</p>`,
-      input.url ? `<p><strong>Sida:</strong> ${escapeHtml(input.url)}</p>` : "",
+      input.url ? `<p><strong>Sida:</strong> ${escapeHtml(input.url.slice(0, 500))}</p>` : "",
       stack ? `<pre>${escapeHtml(stack)}</pre>` : "",
     ].join("");
     await sendSystemMail(env, env.FEEDBACK_NOTIFY_EMAIL, subject, html);
@@ -82,13 +80,23 @@ export async function submitFeedback(
     replyTo?: string;
   },
 ): Promise<{ received: true; id: string }> {
+  const message = (input.message ?? "").trim();
+  if (!message) throw new Error("Meddelande krävs");
+  if (message.length > MAX_FEEDBACK_CHARS) throw new Error(`Meddelandet får vara högst ${MAX_FEEDBACK_CHARS} tecken`);
+
   const isContact = input.type === "contact";
   const replyTo = input.replyTo?.trim() || null;
+  if (replyTo && replyTo.length > MAX_REPLY_TO_CHARS) throw new Error("Svarsadressen är för lång");
+
+  let contextJson = "";
+  if (input.context) {
+    contextJson = JSON.stringify(input.context, null, 2);
+    if (contextJson.length > MAX_CONTEXT_CHARS) throw new Error("Klientkontexten är för stor");
+  }
+
   const wantsReply = replyTo ? 1 : 0;
   const feedbackId = randomId();
 
-  // Hämta serverfel för kontot (senaste 48h) — ger administratören relevant
-  // felsammanhang utan att exponera request-body eller hemligheter.
   const since48h = Date.now() - 48 * 60 * 60 * 1000;
   const serverErrors: WorkerError[] = [];
   if (input.accountId) {
@@ -105,16 +113,16 @@ export async function submitFeedback(
   await env.DB.prepare(
     "INSERT INTO feedback (id, account_id, message, github_issue_url, created_at, reply_to, wants_reply, kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   )
-    .bind(feedbackId, input.accountId, input.message, null, Date.now(), replyTo, wantsReply, isContact ? "contact" : "feedback")
+    .bind(feedbackId, input.accountId, message, null, Date.now(), replyTo, wantsReply, isContact ? "contact" : "feedback")
     .run();
 
   const mailSubject = isContact ? "Ny kontaktfråga — politiker.denied.se" : "Ny feedback — politiker.denied.se";
   const mailHtml = [
     replyTo ? `<p>Svar önskas till: ${escapeHtml(replyTo)}</p>` : "<p>Ingen återkoppling via e-post begärd.</p>",
-    `<p>${escapeHtml(input.message)}</p>`,
+    `<p>${escapeHtml(message)}</p>`,
     `<p><strong>Ärende:</strong> ${escapeHtml(feedbackId)}</p>`,
     `<p><strong>Konto:</strong> ${escapeHtml(input.accountId ?? "ej inloggad")}</p>`,
-    input.context ? `<p><strong>Klientkontext:</strong></p><pre>${escapeHtml(JSON.stringify(input.context, null, 2))}</pre>` : "",
+    contextJson ? `<p><strong>Klientkontext:</strong></p><pre>${escapeHtml(contextJson)}</pre>` : "",
     serverErrors.length > 0
       ? `<p><strong>Serverfel senaste 48 timmarna:</strong></p><pre>${escapeHtml(serverErrors.map((error) => {
           const timestamp = new Date(error.created_at).toISOString();
