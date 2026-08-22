@@ -8,9 +8,14 @@
 set -e
 cd "$(dirname "$0")"
 
-set -a
-source ~/.appdata/.config/.env
-set +a
+# Sync-/importskripten som använder D1 HTTP-API behöver sina Cloudflare-
+# variabler i processmiljön. Ingen lokal sökväg antas här. Om servern använder
+# en env-fil kan schedulern sätta POLITIKER_ENV_FILE till just den filen.
+if [[ -n "${POLITIKER_ENV_FILE:-}" ]]; then
+  set -a
+  source "$POLITIKER_ENV_FILE"
+  set +a
+fi
 
 echo "=== $(date -Iseconds) Startar kvartalsvis uppdatering ==="
 
@@ -22,7 +27,7 @@ cd scraper
 echo "--- Synkar kommun/region till D1 ---"
 python3 sync_to_d1.py
 
-echo "--- Hämtar EU-parlamentariker (alla 27 länder) ---"
+echo "--- Hämtar Sveriges EU-parlamentariker ---"
 python3 fetch_eu_meps.py
 
 echo "--- Hämtar riksdagens nuvarande ledamöter ---"
