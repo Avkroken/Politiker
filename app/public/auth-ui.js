@@ -28,6 +28,23 @@
     if (notices?.textContent?.includes('TOTP_REQUIRED')) notices.innerHTML = '';
   }
 
+  function providerIcon(provider) {
+    if (provider === 'github') {
+      return `<span class="oauth-icon oauth-icon-github" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .8a11.2 11.2 0 0 0-3.5 21.8c.6.1.8-.2.8-.6v-2.1c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.5 1.2a12 12 0 0 1 6.4 0c2.4-1.6 3.5-1.2 3.5-1.2.6 1.6.2 2.9.1 3.2.8.9 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.1V22c0 .4.2.7.8.6A11.2 11.2 0 0 0 12 .8Z"/></svg></span>`;
+    }
+    if (provider === 'microsoft') return '<span class="oauth-icon oauth-icon-microsoft" aria-hidden="true"></span>';
+    return '<span class="oauth-icon oauth-icon-google" aria-hidden="true">G</span>';
+  }
+
+  function injectProviderIcons(root) {
+    root.querySelectorAll('.oauth-btn').forEach(link => {
+      if (link.querySelector('.oauth-icon')) return;
+      const href = link.getAttribute('href') || '';
+      const provider = href.includes('/github/') ? 'github' : href.includes('/microsoft/') ? 'microsoft' : 'google';
+      link.insertAdjacentHTML('afterbegin', providerIcon(provider));
+    });
+  }
+
   function authBrand() {
     return `<div class="auth-brand"><div class="brand" style="justify-content:center"><span class="brand-mark">🇸🇪</span><span>Politikerkontakt</span></div><p class="hint">Skriv till dina folkvalda från ditt eget mailkonto.</p></div>`;
   }
@@ -62,11 +79,7 @@
     try {
       const result = await json('/api/signup', {
         method: 'POST',
-        body: JSON.stringify({
-          email: data.get('email'),
-          password: data.get('password'),
-          turnstileToken: token,
-        }),
+        body: JSON.stringify({ email: data.get('email'), password: data.get('password'), turnstileToken: token }),
       });
       showVerification(result.accountId, data.get('email'));
     } catch (error) {
@@ -101,6 +114,8 @@
     const loginForm = root.querySelector('#login-form');
     if (!layout || !loginForm || loginForm.dataset.authEnhanced === '1') return false;
     loginForm.dataset.authEnhanced = '1';
+    layout.classList.add('auth-login-compact');
+    injectProviderIcons(root);
 
     const signupPanel = root.querySelector('.auth-layout > aside.panel');
     if (signupPanel) {
@@ -172,10 +187,7 @@
 
       const code = totpRow?.querySelector('input')?.value || '';
       try {
-        await json('/api/login', {
-          method: 'POST',
-          body: JSON.stringify({ ...credentials, totpCode: code }),
-        });
+        await json('/api/login', { method: 'POST', body: JSON.stringify({ ...credentials, totpCode: code }) });
         location.reload();
       } catch (error) {
         if (msg) msg.innerHTML = `<div class="notice error">${escapeHtml(error.message === 'TOTP_REQUIRED' ? 'Fel 2FA-kod.' : error.message)}</div>`;
