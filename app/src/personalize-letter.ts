@@ -21,8 +21,7 @@ export function personalizeLetter(bodyHtml: string, recipientName: string, recip
     return bodyHtml.replace(/\{GREETING\}/gi, safeGreeting);
   }
 
-  // Bakåtkompatibilitet med äldre AI-utkast. Ersätt hela hälsningen först så
-  // funktionsadresser inte blir "Hej !".
+  // Bakåtkompatibilitet med äldre utkast från tidigare versioner.
   if (/Hej\s+\[förnamn\]!/i.test(bodyHtml)) {
     return bodyHtml.replace(/Hej\s+\[förnamn\]!/gi, safeGreeting);
   }
