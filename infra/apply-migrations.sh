@@ -7,7 +7,7 @@
 set -euo pipefail
 
 REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-DB_NAME="politiker"
+DB_NAME="politiker-eu"
 WR="npx wrangler"
 
 cd "$REPO_DIR/app"
