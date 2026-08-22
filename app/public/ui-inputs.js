@@ -1,5 +1,5 @@
-// Small browser-level input and clipboard helpers. These do not fetch data or
-// re-render application views.
+// Small browser-level input, privacy and clipboard helpers. These do not fetch
+// application data or replace whole application views.
 (() => {
   function enhanceNumericInput(input) {
     if (!(input instanceof HTMLInputElement) || input.type !== 'number') return;
@@ -82,9 +82,38 @@
     field.append(button);
   }
 
+  function retentionCookieValue() {
+    return document.cookie.match(/(?:^|;\s*)letter_retention_ms=([^;]+)/)?.[1] || '300000';
+  }
+
+  function attachRetentionChoice() {
+    const credential = document.querySelector('#send-credential');
+    if (!credential || document.querySelector('[data-letter-retention]')) return;
+    const credentialField = credential.closest('.field');
+    if (!credentialField?.parentElement) return;
+    const field = document.createElement('label');
+    field.className = 'field';
+    field.dataset.letterRetention = '1';
+    field.innerHTML = `<span>Hur länge ska brevtext och bilagor sparas efter slutfört utskick?</span>
+      <select id="letter-retention">
+        <option value="300000">Ta bort efter ca 5 minuter (standard)</option>
+        <option value="86400000">Spara i 24 timmar</option>
+        <option value="259200000">Spara i 3 dagar</option>
+        <option value="604800000">Spara i 7 dagar</option>
+      </select>
+      <small class="hint">Själva utskicksstatistiken sparas separat. Privat brevtext och bilagor sparas aldrig längre än 7 dagar.</small>`;
+    const select = field.querySelector('select');
+    select.value = retentionCookieValue();
+    select.addEventListener('change', () => {
+      document.cookie = `letter_retention_ms=${select.value}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+    });
+    credentialField.insertAdjacentElement('afterend', field);
+  }
+
   function enhanceView() {
     enhanceExistingNumericInputs();
     attachClearLetter();
+    attachRetentionChoice();
   }
 
   if (document.readyState === 'loading') {
@@ -95,7 +124,10 @@
 
   const root = document.querySelector('#root');
   if (root) {
-    const observer = new MutationObserver(attachClearLetter);
+    const observer = new MutationObserver(() => {
+      attachClearLetter();
+      attachRetentionChoice();
+    });
     observer.observe(root, { childList: true, subtree: true });
   }
 
