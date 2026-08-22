@@ -4,15 +4,27 @@
   const fmt=v=>v?new Date(Number(v)).toLocaleString('sv-SE'):'';
   const n=v=>Number(v||0).toLocaleString('sv-SE');
   const status=s=>({queued:'Köad',sending:'Skickar',completed:'Klar',done:'Klar',failed:'Misslyckad',cancelled:'Avbruten',stopped:'Stoppad'}[s]||s||'Okänd');
+  const cache=new Map();
+  const inflight=new Map();
   let timer=0;
+  let observer=null;
 
-  async function json(path){
-    const r=await fetch(path,{headers:{Accept:'application/json'}});
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(d.error||`HTTP ${r.status}`);
-    return d;
+  async function json(path,ttl=5000){
+    const now=Date.now(),cached=cache.get(path);
+    if(cached&&cached.expires>now)return cached.value;
+    if(inflight.has(path))return inflight.get(path);
+    const request=(async()=>{
+      const r=await fetch(path,{headers:{Accept:'application/json'}});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(d.error||`HTTP ${r.status}`);
+      cache.set(path,{value:d,expires:Date.now()+ttl});
+      return d;
+    })().finally(()=>inflight.delete(path));
+    inflight.set(path,request);
+    return request;
   }
 
+  function invalidate(path){cache.delete(path)}
   function providerLabel(p){return ({github:'GitHub',google:'Google',microsoft:'Microsoft'})[String(p||'').toLowerCase()]||p||'Inloggning'}
   function providerMark(p){
     p=String(p||'').toLowerCase();
@@ -33,10 +45,8 @@
   }
 
   async function stabilizeLetters(){
-    if(location.hash!=='#letters')return;
-    const host=$('#letters-list');if(!host)return;
-    if(host.querySelector(':scope > [data-stable-letter]'))return;
-    const d=await json('/api/public/letters');
+    const host=$('#letters-list');if(!host||host.querySelector(':scope > [data-stable-letter]'))return;
+    const d=await json('/api/public/letters',15000);
     if(location.hash!=='#letters'||!document.contains(host))return;
     host.innerHTML='';
     for(const x of d.letters||[]){
@@ -49,18 +59,16 @@
   }
 
   async function stabilizeStats(){
-    if(location.hash!=='#admin/stats')return;
     const panel=$('#admin-panel');if(!panel||panel.querySelector('[data-stable-stats]'))return;
-    const s=await json('/api/admin/stats');
+    const s=await json('/api/admin/stats',10000);
     if(location.hash!=='#admin/stats'||!document.contains(panel))return;
     const countries=(s.visitorCountries||[]).slice(0,12),leaders=(s.leaderboard||[]).slice(0,12);
     panel.innerHTML=`<div data-stable-stats="1"><div class="review-kpis"><a class="kpi stat-link" href="#admin/accounts"><strong>${n(s.totalAccounts)}</strong><span>Konton</span><small>Visa konton →</small></a><div class="kpi"><strong>${n(s.totalVisitors)}</strong><span>Besökare</span></div><div class="kpi"><strong>${n(s.totalLetters)}</strong><span>Brev</span></div></div><div class="review-kpis" style="margin-top:10px"><div class="kpi"><strong>${n(s.totalSent)}</strong><span>Skickade</span></div><div class="kpi"><strong>${n(s.totalBounced)}</strong><span>Misslyckade</span></div><div class="kpi"><strong>${n((s.dailySeries||[]).length)}</strong><span>Aktiva dagar</span></div></div><div class="grid-2" style="margin-top:14px"><div class="panel"><h2>Besökare per land</h2><div class="stack">${countries.length?countries.map(x=>`<div class="admin-row"><div class="credential-head"><strong>${esc(x.country==='??'?'Okänt':x.country)}</strong><span>${n(x.n)}</span></div></div>`).join(''):'<div class="empty">Ingen besöksdata ännu.</div>'}</div></div><div class="panel"><h2>Mest aktiva konton</h2><div class="stack">${leaders.length?leaders.map(x=>x.accountId?`<a class="admin-row" href="#admin/accounts/${encodeURIComponent(x.accountId)}" style="display:block;text-decoration:none"><div class="credential-head"><strong>${esc(x.email)}</strong><span>${n(x.sentCount)}</span></div><div class="hint">Visa konto →</div></a>`:`<div class="admin-row"><div class="credential-head"><strong>${esc(x.email)}</strong><span>${n(x.sentCount)}</span></div></div>`).join(''):'<div class="empty">Ingen utskicksdata ännu.</div>'}</div></div></div></div>`;
   }
 
   async function stabilizeSends(){
-    if(location.hash!=='#admin/sends')return;
     const host=$('#admin-sends');if(!host||host.querySelector(':scope > [data-stable-send]'))return;
-    const rows=await json('/api/admin/send-jobs');
+    const rows=await json('/api/admin/send-jobs',5000);
     if(location.hash!=='#admin/sends'||!document.contains(host))return;
     host.innerHTML='';
     for(const j of rows){const a=document.createElement('a');a.dataset.stableSend='1';a.href=`#admin/sends/${encodeURIComponent(j.id)}`;a.className='admin-row stable-clickable';a.style.cssText='display:block;text-decoration:none';a.innerHTML=`<strong>${esc(j.email||j.account_email||'Konto')}</strong><div class="hint">${esc(status(j.status))} · ${n(j.sent_count)}/${n(j.total_recipients)} · ${esc(fmt(j.created_at))}</div><div class="hint">Visa detaljer →</div>`;host.append(a)}
@@ -68,9 +76,8 @@
   }
 
   async function stabilizeOAuth(){
-    if(location.hash!=='#settings/security')return;
     const list=$('#oauth-list');if(!list||list.querySelector('[data-stable-oauth]'))return;
-    const ids=await json('/api/oauth-identities');
+    const ids=await json('/api/oauth-identities',15000);
     if(location.hash!=='#settings/security'||!document.contains(list))return;
     list.innerHTML='';
     for(const x of ids){
@@ -78,7 +85,7 @@
       const email=x.provider_email?`<div class="hint provider-meta">${esc(x.provider_email)}</div>`:'<div class="hint provider-meta">Mailadress sparas nästa gång du använder den här inloggningen.</div>';
       const date=x.created_at?`<div class="hint provider-meta">Kopplad ${esc(fmt(x.created_at))}</div>`:'';
       d.innerHTML=`<div class="provider-card-head">${providerMark(x.provider)}<div class="provider-card-main"><strong class="provider-name">${esc(providerLabel(x.provider))}</strong>${email}${date}</div></div><button class="danger" type="button">Koppla bort</button>`;
-      d.querySelector('button').onclick=async()=>{const yes=window.appConfirm?await window.appConfirm({title:`Koppla bort ${providerLabel(x.provider)}?`,message:'Du kan länka inloggningssättet igen senare.',confirmLabel:'Koppla bort'}):true;if(!yes)return;const r=await fetch(`/api/oauth-identities/${encodeURIComponent(x.provider)}`,{method:'DELETE'});if(!r.ok)return;list.innerHTML='Laddar…';schedule(10)};
+      d.querySelector('button').onclick=async()=>{const yes=window.appConfirm?await window.appConfirm({title:`Koppla bort ${providerLabel(x.provider)}?`,message:'Du kan länka inloggningssättet igen senare.',confirmLabel:'Koppla bort'}):true;if(!yes)return;const r=await fetch(`/api/oauth-identities/${encodeURIComponent(x.provider)}`,{method:'DELETE'});if(!r.ok)return;invalidate('/api/oauth-identities');list.innerHTML='Laddar…';schedule(10)};
       list.append(d);
     }
     if(!ids.length)list.innerHTML='<div class="empty">Inga externa inloggningar länkade.</div>';
@@ -86,12 +93,24 @@
 
   async function stabilize(){
     ensureStyles();
-    try{await Promise.all([stabilizeLetters(),stabilizeStats(),stabilizeSends(),stabilizeOAuth()])}catch(e){console.warn('render-stability',e)}
+    try{
+      const route=location.hash;
+      if(route==='#letters')await stabilizeLetters();
+      else if(route==='#admin/stats')await stabilizeStats();
+      else if(route==='#admin/sends')await stabilizeSends();
+      else if(route==='#settings/security')await stabilizeOAuth();
+    }catch(e){console.warn('render-stability',e)}
   }
-  function schedule(delay=45){clearTimeout(timer);timer=setTimeout(stabilize,delay)}
 
-  new MutationObserver(()=>schedule()).observe(document.documentElement,{subtree:true,childList:true});
-  window.addEventListener('hashchange',()=>schedule(20));
-  window.addEventListener('pageshow',()=>schedule(20));
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>schedule(20));else schedule(20);
+  function schedule(delay=80){clearTimeout(timer);timer=setTimeout(stabilize,delay)}
+  function startObserver(){
+    const root=$('#root');if(!root||observer)return;
+    observer=new MutationObserver(()=>schedule());
+    observer.observe(root,{subtree:true,childList:true});
+  }
+
+  window.addEventListener('hashchange',()=>schedule(25));
+  window.addEventListener('pageshow',()=>schedule(25));
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{startObserver();schedule(25)});
+  else{startObserver();schedule(25)}
 })();
