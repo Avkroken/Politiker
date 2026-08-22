@@ -30,7 +30,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          LAST_TAG=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          LAST_TAG=$(git tag --list 'v*' --sort=-v:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sed -n '1p' || true)
+
           if [ -n "$LAST_TAG" ]; then
             RANGE="$LAST_TAG..HEAD"
             CURRENT="${LAST_TAG#v}"
