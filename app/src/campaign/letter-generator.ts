@@ -6,8 +6,6 @@ import { encryptLetterData } from "../letter-privacy";
 
 const MAX_ITEMS = 5;
 const MAX_RECIPIENTS_PER_ITEM = 3;
-const EDITORIAL_NAME = "Politikerredaktionen";
-const EDITORIAL_EMAIL = "politiker@denied.se";
 
 interface MonitoredItem { id:string; source:string; item_type:string; title:string; url:string; area_name:string|null; area_type:string; summary:string|null; }
 interface Politician { id:string; name:string; email:string; area_name:string; party:string|null; role:string|null; }
@@ -22,7 +20,7 @@ Svara ENBART "ja" eller "nej".
 Titel: ${item.title}
 Sammanfattning: ${(item.summary??"").slice(0,500)}`,budget:LETTER_GEN_CALL_BUDGET},db);return answer.toLowerCase().startsWith("ja");}
 
-async function generateLetter(item:MonitoredItem,pol:Politician,apiKey:string,db:D1Database):Promise<string>{const polDesc=[pol.name,pol.role,pol.party?`(${pol.party})`:null,pol.area_name].filter(Boolean).join(", "),typeLabel:Record<string,string>={motion:"motion",proposition:"proposition",betankande:"betänkande",news:"nyhet"};return callAnthropic(apiKey,{model:ANTHROPIC_SONNET,maxTokens:950,prompt:`Du skriver för ${EDITORIAL_NAME}, en oberoende redaktionell funktion på Politikerkontakt.
+async function generateLetter(item:MonitoredItem,pol:Politician,apiKey:string,db:D1Database):Promise<string>{const polDesc=[pol.name,pol.role,pol.party?`(${pol.party})`:null,pol.area_name].filter(Boolean).join(", "),typeLabel:Record<string,string>={motion:"motion",proposition:"proposition",betankande:"betänkande",news:"nyhet"};return callAnthropic(apiKey,{model:ANTHROPIC_SONNET,maxTokens:950,prompt:`Du tar fram ett internt brevutkast för Politikerkontakt. Utkastet får inte framställa Politikerkontakt som en redaktion, organisation eller mänsklig författare och får inte innehålla någon signatur eller undertecknare.
 
 Mottagare: ${polDesc}
 Ärende (${typeLabel[item.item_type]??"ärende"}): ${item.title}
@@ -40,10 +38,7 @@ Kvalitetskrav:
 6. Gör inga generaliseringar om människor utifrån etnicitet, religion, nationalitet eller annan gruppidentitet. Om sådana faktorer är sakligt relevanta måste resonemanget vara knutet till verifierbara data i källan och uttryckas neutralt.
 7. Ställ 1–3 konkreta frågor och begär svar på vad mottagaren tänker göra, hur effekten ska mätas och inom vilken tidsram.
 8. Avsluta med en tydlig källrad: "Källa: ${item.url}".
-9. Signera exakt:
-Med vänlig hälsning
-${EDITORIAL_NAME}
-${EDITORIAL_EMAIL}
+9. Lägg INTE till "Med vänlig hälsning", namn, e-postadress, redaktionsnamn eller annan signatur. Utkastet slutar efter källraden.
 
 Ton: saklig, tydlig och kritisk när underlaget motiverar kritik. Ingen förolämpning, inget partipolitiskt slagord, ingen fabricerad säkerhet.
 Skriv ENBART brevtexten.`,budget:LETTER_GEN_CALL_BUDGET},db);}
@@ -60,7 +55,7 @@ async function relevantRecipients(env:Env,item:MonitoredItem):Promise<Politician
 }
 
 export async function runLetterGenerator(env:Env):Promise<void>{
-  // Dagliga redaktionella brev kräver en källa med rimlig förstahands-/public-service-nivå.
+  // Kvalificerade källor kan skapa interna utkast, men aldrig automatiskt godkänna eller skicka dem.
   // Kommersiella feeds ligger kvar som bevakningssignaler men får inte ensamma trigga utskick.
   const{results:items}=await env.DB.prepare("SELECT id,source,item_type,title,url,area_name,area_type,summary FROM monitored_items WHERE letter_queued=0 AND (source='riksdagen' OR source LIKE 'svt_%') ORDER BY created_at ASC LIMIT ?").bind(MAX_ITEMS).all<MonitoredItem>();
   if(!items.length){console.log("letter-gen: inga nya kvalificerade ärenden");return;}
@@ -74,5 +69,5 @@ export async function runLetterGenerator(env:Env):Promise<void>{
     for(const pol of politicians){try{const body=await generateLetter(item,pol,env.ANTHROPIC_API_KEY,env.DB),encryptedBody=await encryptLetterData(env,body),draftId=randomId(),approveToken=randomId()+randomId(),now=Date.now();await env.DB.batch([env.DB.prepare("INSERT INTO civic_letter_drafts (id,subject,html_body,topic_source_url,status,approve_token,created_at) VALUES (?,?,?,?,'pending',?,?)").bind(draftId,subject,encryptedBody,item.url,approveToken,now),env.DB.prepare("INSERT INTO campaign_recipients (id,draft_id,politician_id,politician_email,politician_name,area_name) VALUES (?,?,?,?,?,?)").bind(randomId(),draftId,pol.id,pol.email,pol.name,pol.area_name)]);await sendApprovalNotification(env,{id:draftId,subject,htmlBody:body,topicSourceUrl:item.url,status:"pending",approveToken,createdAt:now,approvedAt:null});totalDrafts++;itemDrafts++;}catch(e){if(e instanceof AnthropicBudgetExceededError){if(itemDrafts>0)await env.DB.prepare("UPDATE monitored_items SET letter_queued=1 WHERE id=?").bind(item.id).run();await notifyBudgetExhausted(env,"letter-generator",`${totalDrafts} brevutkast skapade innan budgeten tog slut. Resterande ärenden ligger kvar i kön.`);return;}console.error(`letter-gen: fel för ${pol.name}:`,e);}}
     if(itemDrafts>0)await env.DB.prepare("UPDATE monitored_items SET letter_queued=1 WHERE id=?").bind(item.id).run();
   }
-  console.log(`letter-gen: ${totalDrafts} brevutkast skapade för manuell granskning`);
+  console.log(`letter-gen: ${totalDrafts} interna brevutkast skapade för manuell granskning`);
 }
