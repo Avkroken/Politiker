@@ -1,109 +1,69 @@
 # Politiker-kontakter
 
-Scraper som hämtar e-postadresser till förtroendevalda i svenska regioner och
-kommuner (samt EU-parlamentet, riksdagen och departementen), och synkar till
-D1-databasen som driver [politiker](https://politiker.denied.se).
+`kontakter/` hämtar offentligt publicerade kontaktuppgifter till förtroendevalda i svenska kommuner och regioner samt från bland annat Europaparlamentet, Riksdagen och regeringen. Resultatet synkas till den D1-databas som används av [Politikerkontakt](https://politiker.denied.se).
 
 ## Publicerad data
 
-Hela kontaktdatabasen publiceras i [`data/`](data/) — namn, e-post, område,
-områdestyp, parti och befattning för samtliga ~17 000 folkvalda:
+Den exporterade kontaktdatabasen finns i `data/`:
 
 | Fil | Format | Användning |
 | --- | --- | --- |
-| `data/politiker.csv` | CSV | Kanonisk, människoläsbar — öppnas i Excel/pandas/osv |
+| `data/politiker.csv` | CSV | Människoläsbar och enkel att använda i exempelvis Excel/pandas |
 | `data/politiker.json` | JSON | Programmatisk användning |
-| `data/politiker.sql` | SQL (`INSERT OR IGNORE`) | Direktimport till en egen D1 |
+| `data/politiker.sql` | SQL | Import till en egen D1-databas |
 
-Filerna genereras direkt ur live-D1:n (read-only) av
-[`.github/workflows/export-politiker.yml`](../.github/workflows/export-politiker.yml),
-som veckovis öppnar en auto-mergad PR när datan ändrats. Ingen extern skrapning
-sker i den workflowen — den läser bara den redan publika databasen.
+Filerna genereras ur live-D1 av `.github/workflows/export-politiker.yml`. Workflowen läser databasen och uppdaterar exportfilerna när innehållet har ändrats; den kör inte själva webbskrapningen.
 
-Importera till en egen politiker-kopia (efter `infra/schema.sql`):
+För en egen installation skapas grundschemat via `infra/setup.sh`/`infra/schema.sql`; därefter kan exporten importeras med Wrangler.
 
-```bash
-wrangler d1 execute <din-db> --remote --file data/politiker.sql
-```
+## Kontaktkort till mobilen
 
-### Kontaktkort till mobilen (VCF)
-
-Vill du lägga in kontakterna i telefonen genereras VCF **på begäran** ur den
-lokala `data/politiker.csv` — ingen belastning på sidan eller databasen. Filtrera
-så du bara får det du vill ha och importera `.vcf`-filen i telefonens kontakter:
+VCF genereras lokalt ur `data/politiker.csv` och committas inte:
 
 ```bash
-python3 export/to_vcf.py                          # alla i en samlad fil
-python3 export/to_vcf.py --area "Lysekils kommun" # bara en kommun
-python3 export/to_vcf.py --type riksdag           # hela riksdagen
-python3 export/to_vcf.py --per-area               # en fil per område
+python3 export/to_vcf.py
+python3 export/to_vcf.py --area "Lysekils kommun"
+python3 export/to_vcf.py --type riksdag
+python3 export/to_vcf.py --per-area
 ```
 
-Filerna skrivs till `vcf/` (committas inte). Detta ersätter de tidigare
-hårdkodade VCF-filerna i repot.
+Utdata skrivs till `vcf/`.
 
-## Regioner utan data (2026-08-18)
+## Kända täckningsbegränsningar
 
-Skrapan är konfigurerad för alla 21 regioner i `scraper/regioner.json`, men
-två av dem ger noll poster i produktionsdatabasen. Det är inte en
-dokumenterad begränsning som i [`UNSUPPORTED_KOMMUNER.md`](UNSUPPORTED_KOMMUNER.md)
-— det är konfiguration som slutat fungera, och den syntes inte förrän
-täckningen mättes per region i stället för som en totalsumma.
+Alla kommuner kan inte skrapas tillförlitligt. `UNSUPPORTED_KOMMUNER.md` dokumenterar de kommuner där en komplett, namngiven lista med faktiska publicerade e-postadresser inte har kunnat verifieras.
 
-| Region | Konfiguration | Uppmätt |
-| --- | --- | --- |
-| Region Örebro län | `typ: "mailto"` mot `regionorebrolan.tromanpublik.se/` | Källan svarar **500**. Dessutom fel strategi: alla andra Troman-regioner använder `typ: "troman"` mot en `/organisation/<uuid>`-URL, och rot-URL:en har inga mailto-länkar att skrapa även när den svarar. |
-| Region Skåne | `typ: "mailto"` mot `skane.se/.../regionfullmaktige/` | Källan svarar **403** på en vanlig HTTP-hämtning (456 byte, ser ut som ett WAF-svar). Kan mycket väl fungera från Playwrights riktiga webbläsare — det behöver provas från en miljö med fungerande browser innan URL:en döms ut. |
+Region- och kommunkällor är externa system och kan ändras eller börja blockera automatiserad hämtning. Täckningen ska därför bedömas från aktuell exporterad data och aktuella scraperkörningar; repot har inte längre någon separat `healthcheck/`-Worker.
 
-Vad det betyder för sajten: den som bor i Skåne eller Örebro län väljer sin
-region och får ingen att kontakta. Tillsammans är det drygt 1,7 miljoner
-invånare.
-
-Hälsokontrollen (`healthcheck/`) larmar numera på detta — se
-`checkRegionCoverage`. Tidigare rapporterades bara totalen ("17 196 politiker
-i databasen"), som såg fullt trovärdig ut medan två regioner var tomma.
-
-## Köra scrapern själv
+## Köra scrapern
 
 ```bash
 cp .env.example .env
-# Justera OUTPUT_DIR i .env
+# Justera OUTPUT_DIR och övriga lokala värden i .env
 docker compose up
 ```
 
-Scrapern skriver till `OUTPUT_DIR`:
+Scrapern skriver bland annat:
 
-- VCF-filer (en per region + en samlad)
-- `Alla_kommuner_och_regioner.txt` — människoläsbar lista
-- `Alla_kommuner_och_regioner.csv` — maskinläsbar; det format `sync_to_d1.py`
-  läser vid synk till D1. Kolumnen `source` är `pattern-guess` för adresser som
-  byggts från ett namnmönster (kan vara felaktiga), annars `scraped`
-- `gissade_adresser.txt` — just de mönster-gissade adresserna, för översyn
+- VCF-filer för lokal användning.
+- `Alla_kommuner_och_regioner.txt` som människoläsbar lista.
+- `Alla_kommuner_och_regioner.csv` som maskinläsbar överföringsform för `sync_to_d1.py`.
+- `gissade_adresser.txt` för adresser som byggts från namnmönster och behöver granskas.
 
 ## Struktur
 
-- `scraper/scraper.py` – huvudlogik, Playwright-baserad
-- `scraper/regioner.json` – regionkonfigurationen (namn/typ/URL per kommun och
-  region) — ren data, läses av både scrapern och backfill-skriptet
-- `scraper/d1.py` – delad Cloudflare D1-klient som alla sync-/export-/verify-
-  skript går via
-- `scraper/politiker_common.py` – delade parti-/namnhjälpare
-- `scraper/fetch_eu_meps.py` – EU-parlamentariker (namn, parti, utskottsbefattning)
-- `scraper/fetch_riksdagen_members.py` – riksdagsledamöter
-- `scraper/sync_regeringen.py` – departementens registratorsadresser
-- `scraper/backfill_kommun_role_party.py` – engångs-/återkörbar bakfyllning av
-  befattning+parti för kommun/region via troman/netpublicator-källornas
-  ledamotslistor (samma datakälla som `scraper.py`, separat steg eftersom det
-  görs per person istället för per region)
-- `scraper/backfill_riksdagen_role.py` – motsvarande bakfyllning för riksdagen
-- `scraper/sync_party_from_val.py` – matchar parti mot Valmyndighetens öppna data
-  där det inte går att fastställa direkt vid skrapning
-- `scraper/sync_to_d1.py` – upsert av scraperns CSV-resultat till
-  politikers D1-databas (`politicians`-tabellen)
-- `scraper/Dockerfile` – bygger scrapern
-- `docker-compose.yml` – kör allt
+- `scraper/scraper.py` — huvudlogik för kommuner och regioner.
+- `scraper/regioner.json` — källkonfiguration för kommuner och regioner.
+- `scraper/d1.py` — gemensam D1-klient för sync-/export-/verify-skript.
+- `scraper/politiker_common.py` — delade parti- och namnhjälpare.
+- `scraper/fetch_eu_meps.py` — Europaparlamentariker.
+- `scraper/fetch_riksdagen_members.py` — riksdagsledamöter.
+- `scraper/sync_regeringen.py` — regering/departement.
+- `scraper/backfill_kommun_role_party.py` och `backfill_riksdagen_role.py` — återkörbara kompletteringar av roll/parti.
+- `scraper/sync_party_from_val.py` — kompletterar parti från Valmyndighetens data.
+- `scraper/sync_to_d1.py` — synkar scraperresultat till `politicians` i D1.
+- `export/` — exportverktyg, bland annat CSV/JSON/SQL och VCF.
 
-## Lägga till kommuner
+## Lägga till eller rätta en källa
 
-Lägg till en post i `scraper/regioner.json` med kommunens fullmäktigesida och
-rätt `"typ"` (se CLAUDE.md för fälten per typ).
+Ändra posten i `scraper/regioner.json` och välj en scraperstrategi som motsvarar hur källan faktiskt publicerar ledamöterna. När en tidigare osupportad kommun får en verifierbar komplett källa ska även `UNSUPPORTED_KOMMUNER.md` uppdateras.
