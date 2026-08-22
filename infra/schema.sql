@@ -1,11 +1,15 @@
 -- Politiker D1-schema
+--
+-- Detta är den kanoniska baslinjen efter migrations-squashen 2026-08-22.
+-- Nya installationer applicerar denna fil direkt. Framtida schemaändringar
+-- läggs som nya filer i infra/migrations/ och bakas in här vid nästa squash.
 
 CREATE TABLE accounts (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   password_salt TEXT NOT NULL,
-  password_set_by_user INTEGER NOT NULL DEFAULT 0, -- 0 för konton skapade via OAuth med slumpat oanvändbart lösenord, 1 efter setPassword()
+  password_set_by_user INTEGER NOT NULL DEFAULT 0,
   email_verified INTEGER NOT NULL DEFAULT 0,
   verification_code TEXT,
   verification_expires_at INTEGER,
@@ -19,52 +23,58 @@ CREATE TABLE accounts (
   created_at INTEGER NOT NULL
 );
 
--- Länkar externa OAuth-identiteter (Google/GitHub/Microsoft/Apple) till ett
--- lokalt konto. Ett konto skapat enbart via OAuth har tom password_hash/salt
--- (kan inte logga in med lösenord förrän det sätts explicit).
+CREATE TRIGGER disable_totp_after_password_reset
+AFTER UPDATE OF reset_token ON accounts
+WHEN OLD.reset_token IS NOT NULL AND NEW.reset_token IS NULL
+BEGIN
+  UPDATE accounts
+  SET totp_enabled = 0,
+      totp_secret = NULL
+  WHERE id = NEW.id;
+END;
+
 CREATE TABLE oauth_identities (
   id TEXT PRIMARY KEY,
   account_id TEXT NOT NULL REFERENCES accounts(id),
-  provider TEXT NOT NULL, -- google | github | microsoft | apple
+  provider TEXT NOT NULL,
   provider_user_id TEXT NOT NULL,
+  provider_email TEXT,
   created_at INTEGER NOT NULL,
   UNIQUE(provider, provider_user_id),
   UNIQUE(account_id, provider)
 );
 
--- Två typer av mailkoppling i samma tabell:
--- 1) SMTP (gmail/outlook/icloud/yahoo/generic): smtp_*/encrypted_password ifyllda, oauth_*-kolumner NULL.
--- 2) OAuth/Graph (microsoft_graph): oauth_*-kolumner ifyllda (krypterade), smtp_*/encrypted_password
---    får platshållarvärden ("oauth"/0) eftersom kolumnerna är NOT NULL och SQLite inte
---    enkelt stödjer att släppa det villkoret i efterhand.
 CREATE TABLE mail_credentials (
   id TEXT PRIMARY KEY,
   account_id TEXT NOT NULL REFERENCES accounts(id),
-  provider TEXT NOT NULL, -- gmail | outlook | icloud | yahoo | generic | microsoft_graph
+  provider TEXT NOT NULL,
   smtp_host TEXT NOT NULL,
   smtp_port INTEGER NOT NULL,
   smtp_user TEXT NOT NULL,
-  encrypted_password TEXT NOT NULL, -- AES-GCM, nyckel = Wrangler secret MAIL_CRED_KEY
+  encrypted_password TEXT NOT NULL,
   from_address TEXT NOT NULL,
-  verified_at INTEGER, -- sätts efter lyckad SMTP AUTH-testhandskakning / OAuth-koppling
-  daily_cap INTEGER, -- = floor(leverantörens hårdkodade tak * user_cap_pct / 100), heltal
-  user_cap_pct INTEGER NOT NULL DEFAULT 100, -- användarens egna val av andel av taket (1-100)
-  oauth_access_token TEXT, -- krypterad, endast för provider = microsoft_graph
-  oauth_refresh_token TEXT, -- krypterad, används för att förnya access_token
+  verified_at INTEGER,
+  daily_cap INTEGER,
+  user_cap_pct INTEGER NOT NULL DEFAULT 100,
+  oauth_access_token TEXT,
+  oauth_refresh_token TEXT,
   oauth_token_expires_at INTEGER,
+  revoked_at INTEGER,
   created_at INTEGER NOT NULL
 );
+CREATE INDEX idx_mail_credentials_account_active
+  ON mail_credentials(account_id, revoked_at, created_at);
 
 CREATE TABLE politicians (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
-  area_name TEXT NOT NULL,   -- t.ex. "Lysekils kommun", "Region Halland", "Sveriges riksdag"
-  area_type TEXT NOT NULL,   -- kommun | region | riksdag | regering | eu
-  party TEXT,                -- partibeteckning, om känd
-  role TEXT,                 -- befattning, om känd (t.ex. "Ordförande", "Ledamot", "Ersättare")
+  area_name TEXT NOT NULL,
+  area_type TEXT NOT NULL,
+  party TEXT,
+  role TEXT,
   last_scraped_at INTEGER NOT NULL,
-  verification_status TEXT NOT NULL DEFAULT 'unknown', -- unknown | valid_via_send | dead_via_send (satt i realtid av sender/src/index.ts vid riktiga utskick) | valid | dead | catchall_unverified | unreachable_* | unknown_code_* | error_* (historiskt satt av politiker-kontakter/verify/verify_emails.py, ej längre i drift — port 25 blockerad både i Cloudflare Workers och hos mp100:s leverantör)
+  verification_status TEXT NOT NULL DEFAULT 'unknown',
   last_verified_at INTEGER,
   UNIQUE(email, area_name)
 );
@@ -77,8 +87,6 @@ CREATE TABLE letters (
   created_at INTEGER NOT NULL
 );
 
--- mode: 'attach' (skickas som bilaga) | 'extract' (innehållet konverterades
--- till HTML och lades in i letters.html_body — raden behålls bara för spårbarhet)
 CREATE TABLE letter_attachments (
   id TEXT PRIMARY KEY,
   letter_id TEXT NOT NULL REFERENCES letters(id),
@@ -90,7 +98,6 @@ CREATE TABLE letter_attachments (
   created_at INTEGER NOT NULL
 );
 
--- En rad per sändningsomgång (för statusvy: "243 av 500 skickade")
 CREATE TABLE send_jobs (
   id TEXT PRIMARY KEY,
   account_id TEXT NOT NULL REFERENCES accounts(id),
@@ -99,22 +106,46 @@ CREATE TABLE send_jobs (
   total_recipients INTEGER NOT NULL,
   sent_count INTEGER NOT NULL DEFAULT 0,
   bounce_count INTEGER NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'pending', -- pending | sending | done | aborted
-  daily_limit INTEGER, -- valfritt extra dygnstak för just detta utskick
-  next_daily_limit INTEGER, -- valfritt tak som tar över vid limit_switch_at
+  status TEXT NOT NULL DEFAULT 'pending',
+  daily_limit INTEGER,
+  next_daily_limit INTEGER,
   limit_switch_at INTEGER,
+  content_retention_ms INTEGER NOT NULL DEFAULT 300000,
+  content_delete_at INTEGER,
   created_at INTEGER NOT NULL,
   finished_at INTEGER
 );
 
--- Beständig mottagarkö för användarutskick som är större än mailkontots
--- dygnskvot. En mottagare förekommer högst en gång per utskick.
+CREATE TRIGGER trg_send_jobs_content_retention
+AFTER UPDATE OF status, finished_at ON send_jobs
+WHEN NEW.finished_at IS NOT NULL
+ AND NEW.status IN ('done','aborted','cancelled')
+BEGIN
+  UPDATE send_jobs
+  SET content_delete_at = NEW.finished_at +
+      CASE NEW.content_retention_ms
+        WHEN 300000 THEN 300000
+        WHEN 86400000 THEN 86400000
+        WHEN 259200000 THEN 259200000
+        WHEN 604800000 THEN 604800000
+        ELSE 300000
+      END
+  WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER trg_send_jobs_clear_content_retention
+AFTER UPDATE OF status ON send_jobs
+WHEN NEW.status IN ('pending','sending') AND OLD.status != NEW.status
+BEGIN
+  UPDATE send_jobs SET content_delete_at = NULL WHERE id = NEW.id;
+END;
+
 CREATE TABLE send_job_recipients (
   send_job_id TEXT NOT NULL REFERENCES send_jobs(id) ON DELETE CASCADE,
   recipient_email TEXT NOT NULL COLLATE NOCASE,
   recipient_name TEXT NOT NULL,
   subject TEXT,
-  status TEXT NOT NULL DEFAULT 'pending', -- pending | queued | ok | bounce
+  status TEXT NOT NULL DEFAULT 'pending',
   queued_at INTEGER,
   finished_at INTEGER,
   error TEXT,
@@ -123,27 +154,23 @@ CREATE TABLE send_job_recipients (
 CREATE INDEX idx_send_job_recipients_pending ON send_job_recipients(send_job_id, status);
 CREATE INDEX idx_send_job_recipients_queued ON send_job_recipients(status, queued_at);
 
--- En rad per mottagare, facit för rate-limit och bounce-cirkelbrytare
 CREATE TABLE send_log (
   id TEXT PRIMARY KEY,
   send_job_id TEXT NOT NULL REFERENCES send_jobs(id),
   account_id TEXT NOT NULL REFERENCES accounts(id),
   recipient_email TEXT NOT NULL,
-  status TEXT NOT NULL, -- ok | bounce
+  status TEXT NOT NULL,
   error TEXT,
   sent_at INTEGER NOT NULL
 );
 CREATE INDEX idx_send_log_account_date ON send_log(account_id, sent_at);
 
--- Granskningskö för civilsamhälls-brev (kvartalsvis, anonymt avsändarkonto).
--- Inget skickas förrän status='approved' satts via en token-länk i ett
--- granskningsmail — ingen passiv timeout, ingen auto-send.
 CREATE TABLE civic_letter_drafts (
   id TEXT PRIMARY KEY,
   subject TEXT NOT NULL,
   html_body TEXT NOT NULL,
   topic_source_url TEXT,
-  status TEXT NOT NULL DEFAULT 'pending', -- pending | approved | rejected | sending | done
+  status TEXT NOT NULL DEFAULT 'pending',
   approve_token TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   approved_at INTEGER
@@ -154,12 +181,12 @@ CREATE TABLE feedback (
   account_id TEXT,
   message TEXT NOT NULL,
   github_issue_url TEXT,
+  reply_to TEXT,
+  wants_reply INTEGER NOT NULL DEFAULT 0,
+  kind TEXT NOT NULL DEFAULT 'feedback',
   created_at INTEGER NOT NULL
 );
 
--- Serverfel (4xx/5xx) loggade per API-anrop — inkluderas automatiskt i
--- e-postnotisen när feedback skickas. Endpoint = pathname utan query-params
--- (query-params kan innehålla tokens). Rensas löpande i feedback-endpoint (>48h).
 CREATE TABLE worker_errors (
   id TEXT PRIMARY KEY,
   account_id TEXT,
@@ -171,9 +198,6 @@ CREATE TABLE worker_errors (
 );
 CREATE INDEX idx_worker_errors_account ON worker_errors(account_id, created_at);
 
--- Personliga API-nycklar: alternativ till sessionskaka för programmatisk
--- åtkomst (Authorization: Bearer <nyckel>). Bara hash lagras, klartext visas
--- en gång vid skapande.
 CREATE TABLE api_keys (
   id TEXT PRIMARY KEY,
   account_id TEXT NOT NULL REFERENCES accounts(id),
@@ -182,21 +206,16 @@ CREATE TABLE api_keys (
   created_at INTEGER NOT NULL,
   last_used_at INTEGER
 );
--- Anonym besöksstatistik för admin-översikten. Lagrar ALDRIG IP eller
--- user-agent — bara en irreversibel hash (SHA-256 av IP+UA+salt) per
--- sidladdning, så unika besökare kan räknas (COUNT DISTINCT) utan att
--- någon enskild besökare kan identifieras eller spåras bakåt.
+
 CREATE TABLE visits (
   id TEXT PRIMARY KEY,
   visitor_hash TEXT NOT NULL,
-  visited_at INTEGER NOT NULL
+  visited_at INTEGER NOT NULL,
+  country TEXT
 );
 CREATE INDEX idx_visits_visited_at ON visits(visited_at);
 CREATE INDEX idx_visits_hash ON visits(visitor_hash);
 
--- Dedup/räkning av automatiskt rapporterade klientfel (oväntade JS-undantag).
--- En rad per unik signatur. github_issue_url behålls som ett äldre fält för
--- befintliga installationer men används inte för nya rapporter.
 CREATE TABLE client_errors (
   signature TEXT PRIMARY KEY,
   message TEXT NOT NULL,
@@ -209,9 +228,37 @@ CREATE TABLE client_errors (
 CREATE INDEX idx_client_errors_first_seen ON client_errors(first_seen);
 CREATE INDEX idx_client_errors_email_notified_at ON client_errors(email_notified_at);
 
--- Spårar dagliga Anthropic API-anrop per UTC-dag för att hålla oss inom det
--- konfigurerade månadslimitet (se shared/anthropic.ts, DAILY_CALL_BUDGET).
 CREATE TABLE daily_api_usage (
-  date       TEXT PRIMARY KEY,  -- "YYYY-MM-DD" UTC
+  date TEXT PRIMARY KEY,
   call_count INTEGER NOT NULL DEFAULT 0
 );
+
+-- Historiska nyhetsbrevstabeller ingår i baslinjen eftersom de finns i fullt
+-- migrerade installationer. De kan tas bort separat först efter en uttrycklig
+-- databasstädning som även hanterar befintliga produktionsdata.
+CREATE TABLE newsletter_subscribers (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  token TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  confirmed_at INTEGER,
+  unsubscribed_at INTEGER
+);
+
+CREATE TABLE newsletter_sends (
+  id TEXT PRIMARY KEY,
+  letter_id TEXT NOT NULL,
+  subscriber_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  sent_at INTEGER,
+  error TEXT,
+  UNIQUE(letter_id, subscriber_id)
+);
+CREATE INDEX idx_newsletter_sends_status ON newsletter_sends(status);
+
+CREATE TABLE schema_migrations (
+  filename TEXT PRIMARY KEY,
+  applied_at INTEGER NOT NULL
+);
+INSERT INTO schema_migrations (filename, applied_at)
+VALUES ('baseline_2026-08-22', 0);
