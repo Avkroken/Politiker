@@ -114,11 +114,14 @@
     const sourceForm = root.querySelector('#login-form');
     if (!layout || !sourceForm || sourceForm.dataset.authEnhanced === '1') return false;
 
-    // v2.js skapar grundmarkupen och sätter en egen onsubmit på formuläret.
-    // Klona formuläret en gång innan auth-logiken kopplas på: klonen behåller
-    // markup/värden men inga JS-listeners/onsubmit-properties. Därmed finns
-    // exakt EN ägare av login/TOTP-flödet och ett submit kan aldrig ge dubbla
-    // login-anrop eller visa både gammalt och nytt 2FA-steg.
+    // Spara den legitima glömt-lösenord-handlern som v2.js redan kopplat.
+    // Själva login-submit-handlern ska däremot tas bort genom kloningen.
+    const sourceForgot = sourceForm.querySelector('#forgot-btn');
+    const forgotHandler = sourceForgot?.onclick || null;
+
+    // Klonen behåller markup/värden men inga JS-listeners/onsubmit-properties.
+    // Därmed finns exakt EN ägare av login/TOTP-flödet och ett submit kan
+    // aldrig ge dubbla login-anrop eller visa både gammalt och nytt 2FA-steg.
     const loginForm = sourceForm.cloneNode(true);
     sourceForm.replaceWith(loginForm);
     loginForm.dataset.authEnhanced = '1';
@@ -139,6 +142,7 @@
     const originalPassword = loginForm.querySelector('[name="password"]');
     const submit = loginForm.querySelector('button.primary');
     const forgot = loginForm.querySelector('#forgot-btn');
+    if (forgot && forgotHandler) forgot.onclick = forgotHandler;
     let credentials = null;
     let totpMode = false;
 
@@ -201,17 +205,6 @@
         if (msg) msg.innerHTML = `<div class="notice error">${escapeHtml(error.message === 'TOTP_REQUIRED' ? 'Fel 2FA-kod.' : error.message)}</div>`;
       }
     });
-
-    if (forgot) forgot.onclick = () => {
-      // Grundappens onclick försvann med kloningen; navigera via den stabila
-      // befintliga knappen genom att ladda om auth-vyns gamla handler endast
-      // när användaren faktiskt väljer lösenordsåterställning.
-      const replacement = document.createElement('button');
-      replacement.type = 'button';
-      replacement.hidden = true;
-      root.append(replacement);
-      location.reload();
-    };
 
     clearLegacyTotpNotice();
     return true;
