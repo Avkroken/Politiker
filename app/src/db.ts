@@ -126,14 +126,41 @@ export async function listRoles(db: D1Database) {
     .prepare(`SELECT role, COUNT(*) as count FROM politicians WHERE role IS NOT NULL AND TRIM(role) != '' GROUP BY role`)
     .all<{ role: string; count: number }>();
 
-  const merged = new Map<string, { role_key: string; role: string; count: number }>();
+  const merged = new Map<string, { role_key: string; role: string; count: number; kind?: string }>();
   for (const row of results) {
     const { key, label } = canonicalRole(row.role);
     const existing = merged.get(key);
     if (existing) existing.count += row.count;
-    else merged.set(key, { role_key: key, role: label, count: row.count });
+    else merged.set(key, { role_key: key, role: label, count: row.count, kind: "role" });
   }
-  return [...merged.values()].sort((a, b) => b.count - a.count);
+
+  let bodyRows: { area_type: string; area_name: string; body: string; count: number }[] = [];
+  try {
+    const bodyResult = await db.prepare(
+      `SELECT p.area_type, a.area_name, TRIM(a.body) AS body, COUNT(DISTINCT lower(trim(p.email))) AS count
+       FROM politician_assignments a
+       JOIN politicians p ON p.id = a.politician_id
+       WHERE p.area_type IN ('kommun','region') AND TRIM(a.body) != ''
+       GROUP BY p.area_type, a.area_name, TRIM(a.body)
+       ORDER BY a.area_name, TRIM(a.body)`,
+    ).all<{ area_type: string; area_name: string; body: string; count: number }>();
+    bodyRows = bodyResult.results;
+  } catch {
+    // Migrationen kan ligga före appdeploy i några sekunder. Roller ska ändå fungera.
+  }
+
+  return [
+    ...[...merged.values()].sort((a, b) => b.count - a.count),
+    ...bodyRows.map((row) => ({
+      kind: "body",
+      role_key: `exclude-body:${row.body}`,
+      role: row.body,
+      body: row.body,
+      count: row.count,
+      area_type: row.area_type,
+      area_name: row.area_name,
+    })),
+  ];
 }
 
 async function rawRolesForCanonicalKeys(db: D1Database, canonicalKeys: string[]): Promise<string[]> {
@@ -194,11 +221,17 @@ export async function getRecipientsForAreas(
   includeRoles: string[] = [],
   includeEmails: string[] = [],
 ) {
+  const excludedBodies = includeRoles
+    .filter((key) => key.startsWith("exclude-body:"))
+    .map((key) => key.slice("exclude-body:".length).trim())
+    .filter(Boolean);
+  const includedRoleKeys = includeRoles.filter((key) => !key.startsWith("exclude-body:"));
+
   const byEmail = new Map<string, { name: string; email: string; area_name: string }>();
-  const hasPoolIntent = areaNames.length > 0 || includeRoles.length > 0;
+  const hasPoolIntent = areaNames.length > 0 || includedRoleKeys.length > 0;
   if (hasPoolIntent) {
-    const rawRoles = includeRoles.length > 0 ? await rawRolesForCanonicalKeys(db, includeRoles) : [];
-    const roleFilterExcludesAll = includeRoles.length > 0 && rawRoles.length === 0;
+    const rawRoles = includedRoleKeys.length > 0 ? await rawRolesForCanonicalKeys(db, includedRoleKeys) : [];
+    const roleFilterExcludesAll = includedRoleKeys.length > 0 && rawRoles.length === 0;
     if (!roleFilterExcludesAll) {
       let sql = `SELECT name, email, area_name FROM politicians
                  WHERE email IS NOT NULL AND TRIM(email) != ''
@@ -232,6 +265,24 @@ export async function getRecipientsForAreas(
       .bind(JSON.stringify(includeEmails))
       .all<{ name: string; email: string; area_name: string }>();
     for (const r of results) byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"), { ...r, email: r.email.trim() });
+  }
+
+  if (excludedBodies.length > 0 && byEmail.size > 0) {
+    try {
+      let sql = `SELECT DISTINCT lower(trim(p.email)) AS email_key
+                 FROM politician_assignments a
+                 JOIN politicians p ON p.id = a.politician_id
+                 WHERE a.body IN (SELECT value FROM json_each(?))`;
+      const params: unknown[] = [JSON.stringify(excludedBodies)];
+      if (areaNames.length > 0) {
+        sql += ` AND p.area_name IN (SELECT value FROM json_each(?))`;
+        params.push(JSON.stringify(areaNames));
+      }
+      const { results } = await db.prepare(sql).bind(...params).all<{ email_key: string }>();
+      for (const row of results) byEmail.delete(row.email_key);
+    } catch {
+      // Om migrationen ännu inte är applicerad ignoreras bara nämndfiltret.
+    }
   }
 
   for (const e of excludeEmails) byEmail.delete(e.trim().toLocaleLowerCase("sv-SE"));
