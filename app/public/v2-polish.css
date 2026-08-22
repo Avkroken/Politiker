@@ -1,163 +1,24 @@
 [hidden]{display:none!important}
 
-.settings-nav{
-  gap:8px;
-}
+/* The former public Letters publication area is retired. */
+#desktop-nav .nav-btn:nth-child(5),
+#drawer-nav .drawer-btn:nth-child(5){display:none!important}
 
-.settings-nav .subnav-btn{
-  min-height:44px;
-  padding:9px 14px;
-  border:1px solid transparent;
-  border-radius:10px;
-  white-space:nowrap;
-  text-align:center;
-}
-
-.settings-nav .subnav-btn.active{
-  border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
-  background:color-mix(in srgb,var(--accent) 14%,var(--panel2));
-  color:var(--accent);
-}
-
-/* Provider identity is part of the design system, not a post-render patch. */
-.provider-mark{
-  width:42px;
-  height:42px;
-  flex:0 0 42px;
-  display:grid;
-  place-items:center;
-  border-radius:11px;
-  font-size:0;
-  line-height:1;
-  overflow:hidden;
-  position:relative;
-}
-.provider-mark::before{
-  font-size:22px;
-  font-weight:800;
-  line-height:1;
-}
-.provider-mark.github{
-  border-radius:50%;
-  background:#f5f5f7;
-  color:#11131a;
-}
+.settings-nav{gap:8px}
+.settings-nav .subnav-btn{min-height:44px;padding:9px 14px;border:1px solid transparent;border-radius:10px;white-space:nowrap;text-align:center}
+.settings-nav .subnav-btn.active{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));background:color-mix(in srgb,var(--accent) 14%,var(--panel2));color:var(--accent)}
+.provider-mark{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:11px;font-size:0;line-height:1;overflow:hidden;position:relative}
+.provider-mark::before{font-size:22px;font-weight:800;line-height:1}
+.provider-mark.github{border-radius:50%;background:#f5f5f7;color:#11131a}
 .provider-mark.github::before{content:'GH';font-size:13px;letter-spacing:-.04em}
-.provider-mark.microsoft{
-  border-radius:5px;
-  background:
-    linear-gradient(#f25022 0 0) 0 0/47% 47% no-repeat,
-    linear-gradient(#7fba00 0 0) 100% 0/47% 47% no-repeat,
-    linear-gradient(#00a4ef 0 0) 0 100%/47% 47% no-repeat,
-    linear-gradient(#ffb900 0 0) 100% 100%/47% 47% no-repeat;
-}
-.provider-mark.google{
-  background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 0 40%,#fbbc05 0 65%,#ea4335 0 82%,#4285f4 0);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
+.provider-mark.microsoft{border-radius:5px;background:linear-gradient(#f25022 0 0) 0 0/47% 47% no-repeat,linear-gradient(#7fba00 0 0) 100% 0/47% 47% no-repeat,linear-gradient(#00a4ef 0 0) 0 100%/47% 47% no-repeat,linear-gradient(#ffb900 0 0) 100% 100%/47% 47% no-repeat}
+.provider-mark.google{background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 0 40%,#fbbc05 0 65%,#ea4335 0 82%,#4285f4 0);-webkit-background-clip:text;background-clip:text;color:transparent}
 .provider-mark.google::before{content:'G';font-size:30px;font-family:Arial,sans-serif}
-
-/* Login provider buttons use explicit inline marks so Safari cannot drop them. */
-.oauth-btn{
-  position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:.72rem;
-}
-.oauth-btn::before{display:none!important}
-.oauth-icon{
-  width:25px;
-  height:25px;
-  flex:0 0 25px;
-  display:inline-grid;
-  place-items:center;
-  line-height:1;
-}
-.oauth-icon svg{display:block;width:25px;height:25px}
-.oauth-icon-google{
-  font:800 22px/1 Arial,sans-serif;
-  background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 0 40%,#fbbc05 0 65%,#ea4335 0 82%,#4285f4 0);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.oauth-icon-microsoft{
-  width:22px;
-  height:22px;
-  flex-basis:22px;
-  border-radius:2px;
-  background:
-    linear-gradient(#f25022 0 0) 0 0/47% 47% no-repeat,
-    linear-gradient(#7fba00 0 0) 100% 0/47% 47% no-repeat,
-    linear-gradient(#00a4ef 0 0) 0 100%/47% 47% no-repeat,
-    linear-gradient(#ffb900 0 0) 100% 100%/47% 47% no-repeat;
-}
-.oauth-icon-github{color:var(--text,#f5f5f7)}
-
-.auth-layout.auth-login-compact{grid-template-columns:minmax(0,620px);justify-content:center}
-.auth-layout.auth-login-compact>.panel{width:100%}
-.auth-login-compact>.panel:last-child{padding-top:1.2rem}
-.auth-single{max-width:720px;margin-inline:auto}
-.auth-single-card{max-width:620px;margin-inline:auto}
-.auth-back{margin-bottom:1rem}
-.totp-step::before{
-  content:'Tvåfaktorsinloggning';
-  display:block;
-  margin-bottom:.35rem;
-  font-size:1.35rem;
-  font-weight:750;
-}
-.totp-step::after{
-  content:'Ange koden från din autentiseringsapp.';
-  display:block;
-  order:-1;
-  color:var(--muted);
-}
-.auth-signup-button{width:100%}
-
-/* Keep KPI text on separate lines; avoid "KontonVisa konto" collisions. */
-.kpi > strong,.kpi > span,.kpi > small{display:block}
-.kpi > small{margin-top:.45rem;color:var(--accent);font-size:.9rem;font-weight:600}
-.stat-link{text-decoration:none;color:inherit}
-.stat-link:hover,.stat-link:focus-visible{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));outline:none}
-
-/* Grid gap is the sole source of spacing inside grid/stack containers. */
-.grid-2 > .panel + .panel,
-.grid-3 > .panel + .panel,
-.stack > .panel + .panel{margin-top:0}
-.review-kpis + .review-kpis{margin-top:8px}
-.review-kpis + .grid-2{margin-top:12px}
-
-@media(max-width:860px){
-  .settings-nav{
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:8px;
-    border-bottom:0;
-    overflow:visible;
-    margin-bottom:2px;
-  }
-
-  .settings-nav .subnav-btn{
-    width:100%;
-    padding:10px 8px;
-    border-radius:10px;
-    font-size:.94rem;
-  }
-}
-
-@media(max-width:520px){
-  .settings-nav{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-}
-
-@media(hover:none){
-  .settings-nav .subnav-btn:not(.active):hover{
-    background:transparent;
-    color:var(--muted);
-  }
-}
+.oauth-btn{position:relative;display:flex;align-items:center;justify-content:center;gap:.72rem}
+.oauth-btn::before{display:none!important}.oauth-icon{width:25px;height:25px;flex:0 0 25px;display:inline-grid;place-items:center;line-height:1}.oauth-icon svg{display:block;width:25px;height:25px}.oauth-icon-google{font:800 22px/1 Arial,sans-serif;background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 0 40%,#fbbc05 0 65%,#ea4335 0 82%,#4285f4 0);-webkit-background-clip:text;background-clip:text;color:transparent}.oauth-icon-microsoft{width:22px;height:22px;flex-basis:22px;border-radius:2px;background:linear-gradient(#f25022 0 0) 0 0/47% 47% no-repeat,linear-gradient(#7fba00 0 0) 100% 0/47% 47% no-repeat,linear-gradient(#00a4ef 0 0) 0 100%/47% 47% no-repeat,linear-gradient(#ffb900 0 0) 100% 100%/47% 47% no-repeat}.oauth-icon-github{color:var(--text,#f5f5f7)}
+.auth-layout.auth-login-compact{grid-template-columns:minmax(0,620px);justify-content:center}.auth-layout.auth-login-compact>.panel{width:100%}.auth-login-compact>.panel:last-child{padding-top:1.2rem}.auth-single{max-width:720px;margin-inline:auto}.auth-single-card{max-width:620px;margin-inline:auto}.auth-back{margin-bottom:1rem}.totp-step::before{content:'Tvåfaktorsinloggning';display:block;margin-bottom:.35rem;font-size:1.35rem;font-weight:750}.totp-step::after{content:'Ange koden från din autentiseringsapp.';display:block;order:-1;color:var(--muted)}.auth-signup-button{width:100%}
+.kpi > strong,.kpi > span,.kpi > small{display:block}.kpi > small{margin-top:.45rem;color:var(--accent);font-size:.9rem;font-weight:600}.stat-link{text-decoration:none;color:inherit}.stat-link:hover,.stat-link:focus-visible{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));outline:none}
+.grid-2 > .panel + .panel,.grid-3 > .panel + .panel,.stack > .panel + .panel{margin-top:0}.review-kpis + .review-kpis{margin-top:8px}.review-kpis + .grid-2{margin-top:12px}
+@media(max-width:860px){.settings-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;border-bottom:0;overflow:visible;margin-bottom:2px}.settings-nav .subnav-btn{width:100%;padding:10px 8px;border-radius:10px;font-size:.94rem}}
+@media(max-width:520px){.settings-nav{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(hover:none){.settings-nav .subnav-btn:not(.active):hover{background:transparent;color:var(--muted)}}
