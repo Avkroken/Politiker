@@ -4,6 +4,7 @@
   let bodyRows = [];
   let lastFilterPayload = null;
   let loading = null;
+  let renderedAreaSignature = '';
   const originalFetch = window.fetch.bind(window);
 
   const pathOf = input => {
@@ -33,7 +34,10 @@
 
     try {
       const payload = JSON.parse(init.body);
-      if (Array.isArray(payload.areaNames)) lastFilterPayload = structuredClone(payload);
+      if (Array.isArray(payload.areaNames)) {
+        lastFilterPayload = structuredClone(payload);
+        scheduleDraw();
+      }
       const normalRoles = Array.isArray(payload.includeRoles)
         ? payload.includeRoles.filter(x => typeof x === 'string' && !x.startsWith(EXCLUDE_PREFIX))
         : [];
@@ -46,6 +50,10 @@
 
   function selectedAreaNames() {
     return new Set(Array.isArray(lastFilterPayload?.areaNames) ? lastFilterPayload.areaNames : []);
+  }
+
+  function areaSignature() {
+    return [...selectedAreaNames()].sort((a, b) => a.localeCompare(b, 'sv-SE')).join('\u001f');
   }
 
   function relevantBodies() {
@@ -80,9 +88,11 @@
 
   function drawBodyFilter() {
     const advanced = document.querySelector('#send-step details.disclosure > .stack');
-    if (!advanced || document.querySelector('#body-filter-disclosure')) return;
+    if (!advanced) return;
 
     const rows = relevantBodies();
+    const old = document.querySelector('#body-filter-disclosure');
+    if (old) old.remove();
     if (!rows.length) return;
 
     const details = document.createElement('details');
@@ -118,13 +128,22 @@
     clearTimeout(timer);
     timer = setTimeout(async () => {
       await loadBodies();
+      const advanced = document.querySelector('#send-step details.disclosure > .stack');
+      if (!advanced) {
+        renderedAreaSignature = '';
+        return;
+      }
+      const signature = areaSignature();
       const existing = document.querySelector('#body-filter-disclosure');
-      if (existing) existing.remove();
+      if (existing && signature === renderedAreaSignature) return;
+      renderedAreaSignature = signature;
       drawBodyFilter();
     }, 60);
   }
 
-  const observer = new MutationObserver(scheduleDraw);
+  const observer = new MutationObserver(() => {
+    if (!document.querySelector('#body-filter-disclosure')) scheduleDraw();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   loadBodies().then(scheduleDraw);
 })();
