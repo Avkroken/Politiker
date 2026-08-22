@@ -9,7 +9,7 @@
   "upload_source_maps": true,
   "assets": {"directory":"./public","not_found_handling":"single-page-application","binding":"ASSETS","run_worker_first":["/api/*","/"]},
   "routes": [{ "pattern": "politiker.denied.se", "custom_domain": true }],
-  "d1_databases": [{ "binding": "DB", "database_name": "politiker", "database_id": "e9ecf94f-fa71-4004-a5b8-f9317eb4d4e9" }],
+  "d1_databases": [{ "binding": "DB", "database_name": "politiker-eu", "database_id": "78777055-bf37-4388-86ad-69bdf782e2cd" }],
   "kv_namespaces": [{ "binding": "SESSIONS", "id": "23255cc6e67a4a19b19e5ea67a676b40" }],
   "queues": {"producers":[{"queue":"politiker-send-jobs","binding":"SEND_QUEUE"}],"consumers":[{"queue":"politiker-send-jobs","max_batch_size":10,"max_retries":10,"max_concurrency":5,"dead_letter_queue":"politiker-send-jobs-dlq"}]},
   "durable_objects": { "bindings": [{ "name": "RATE_LIMITER", "class_name": "CredentialRateLimiter" }] },
