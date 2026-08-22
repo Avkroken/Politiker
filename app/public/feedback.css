@@ -4,3 +4,6 @@
 .feedback-badge{display:inline-flex;margin-top:.75rem;padding:.3rem .65rem;border:1px solid var(--accent,#9b87f5);border-radius:999px;color:var(--accent,#9b87f5);font-size:.85rem;}
 .feedback-reply-link{display:block;text-align:center;text-decoration:none;}
 .feedback-detail p{overflow-wrap:anywhere;}
+.feedback-controls{margin-bottom:14px;justify-content:flex-end;}
+.feedback-detail-actions{justify-content:space-between;align-items:center;}
+@media(max-width:560px){.feedback-controls,.feedback-detail-actions{display:grid;grid-template-columns:1fr}.feedback-controls button,.feedback-detail-actions button{width:100%}}
