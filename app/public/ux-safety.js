@@ -31,6 +31,77 @@
     return body;
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function showNotice(message) {
+    const box = $('#global-notices');
+    if (!box) return;
+    const notice = document.createElement('div');
+    notice.className = 'notice error';
+    notice.textContent = message;
+    box.replaceChildren(notice);
+  }
+
+  function ensureConfirmHost() {
+    let host = $('#app-confirm');
+    if (host) return host;
+    host = document.createElement('div');
+    host.id = 'app-confirm';
+    host.className = 'app-confirm';
+    host.hidden = true;
+    host.innerHTML = `<div class="app-confirm-backdrop"></div><div class="app-confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="app-confirm-title" aria-describedby="app-confirm-message"><h2 id="app-confirm-title"></h2><p id="app-confirm-message"></p><div class="button-row app-confirm-actions"><button type="button" class="secondary" id="app-confirm-cancel">Avbryt</button><button type="button" class="danger" id="app-confirm-ok">Bekräfta</button></div></div>`;
+    document.body.append(host);
+    return host;
+  }
+
+  window.appConfirm = function appConfirm(options = {}) {
+    const host = ensureConfirmHost();
+    const title = options.title || 'Är du säker?';
+    const message = options.message || 'Den här åtgärden går inte att ångra.';
+    const confirmLabel = options.confirmLabel || 'Bekräfta';
+    const cancelLabel = options.cancelLabel || 'Avbryt';
+    const danger = options.danger !== false;
+    const titleEl = $('#app-confirm-title', host);
+    const messageEl = $('#app-confirm-message', host);
+    const ok = $('#app-confirm-ok', host);
+    const cancel = $('#app-confirm-cancel', host);
+    const backdrop = $('.app-confirm-backdrop', host);
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    ok.textContent = confirmLabel;
+    cancel.textContent = cancelLabel;
+    ok.className = danger ? 'danger' : 'primary';
+    host.hidden = false;
+    host.classList.add('open');
+    document.body.classList.add('confirm-open');
+
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        host.classList.remove('open');
+        host.hidden = true;
+        document.body.classList.remove('confirm-open');
+        ok.onclick = null;
+        cancel.onclick = null;
+        backdrop.onclick = null;
+        document.removeEventListener('keydown', onKey);
+        resolve(value);
+      };
+      const onKey = event => {
+        if (event.key === 'Escape') finish(false);
+      };
+      ok.onclick = () => finish(true);
+      cancel.onclick = () => finish(false);
+      backdrop.onclick = () => finish(false);
+      document.addEventListener('keydown', onKey);
+      setTimeout(() => cancel.focus(), 0);
+    });
+  };
+
   let oauthBusy = false;
   async function enhanceOAuthList() {
     const list = $('#oauth-list');
@@ -63,6 +134,12 @@
           </div>
           <button class="danger oauth-unlink" type="button">Koppla bort</button>`;
         $('.oauth-unlink', card).onclick = async () => {
+          const yes = await window.appConfirm({
+            title: `Koppla bort ${provider.name}?`,
+            message: `Du kan inte längre logga in med ${provider.name} förrän det länkas igen.`,
+            confirmLabel: 'Koppla bort',
+          });
+          if (!yes) return;
           try {
             await json(`/api/oauth-identities/${encodeURIComponent(identity.provider)}`, { method: 'DELETE' });
             list.dataset.rich = '0';
@@ -78,19 +155,6 @@
     } finally {
       oauthBusy = false;
     }
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  function showNotice(message) {
-    const box = $('#global-notices');
-    if (!box) return;
-    const notice = document.createElement('div');
-    notice.className = 'notice error';
-    notice.textContent = message;
-    box.replaceChildren(notice);
   }
 
   let jobsBusy = false;
@@ -171,6 +235,52 @@
   function closeModal() {
     $('#modal')?.classList.remove('open');
   }
+
+  // Fånga de äldre destruktiva knapparna innan v2.js hinner visa native confirm().
+  document.addEventListener('click', async event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+
+    if (button.id === 'totp-action' && button.textContent.includes('Inaktivera')) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (!await window.appConfirm({ title: 'Inaktivera 2FA?', message: 'Kontot kommer därefter bara skyddas av dina övriga inloggningssätt.', confirmLabel: 'Inaktivera 2FA' })) return;
+      try { await json('/api/totp/disable', { method: 'POST' }); location.reload(); } catch (error) { showNotice(error.message); }
+      return;
+    }
+
+    const credentialCard = button.closest('#cred-list .credential-card');
+    if (credentialCard && button.classList.contains('danger')) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      const cards = $$('#cred-list .credential-card');
+      const index = cards.indexOf(credentialCard);
+      try {
+        const credentials = await json('/api/mail-credentials');
+        const credential = credentials[index];
+        if (!credential) return;
+        if (!await window.appConfirm({ title: 'Ta bort mailkonto?', message: 'Pågående utskick som använder kontot kan stoppas. Historiken behålls.', confirmLabel: 'Ta bort mailkonto' })) return;
+        await json(`/api/mail-credentials/${encodeURIComponent(credential.id)}`, { method: 'DELETE' });
+        location.reload();
+      } catch (error) { showNotice(error.message); }
+      return;
+    }
+
+    const jobCard = button.closest('.job-card');
+    if (jobCard && button.classList.contains('danger') && button.textContent.trim() === 'Ta bort') {
+      event.preventDefault(); event.stopImmediatePropagation();
+      try {
+        let id = jobCard.dataset.jobId;
+        if (!id) {
+          const jobs = await json('/api/send-jobs');
+          const index = $$('.job-card').indexOf(jobCard);
+          id = jobs[index]?.id;
+        }
+        if (!id) return;
+        if (!await window.appConfirm({ title: 'Ta bort utskicket?', message: 'Utskicket tas bort från historiken. Redan skickade mail påverkas inte.', confirmLabel: 'Ta bort utskick' })) return;
+        await json(`/api/send-jobs/${encodeURIComponent(id)}/rate`, { method: 'PATCH', body: JSON.stringify({ action: 'delete' }) });
+        location.reload();
+      } catch (error) { showNotice(error.message); }
+    }
+  }, true);
 
   const observer = new MutationObserver(() => {
     enhanceOAuthList();
