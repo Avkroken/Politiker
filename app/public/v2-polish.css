@@ -57,41 +57,35 @@
 }
 .provider-mark.google::before{content:'G';font-size:30px;font-family:Arial,sans-serif}
 
-/* Login provider buttons use the same visual language. */
+/* Login provider buttons use explicit inline marks so Safari cannot drop them. */
 .oauth-btn{
   position:relative;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:.7rem;
+  gap:.72rem;
 }
-.oauth-btn::before{
-  width:24px;
-  height:24px;
-  flex:0 0 24px;
-  display:grid;
+.oauth-btn::before{display:none!important}
+.oauth-icon{
+  width:25px;
+  height:25px;
+  flex:0 0 25px;
+  display:inline-grid;
   place-items:center;
-  font-weight:800;
   line-height:1;
 }
-.oauth-btn[href*="/google/"]::before{
-  content:'G';
-  font-family:Arial,sans-serif;
-  font-size:21px;
+.oauth-icon svg{display:block;width:25px;height:25px}
+.oauth-icon-google{
+  font:800 22px/1 Arial,sans-serif;
   background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 0 40%,#fbbc05 0 65%,#ea4335 0 82%,#4285f4 0);
   -webkit-background-clip:text;
   background-clip:text;
   color:transparent;
 }
-.oauth-btn[href*="/github/"]::before{
-  content:'GH';
-  border-radius:50%;
-  background:#f5f5f7;
-  color:#11131a;
-  font-size:10px;
-}
-.oauth-btn[href*="/microsoft/"]::before{
-  content:'';
+.oauth-icon-microsoft{
+  width:22px;
+  height:22px;
+  flex-basis:22px;
   border-radius:2px;
   background:
     linear-gradient(#f25022 0 0) 0 0/47% 47% no-repeat,
@@ -99,6 +93,28 @@
     linear-gradient(#00a4ef 0 0) 0 100%/47% 47% no-repeat,
     linear-gradient(#ffb900 0 0) 100% 100%/47% 47% no-repeat;
 }
+.oauth-icon-github{color:var(--text,#f5f5f7)}
+
+.auth-layout.auth-login-compact{grid-template-columns:minmax(0,620px);justify-content:center}
+.auth-layout.auth-login-compact>.panel{width:100%}
+.auth-login-compact>.panel:last-child{padding-top:1.2rem}
+.auth-single{max-width:720px;margin-inline:auto}
+.auth-single-card{max-width:620px;margin-inline:auto}
+.auth-back{margin-bottom:1rem}
+.totp-step::before{
+  content:'Tvåfaktorsinloggning';
+  display:block;
+  margin-bottom:.35rem;
+  font-size:1.35rem;
+  font-weight:750;
+}
+.totp-step::after{
+  content:'Ange koden från din autentiseringsapp.';
+  display:block;
+  order:-1;
+  color:var(--muted);
+}
+.auth-signup-button{width:100%}
 
 /* Keep KPI text on separate lines; avoid "KontonVisa konto" collisions. */
 .kpi > strong,.kpi > span,.kpi > small{display:block}
