@@ -89,15 +89,6 @@ npm run validate
 
 SMTP-/mailhemligheter och temporärt brevinnehåll skyddas med applikationskryptering. Säkerhetskänsliga kontoändringar kräver en färsk webbsession, API-nycklar har begränsade operationer och publika skrivvägar skyddas med bland annat Turnstile/rate limiting där det behövs.
 
-## Sponsring
-
-Politikerkontakt är gratis att använda. Frivilligt stöd till drift och fortsatt utveckling kan lämnas via:
-
-- GitHub Sponsors: https://github.com/sponsors/blixten85
-- PayPal: https://paypal.me/anders0225
-
-Även en liten summa, exempelvis 25 kr, är tillräcklig; PayPal-länken låter givaren välja belopp själv.
-
 ## Kontakt och källkod
 
 Källkoden finns öppet i detta GitHub-repo. Frågor om tjänsten kan skickas till `politiker@denied.se` eller via tjänstens kontaktfunktion.
