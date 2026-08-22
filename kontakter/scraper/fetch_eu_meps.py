@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Hämtar ALLA ledamöter i Europaparlamentet (alla 27 EU-länder) via
-EU-parlamentets öppna data-API (data.europarl.europa.eu) och synkar till
-D1-tabellen `politicians` (area_type='eu', area_name='Europaparlamentet
-(<land>)' — ett område per land, så mottagarlistan kan filtreras per land
-senare).
+Hämtar Sveriges nuvarande ledamöter i Europaparlamentet via parlamentets
+öppna data-API och synkar dem till D1-tabellen `politicians` som
+area_type='eu', area_name='Europaparlamentet (Sverige)'.
 
-Mail-adresser finns inte i API-svaret — varje ledamots officiella profilsida
-innehåller en spam-skyddad, omvänd sträng (t.ex. "ue[dot]aporue.lraporue[at]
-nergmloh.rap") som avkodas till "par.holmgren@europarl.europa.eu". Avkodning:
-ersätt "[dot]"->"." och "[at]"->"@", sedan vänd strängen.
+Politikerkontakt är inriktat på svenska politiska företrädare. Därför importeras
+inte längre Europaparlamentets ledamöter från övriga 26 medlemsländer. Svenska
+MEP:ars politiska grupp behålls i `party` eftersom den är relevant i just EU-
+kontexten.
+
+Mail-adresser finns inte i API-svaret utan hämtas från respektive officiell
+profilsida.
 
 Miljövariabler som krävs (samma .env som sync_to_d1.py):
   CLOUDFLARE_ACCOUNT_ID
@@ -27,17 +28,7 @@ import requests
 from d1 import D1Client
 
 EP_API_BASE = "https://data.europarl.europa.eu/api/v2"
-
-# Svenska landsnamn för EU:s 27 medlemsländer (ISO 3166-1 alpha-2).
-COUNTRY_NAMES = {
-    "AT": "Österrike", "BE": "Belgien", "BG": "Bulgarien", "CY": "Cypern",
-    "CZ": "Tjeckien", "DE": "Tyskland", "DK": "Danmark", "EE": "Estland",
-    "ES": "Spanien", "FI": "Finland", "FR": "Frankrike", "GR": "Grekland",
-    "HR": "Kroatien", "HU": "Ungern", "IE": "Irland", "IT": "Italien",
-    "LT": "Litauen", "LU": "Luxemburg", "LV": "Lettland", "MT": "Malta",
-    "NL": "Nederländerna", "PL": "Polen", "PT": "Portugal", "RO": "Rumänien",
-    "SE": "Sverige", "SI": "Slovenien", "SK": "Slovakien",
-}
+SWEDISH_EU_AREA = "Europaparlamentet (Sverige)"
 
 UPSERT_SQL = (
     "INSERT INTO politicians (id, name, email, area_name, area_type, party, role, last_scraped_at) "
@@ -45,11 +36,6 @@ UPSERT_SQL = (
     "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, party = excluded.party, role = excluded.role, last_scraped_at = excluded.last_scraped_at"
 )
 
-# Profilsidan grupperar utskottsuppdrag under rubriker <h4 class="es_title-h4">
-# Chair/Vice-Chair/Member/Substitute</h4> — en person kan ha flera uppdrag
-# (t.ex. ordförande i ett utskott, vanlig ledamot i ett annat), så vi väljer
-# det mest framträdande. Svensk översättning för konsekvens med övriga
-# kategoriers rollnamn (samma vokabulär som riksdagens utskottsroller).
 ROLE_TRANSLATION = {"Chair": "Ordförande", "Vice-Chair": "Vice ordförande", "Member": "Ledamot", "Substitute": "Suppleant"}
 ROLE_PRIORITY = {"Chair": 0, "Vice-Chair": 1, "Member": 2, "Substitute": 3}
 
@@ -76,11 +62,6 @@ def fetch_all_current_meps() -> list[dict]:
 
 
 def fetch_email_and_role(mep_id: str) -> tuple[str | None, str | None]:
-    """Returnerar (email, roll) från ledamotens profilsida — båda plockas ur
-    samma sidhämtning, ingen anledning till två separata anrop. Email blir
-    None om profilsidan saknar ett mailfält. Kastar requests.HTTPError vid
-    4xx/5xx — det är en riktig miss (rate limit, serverfel), inte "ingen
-    email"."""
     resp = requests.get(f"https://www.europarl.europa.eu/meps/en/{mep_id}/x/home", timeout=20)
     resp.raise_for_status()
     html = resp.text
@@ -98,13 +79,12 @@ def fetch_email_and_role(mep_id: str) -> tuple[str | None, str | None]:
         if rank < best_rank:
             role, best_rank = m.group(1), rank
     role = ROLE_TRANSLATION.get(role)
-
     return email, role
 
 
-def sync_one(client: D1Client, name: str, email: str, area_name: str, party: str | None, role: str | None, now_ms: int) -> bool:
+def sync_one(client: D1Client, name: str, email: str, party: str | None, role: str | None, now_ms: int) -> bool:
     try:
-        client.run(UPSERT_SQL, [name, email, area_name, party, role, now_ms])
+        client.run(UPSERT_SQL, [name, email, SWEDISH_EU_AREA, party, role, now_ms])
         return True
     except (requests.RequestException, RuntimeError) as err:
         print(f"FEL: {name} <{email}>: {err}", file=sys.stderr)
@@ -113,26 +93,14 @@ def sync_one(client: D1Client, name: str, email: str, area_name: str, party: str
 
 def main():
     client = D1Client()
-
-    # Engångsstädning: tidigare körningar (innan per-land-uppdelning) skrev
-    # area_name='Europaparlamentet' utan land. Ofarligt att köra om — bara en
-    # no-op om raderna redan är borta.
-    try:
-        client.run("DELETE FROM politicians WHERE area_type = 'eu' AND area_name = 'Europaparlamentet'")
-    except (requests.RequestException, RuntimeError) as err:
-        print(f"VARNING: engångsstädning misslyckades: {err}", file=sys.stderr, flush=True)
-
-    meps = fetch_all_current_meps()
-    print(f"Hittade {len(meps)} EU-parlamentariker totalt (alla 27 länder).", flush=True)
+    meps = [m for m in fetch_all_current_meps() if m.get("api:country-of-representation") == "SE"]
+    print(f"Hittade {len(meps)} svenska EU-parlamentariker.", flush=True)
 
     now_ms = int(time.time() * 1000)
     ok = fail = skipped = 0
     for i, m in enumerate(meps, 1):
         mep_id = m["id"].rstrip("/").split("/")[-1]
         name = f"{m['givenName']} {m['familyName']}"
-        country_code = m.get("api:country-of-representation")
-        country_name = COUNTRY_NAMES.get(country_code, country_code)
-        area_name = f"Europaparlamentet ({country_name})"
         party = m.get("api:political-group")
 
         try:
@@ -146,14 +114,12 @@ def main():
             skipped += 1
             continue
 
-        # Synkar DIREKT, en i taget — om processen avbryts (rate limit, krasch)
-        # är allt som redan körts sparat, inget arbete går förlorat.
-        if sync_one(client, name, email, area_name, party, role, now_ms):
+        if sync_one(client, name, email, party, role, now_ms):
             ok += 1
         else:
             fail += 1
 
-        if i % 25 == 0:
+        if i % 10 == 0:
             print(f"{i}/{len(meps)} klara ({ok} ok, {fail} fel, {skipped} utan email)...", flush=True)
         time.sleep(0.3)
 
