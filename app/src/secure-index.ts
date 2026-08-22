@@ -5,6 +5,7 @@ import type { Env } from "./db";
 import type { SendJobMessage } from "../../shared/types";
 import { randomId } from "../../shared/crypto";
 import { decryptLetterData, encryptLetterData, enforceLetterRetention, protectStoredLetterData } from "./letter-privacy";
+import { approveCivicLetterDraft, rejectCivicLetterDraft } from "./civic-outreach";
 
 export { CredentialRateLimiter } from "./rate-limiter";
 
@@ -31,18 +32,13 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-  });
+  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 }
-
 function getCookie(req: Request, name: string): string | null {
   const cookie = req.headers.get("Cookie") ?? "";
   const match = cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return match ? match[1] : null;
 }
-
 function apiKeyRouteAllowed(method: string, pathname: string): boolean {
   if (method === "GET" && ["/api/me", "/api/areas", "/api/parties", "/api/roles", "/api/provider-ceilings", "/api/send-jobs"].includes(pathname)) return true;
   if (method === "GET" && pathname === "/api/politicians/search") return true;
@@ -50,14 +46,9 @@ function apiKeyRouteAllowed(method: string, pathname: string): boolean {
   if (method === "PATCH" && /^\/api\/send-jobs\/[^/]+\/rate$/.test(pathname)) return true;
   return false;
 }
-
 function needsFreshSession(method: string, pathname: string): boolean {
-  if (method === "POST" && [
-    "/api/totp/setup", "/api/totp/confirm", "/api/totp/disable", "/api/set-password", "/api/api-keys", "/api/mail-credentials",
-  ].includes(pathname)) return true;
-  if (method === "DELETE" && (/^\/api\/api-keys\/[^/]+$/.test(pathname)
-    || /^\/api\/oauth-identities\/[a-z]+$/.test(pathname)
-    || /^\/api\/mail-credentials\/[^/]+$/.test(pathname))) return true;
+  if (method === "POST" && ["/api/totp/setup", "/api/totp/confirm", "/api/totp/disable", "/api/set-password", "/api/api-keys", "/api/mail-credentials"].includes(pathname)) return true;
+  if (method === "DELETE" && (/^\/api\/api-keys\/[^/]+$/.test(pathname) || /^\/api\/oauth-identities\/[a-z]+$/.test(pathname) || /^\/api\/mail-credentials\/[^/]+$/.test(pathname))) return true;
   if (method === "GET" && /^\/api\/(?:oauth-link\/[a-z]+|oauth-mail\/microsoft)\/start$/.test(pathname)) return true;
   return false;
 }
@@ -70,13 +61,11 @@ async function takeRateLimit(env: Env, key: string, capacity: number, refillPerM
     return result.granted === true;
   } catch { return false; }
 }
-
 async function allowPublicWrite(req: Request, env: Env, pathname: string): Promise<boolean> {
   const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
   if (pathname === "/api/feedback") return (await takeRateLimit(env, `feedback:${ip}`, 10, 2)) && (await takeRateLimit(env, "feedback:global", 120, 60));
   return (await takeRateLimit(env, `client-error:${ip}`, 30, 10)) && (await takeRateLimit(env, "client-error:global", 300, 120));
 }
-
 async function upgradeOAuthSession(req: Request, env: Env, response: Response): Promise<void> {
   const pathname = new URL(req.url).pathname;
   if (req.method !== "GET" || !/^\/api\/oauth\/[a-z]+\/callback$/.test(pathname) || response.status !== 302) return;
@@ -88,31 +77,54 @@ async function upgradeOAuthSession(req: Request, env: Env, response: Response): 
   try { await writeSession(env, token, raw, Date.now()); }
   catch (error) { await env.SESSIONS.delete(`session:${token}`).catch(() => {}); throw error; }
 }
-
 function withSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+async function handleCivicReview(req: Request, env: Env, url: URL): Promise<Response | null> {
+  const match = url.pathname.match(/^\/api\/civic-letter\/([^/]+)\/(approve|reject)$/);
+  if (!match) return null;
+  const [, draftId, action] = match;
+  if (req.method === "GET") {
+    const token = url.searchParams.get("token") ?? "";
+    if (!token) return new Response("Ogiltig granskningslänk", { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+    const label = action === "approve" ? "Godkänn och skicka" : "Avslå brevet";
+    const html = `<!doctype html><html lang="sv"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Bekräfta granskning</title><body style="font:16px system-ui;max-width:680px;margin:4rem auto;padding:1rem"><h1>Bekräfta åtgärd</h1><p>Inget ändras bara för att länken öppnades. Bekräfta manuellt nedan.</p><form method="post"><input type="hidden" name="token" value="${escapeHtml(token)}"><button style="font:inherit;padding:.75rem 1rem" type="submit">${label}</button></form></body></html>`;
+    return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+  }
+  if (req.method === "POST") {
+    const form = await req.formData();
+    const token = String(form.get("token") ?? "");
+    try {
+      if (action === "approve") await approveCivicLetterDraft(env, draftId, token);
+      else await rejectCivicLetterDraft(env, draftId, token);
+      return new Response(action === "approve" ? "Brevet är godkänt." : "Brevet är avslaget.", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    } catch (error) {
+      return new Response(error instanceof Error ? error.message : "Åtgärden misslyckades", { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    }
+  }
+  return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET, POST" } });
+}
+
 async function publishEncryptedLetter(req: Request, env: Env, letterId: string): Promise<Response> {
   const session = await getSessionContext(env, getCookie(req, "session"));
   if (!session) return json({ error: "Inte inloggad" }, 401);
   const accountId = String(session.account?.id ?? "");
-  const letter = await env.DB.prepare(
-    "SELECT l.html_body FROM letters l JOIN send_jobs sj ON sj.letter_id=l.id WHERE l.id=? AND sj.account_id=? LIMIT 1",
-  ).bind(letterId, accountId).first<{ html_body: string }>();
+  const letter = await env.DB.prepare("SELECT l.html_body FROM letters l JOIN send_jobs sj ON sj.letter_id=l.id WHERE l.id=? AND sj.account_id=? LIMIT 1").bind(letterId, accountId).first<{ html_body: string }>();
   if (!letter) return json({ error: "Brevet hittades inte" }, 404);
   if (await env.DB.prepare("SELECT id FROM public_letters WHERE source='user' AND account_id=?").bind(accountId).first()) return json({ error: "Du har redan publicerat ett brev" }, 409);
   const body = await decryptLetterData(env, letter.html_body);
   if (!body) return json({ error: "Brevets innehåll har raderats enligt lagringspolicyn" }, 410);
   const subject = (body.replace(/[<>]/g, "").split(/\n/).find((line) => line.trim().length > 20) ?? "Medborgarbrev").trim().slice(0, 100);
   const pubId = randomId();
-  await env.DB.prepare("INSERT INTO public_letters (id,source,account_id,subject,body,area_name,published_at) VALUES (?,'user',?,?,?,NULL,?)")
-    .bind(pubId, accountId, subject, await encryptLetterData(env, body.replace(/[<>]/g, "")), Date.now()).run();
+  await env.DB.prepare("INSERT INTO public_letters (id,source,account_id,subject,body,area_name,published_at) VALUES (?,'user',?,?,?,NULL,?)").bind(pubId, accountId, subject, await encryptLetterData(env, body.replace(/[<>]/g, "")), Date.now()).run();
   return json({ ok: true, id: pubId });
 }
-
 async function decryptedPublicLetters(env: Env, url: URL): Promise<Response> {
   const detail = url.pathname.match(/^\/api\/public\/letters\/(.+)$/);
   if (detail) {
@@ -121,8 +133,7 @@ async function decryptedPublicLetters(env: Env, url: URL): Promise<Response> {
     return json({ subject: row.subject, body: await decryptLetterData(env, row.body) });
   }
   const page = Math.max(0, parseInt(url.searchParams.get("page") ?? "0", 10));
-  const { results } = await env.DB.prepare("SELECT id,source,subject,body,area_name,published_at FROM public_letters ORDER BY published_at DESC LIMIT 20 OFFSET ?")
-    .bind(page * 20).all<{ id: string; source: string; subject: string; body: string; area_name: string | null; published_at: number }>();
+  const { results } = await env.DB.prepare("SELECT id,source,subject,body,area_name,published_at FROM public_letters ORDER BY published_at DESC LIMIT 20 OFFSET ?").bind(page * 20).all<{ id:string; source:string; subject:string; body:string; area_name:string|null; published_at:number }>();
   const letters = await Promise.all(results.map(async (row) => ({ ...row, excerpt: (await decryptLetterData(env, row.body)).slice(0, 400), body: undefined })));
   return json({ letters });
 }
@@ -132,24 +143,24 @@ function requestedRetentionMs(req: Request): number {
   const value = Number(raw);
   return ALLOWED_RETENTION_MS.has(value) ? value : 300000;
 }
-
 async function protectCreatedSendJob(req: Request, env: Env, response: Response): Promise<void> {
   if (!response.ok) return;
-  const data = await response.clone().json<{ sendJobId?: string }>().catch(() => ({}));
+  const data: { sendJobId?: string } = await response.clone().json<{ sendJobId?: string }>().catch(() => ({ sendJobId: undefined }));
   if (!data.sendJobId) return;
-  const row = await env.DB.prepare("SELECT l.id,l.html_body FROM letters l JOIN send_jobs sj ON sj.letter_id=l.id WHERE sj.id=?")
-    .bind(data.sendJobId).first<{ id: string; html_body: string }>();
+  const row = await env.DB.prepare("SELECT l.id,l.html_body,sj.status,sj.finished_at FROM letters l JOIN send_jobs sj ON sj.letter_id=l.id WHERE sj.id=?").bind(data.sendJobId).first<{ id:string; html_body:string; status:string; finished_at:number|null }>();
   if (!row) return;
+  const retentionMs = requestedRetentionMs(req);
   await env.DB.batch([
     env.DB.prepare("UPDATE letters SET html_body=? WHERE id=?").bind(await encryptLetterData(env, row.html_body), row.id),
-    env.DB.prepare("UPDATE send_jobs SET content_retention_ms=? WHERE id=?").bind(requestedRetentionMs(req), data.sendJobId),
+    env.DB.prepare("UPDATE send_jobs SET content_retention_ms=?, content_delete_at=CASE WHEN finished_at IS NOT NULL AND status IN ('done','aborted','cancelled') THEN finished_at+? ELSE content_delete_at END WHERE id=?").bind(retentionMs, retentionMs, data.sendJobId),
   ]);
 }
 
 async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(req.url);
+  const civicReview = await handleCivicReview(req, env, url);
+  if (civicReview) return withSecurityHeaders(civicReview);
   const bearer = req.headers.get("Authorization")?.startsWith("Bearer ") === true;
-
   if (bearer && url.pathname.startsWith("/api/") && !apiKeyRouteAllowed(req.method, url.pathname)) {
     const session = await getSessionContext(env, getCookie(req, "session"));
     if (!session) return withSecurityHeaders(json({ error: "API-nyckeln saknar behörighet för den här operationen" }, 403));
@@ -165,18 +176,14 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
     if (Number.isFinite(contentLength) && contentLength > maxBytes) return withSecurityHeaders(json({ error: "För stor begäran" }, 413));
     if (!(await allowPublicWrite(req, env, url.pathname))) return withSecurityHeaders(json({ error: "För många anrop — försök igen senare" }, 429));
   }
-
   const publish = req.method === "POST" ? url.pathname.match(/^\/api\/letters\/([^/]+)\/publish$/) : null;
   if (publish) return withSecurityHeaders(await publishEncryptedLetter(req, env, publish[1]));
 
   const response = await baseApp.fetch(req, env, ctx);
   try { await upgradeOAuthSession(req, env, response); }
   catch { return withSecurityHeaders(json({ error: "Kontot kunde inte skapa en giltig session" }, 403)); }
-
   if (req.method === "POST" && url.pathname === "/api/send") await protectCreatedSendJob(req, env, response);
-  if (req.method === "GET" && /^\/api\/public\/letters(?:\/.*)?$/.test(url.pathname) && response.ok) {
-    return withSecurityHeaders(await decryptedPublicLetters(env, url));
-  }
+  if (req.method === "GET" && /^\/api\/public\/letters(?:\/.*)?$/.test(url.pathname) && response.ok) return withSecurityHeaders(await decryptedPublicLetters(env, url));
   return withSecurityHeaders(response);
 }
 
