@@ -18,6 +18,18 @@ function safeHref(value: string): string | null {
   return null;
 }
 
+// Textescaping och attributescaping är olika kontexter. shared/escapeHtml
+// skyddar textnoder (&, <, >), men ett dubbelciterat attribut måste dessutom
+// koda citattecken så opålitlig input aldrig kan bryta sig ur href="...".
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 // Mammoth genererar HTML, men dokumentinnehåll är fortfarande opålitlig input.
 // Normalisera till en liten allowlist och kasta alla attribut utom säkra href.
 function sanitizeConvertedHtml(html: string): string {
@@ -39,7 +51,7 @@ function sanitizeConvertedHtml(html: string): string {
     const attrs = open[2];
     const hrefMatch = attrs.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
     const href = safeHref(hrefMatch?.[1] ?? hrefMatch?.[2] ?? "");
-    return href ? `<a href="${escapeHtml(href)}" rel="noopener noreferrer">` : "<a>";
+    return href ? `<a href="${escapeHtmlAttribute(href)}" rel="noopener noreferrer">` : "<a>";
   }).join("");
 }
 
