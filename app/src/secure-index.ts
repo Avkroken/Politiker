@@ -9,6 +9,7 @@ import { decryptLetterData, encryptLetterData, enforceLetterRetention, protectSt
 export { CredentialRateLimiter } from "./rate-limiter";
 
 const FRESH_AUTH_MS = 15 * 60 * 1000;
+const ALLOWED_RETENTION_MS = new Set([300000, 86400000, 259200000, 604800000]);
 
 const SECURITY_HEADERS: Record<string, string> = {
   "Content-Security-Policy": [
@@ -126,14 +127,23 @@ async function decryptedPublicLetters(env: Env, url: URL): Promise<Response> {
   return json({ letters });
 }
 
-async function encryptCreatedSendJob(env: Env, response: Response): Promise<void> {
+function requestedRetentionMs(req: Request): number {
+  const raw = req.headers.get("X-Letter-Retention-Ms") ?? getCookie(req, "letter_retention_ms") ?? "300000";
+  const value = Number(raw);
+  return ALLOWED_RETENTION_MS.has(value) ? value : 300000;
+}
+
+async function protectCreatedSendJob(req: Request, env: Env, response: Response): Promise<void> {
   if (!response.ok) return;
   const data = await response.clone().json<{ sendJobId?: string }>().catch(() => ({}));
   if (!data.sendJobId) return;
   const row = await env.DB.prepare("SELECT l.id,l.html_body FROM letters l JOIN send_jobs sj ON sj.letter_id=l.id WHERE sj.id=?")
     .bind(data.sendJobId).first<{ id: string; html_body: string }>();
   if (!row) return;
-  await env.DB.prepare("UPDATE letters SET html_body=? WHERE id=?").bind(await encryptLetterData(env, row.html_body), row.id).run();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE letters SET html_body=? WHERE id=?").bind(await encryptLetterData(env, row.html_body), row.id),
+    env.DB.prepare("UPDATE send_jobs SET content_retention_ms=? WHERE id=?").bind(requestedRetentionMs(req), data.sendJobId),
+  ]);
 }
 
 async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -163,7 +173,7 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
   try { await upgradeOAuthSession(req, env, response); }
   catch { return withSecurityHeaders(json({ error: "Kontot kunde inte skapa en giltig session" }, 403)); }
 
-  if (req.method === "POST" && url.pathname === "/api/send") await encryptCreatedSendJob(env, response);
+  if (req.method === "POST" && url.pathname === "/api/send") await protectCreatedSendJob(req, env, response);
   if (req.method === "GET" && /^\/api\/public\/letters(?:\/.*)?$/.test(url.pathname) && response.ok) {
     return withSecurityHeaders(await decryptedPublicLetters(env, url));
   }
