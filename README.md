@@ -4,7 +4,7 @@ Politikerkontakt är ett gratis och öppet verktyg för att göra det enklare f�
 
 Live: https://politiker.denied.se
 
-Projektets grundprincip är enkel: politiker och andra offentliga aktörer har många kanaler för att nå befolkningen. Politikerkontakt ger människor en praktisk kanal i motsatt riktning. Plattformen är infrastruktur för användarens kommunikation och tar inte själv politisk ställning.
+Projektets grundprincip är enkel: folkvalda har många kanaler för att nå befolkningen. Politikerkontakt ger människor en praktisk kanal i motsatt riktning. Plattformen är infrastruktur för användarens kommunikation och tar inte själv politisk ställning.
 
 ## Vad tjänsten gör
 
@@ -21,6 +21,8 @@ Politikerkontakt producerar, publicerar eller skickar **inte egna politiska brev
 
 Databasen byggs från offentliga källor och omfattar bland annat Europaparlamentet, Riksdagen, regeringen/departement, Sveriges regioner och kommuner samt relevanta valda organ inom Svenska kyrkan. Insamlings- och uppdateringslogiken finns i `kontakter/`.
 
+Importerade parti- och befattningsuppgifter normaliseras innan de används för mottagarfiltrering. Syftet är att hålla filtren inriktade på relevanta politiska mottagare även när källorna använder varierande benämningar eller innehåller administrativa uppdrag.
+
 ## Integritet och dataminimering
 
 Tjänsten är byggd för att behandla så lite användardata som möjligt.
@@ -33,7 +35,7 @@ Tjänsten är byggd för att behandla så lite användardata som möjligt.
 - Brevinnehåll lagras krypterat medan det behövs för utskicket.
 - Kortast retention är standard för privata brev; användaren kan välja en begränsad längre retention.
 - Brevtext och temporära bilagor raderas efter retentionstiden. Minimal metadata om status, antal skickade/studsade meddelanden och tidpunkter kan behållas för historik, statistik och drift.
-- Cloudflare D1 används som databas och R2 för temporära bilagor.
+- Cloudflare D1 används som databas med EU-jurisdiktion och R2 används för temporära bilagor.
 
 ## Utskick
 
@@ -47,8 +49,8 @@ Kösystemet använder Cloudflare Queues och D1. En Durable Object per mailkoppli
 | --- | --- |
 | `app/` | Cloudflare Worker, API, kökonsument, retention och frontend |
 | `shared/` | Delad TypeScript-kod, bland annat SMTP, kryptering och typer |
-| `kontakter/` | Insamling och uppdatering av offentliga kontaktuppgifter |
-| `infra/` | D1-schema, migrationer och provisioneringsverktyg |
+| `kontakter/` | Insamling, normalisering och uppdatering av offentliga kontaktuppgifter |
+| `infra/` | D1-schema, databasbootstrap och provisioneringsverktyg |
 
 Viktiga delar i `app/src/` är `send-queue.ts` för faktisk sändning, `rate-limiter.ts` för sändningstakt, `letter-privacy.ts` för skydd/retention och auth/OAuth-modulerna för kontoåtkomst.
 
@@ -80,7 +82,7 @@ npm run validate
 
 ## CI, deploy och release
 
-Arbete går via `dev` → PR → `main`. CI kör relevanta Node-/Pythonkontroller, deploy sker från `main`, och D1-migrationer appliceras före Worker-deploy. GitHub Releases versionssätts automatiskt från commitmeddelanden; se `docs/CI.md` för reglerna.
+Arbete går via `dev` → PR → `main`. GitHub Actions kör projektets CI-kontroller. Produktion deployas av Cloudflare från `main`, så kod på `dev` deployas inte till produktion. Databasschema och bootstrap hanteras separat från den automatiska Worker-deployen. GitHub Releases versionssätts automatiskt från commitmeddelanden; se `docs/CI.md` för reglerna.
 
 ## Säkerhet
 
