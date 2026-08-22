@@ -1,14 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "politiker",
-  "main": "src/index.ts",
+  "main": "src/secure-index.ts",
   "compatibility_date": "2026-08-21",
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1,
+    "head_sampling_rate": 0.1,
     "logs": {
       "enabled": true,
-      "head_sampling_rate": 1,
+      "head_sampling_rate": 0.1,
       "persist": true,
       "invocation_logs": true
     },
@@ -80,8 +80,8 @@
   },
 
   // Token bucket per mailkoppling, från f.d. sender-Workern. Klassen exporteras
-  // från main (src/index.ts). Deklarativ exports ersätter den äldre v1-
-  // migrationsposten och beskriver det aktuella DO-tillståndet direkt.
+  // via säkerhets-entrypointen secure-index.ts. Deklarativ exports beskriver
+  // det aktuella DO-tillståndet direkt.
   "durable_objects": {
     "bindings": [
       {

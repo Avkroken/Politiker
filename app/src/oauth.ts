@@ -129,11 +129,13 @@ async function exchangeCodeForUserInfo(
       headers: { Authorization: `Bearer ${tokenData.access_token}`, "User-Agent": "politiker" },
     });
     if (emailsResp.ok) {
-      const emails = await emailsResp.json<Array<{ email: string; primary: boolean }>>();
-      email = emails.find((e) => e.primary)?.email ?? emails[0]?.email ?? null;
+      const emails = await emailsResp.json<Array<{ email: string; primary: boolean; verified?: boolean }>>();
+      email = emails.find((e) => e.primary && e.verified !== false)?.email
+        ?? emails.find((e) => e.verified !== false)?.email
+        ?? null;
     }
   }
-  if (!email) throw new Error(`Kunde inte hämta e-postadress från ${provider}`);
+  if (!email) throw new Error(`Kunde inte hämta en verifierad e-postadress från ${provider}`);
 
   return { providerUserId, email };
 }
@@ -155,20 +157,23 @@ export async function handleOAuthCallback(
     return { accountId: existingIdentity.account_id };
   }
 
-  let account = await getAccountByEmail(env.DB, email);
-  let accountId: string;
-  if (account) {
-    accountId = account.id as string;
-  } else {
-    accountId = randomId();
-    const { hash, salt } = await hashPassword(randomId() + randomId());
-    await env.DB.prepare(
-      `INSERT INTO accounts (id, email, password_hash, password_salt, email_verified, daily_send_cap, created_at)
-       VALUES (?, ?, ?, ?, 1, 200, ?)`,
-    )
-      .bind(accountId, email, hash, salt, Date.now())
-      .run();
+  // Auto-länka aldrig en NY extern identitet till ett existerande lokalt
+  // konto enbart för att e-poststrängen råkar matcha. Användaren måste först
+  // logga in på det lokala kontot och uttryckligen länka providern därifrån.
+  // Det gör den befintliga kontoinloggningen till den gemensamma trust-boundaryn.
+  const existingAccount = await getAccountByEmail(env.DB, email);
+  if (existingAccount) {
+    throw new Error("Det finns redan ett konto med den här e-postadressen. Logga in på kontot och länka inloggningssättet under Inställningar.");
   }
+
+  const accountId = randomId();
+  const { hash, salt } = await hashPassword(randomId() + randomId());
+  await env.DB.prepare(
+    `INSERT INTO accounts (id, email, password_hash, password_salt, email_verified, daily_send_cap, created_at)
+     VALUES (?, ?, ?, ?, 1, 200, ?)`,
+  )
+    .bind(accountId, email, hash, salt, Date.now())
+    .run();
 
   await env.DB.prepare("INSERT INTO oauth_identities (id, account_id, provider, provider_user_id, provider_email, created_at) VALUES (?, ?, ?, ?, ?, ?)")
     .bind(randomId(), accountId, provider, providerUserId, email, Date.now())

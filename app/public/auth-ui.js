@@ -111,9 +111,21 @@
 
   function makeLoginCompact(root) {
     const layout = root.querySelector('.auth-layout');
-    const loginForm = root.querySelector('#login-form');
-    if (!layout || !loginForm || loginForm.dataset.authEnhanced === '1') return false;
+    const sourceForm = root.querySelector('#login-form');
+    if (!layout || !sourceForm || sourceForm.dataset.authEnhanced === '1') return false;
+
+    // Spara den legitima glömt-lösenord-handlern som v2.js redan kopplat.
+    // Själva login-submit-handlern ska däremot tas bort genom kloningen.
+    const sourceForgot = sourceForm.querySelector('#forgot-btn');
+    const forgotHandler = sourceForgot?.onclick || null;
+
+    // Klonen behåller markup/värden men inga JS-listeners/onsubmit-properties.
+    // Därmed finns exakt EN ägare av login/TOTP-flödet och ett submit kan
+    // aldrig ge dubbla login-anrop eller visa både gammalt och nytt 2FA-steg.
+    const loginForm = sourceForm.cloneNode(true);
+    sourceForm.replaceWith(loginForm);
     loginForm.dataset.authEnhanced = '1';
+
     layout.classList.add('auth-login-compact');
     injectProviderIcons(root);
 
@@ -123,19 +135,19 @@
       signupPanel.querySelector('.auth-signup-button').onclick = showSignup;
     }
 
-    const totpRow = root.querySelector('#totp-row');
+    const totpRow = loginForm.querySelector('#totp-row');
     if (totpRow) totpRow.hidden = true;
 
     const originalEmail = loginForm.querySelector('[name="email"]');
     const originalPassword = loginForm.querySelector('[name="password"]');
     const submit = loginForm.querySelector('button.primary');
-    const forgot = root.querySelector('#forgot-btn');
+    const forgot = loginForm.querySelector('#forgot-btn');
+    if (forgot && forgotHandler) forgot.onclick = forgotHandler;
     let credentials = null;
     let totpMode = false;
 
     loginForm.addEventListener('submit', async event => {
       event.preventDefault();
-      event.stopImmediatePropagation();
       const msg = root.querySelector('#auth-msg');
       if (msg) msg.innerHTML = '';
 
@@ -192,7 +204,7 @@
       } catch (error) {
         if (msg) msg.innerHTML = `<div class="notice error">${escapeHtml(error.message === 'TOTP_REQUIRED' ? 'Fel 2FA-kod.' : error.message)}</div>`;
       }
-    }, true);
+    });
 
     clearLegacyTotpNotice();
     return true;

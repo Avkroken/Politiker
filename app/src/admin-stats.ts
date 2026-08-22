@@ -5,14 +5,40 @@ export interface AdminStats {
   totalLetters: number;
   totalSent: number;
   totalBounced: number;
-  totalVisitors: number; // unika besökare (COUNT DISTINCT), all tid
-  visitorCountries: { country: string; n: number }[]; // unika besökare per land
-  dailySeries: { day: string; sent: number }[]; // senaste 365 dagarna, ok-status
-  leaderboard: { accountId: string; email: string; sentCount: number }[]; // topp 50
+  totalVisitors: number; // pseudonyma unika besökare/dag inom retentionstiden
+  visitorCountries: { country: string; n: number }[];
+  dailySeries: { day: string; sent: number }[];
+  leaderboard: { accountId: string; email: string; sentCount: number }[];
+}
+
+const CACHE_TTL_SECONDS = 60;
+
+async function readCache<T>(env: Env, key: string): Promise<T | null> {
+  try {
+    const raw = await env.SESSIONS.get(`cache:${key}`);
+    return raw ? JSON.parse(raw) as T : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeCache(env: Env, key: string, value: unknown): Promise<void> {
+  try {
+    await env.SESSIONS.put(`cache:${key}`, JSON.stringify(value), { expirationTtl: CACHE_TTL_SECONDS });
+  } catch {
+    // Statistikcache är bara en optimering.
+  }
 }
 
 export async function getAdminStats(env: Env): Promise<AdminStats> {
-  const totals = await env.DB.prepare(
+  const cached = await readCache<AdminStats>(env, "admin-stats:v2");
+  if (cached) return cached;
+
+  const since365 = Date.now() - 365 * 24 * 60 * 60 * 1000;
+
+  // De fyra tunga läsningarna är oberoende. Kör dem parallellt och cacha det
+  // färdiga svaret kort så upprepade admin-refreshar inte räknar om historiken.
+  const totalsPromise = env.DB.prepare(
     `SELECT
        (SELECT COUNT(*) FROM accounts) as totalAccounts,
        (SELECT COUNT(*) FROM letters) as totalLetters,
@@ -20,27 +46,24 @@ export async function getAdminStats(env: Env): Promise<AdminStats> {
        (SELECT COUNT(*) FROM send_log WHERE status = 'bounce') as totalBounced`,
   ).first<{ totalAccounts: number; totalLetters: number; totalSent: number; totalBounced: number }>();
 
-  // Defensivt: visits-tabellen (och country-kolumnen) kan saknas innan
-  // migrationerna körts.
-  let totalVisitors = 0;
-  let visitorCountries: { country: string; n: number }[] = [];
-  try {
-    const v = await env.DB.prepare("SELECT COUNT(DISTINCT visitor_hash) as n FROM visits").first<{ n: number }>();
-    totalVisitors = v?.n ?? 0;
-    const c = await env.DB.prepare(
-      `SELECT country, COUNT(DISTINCT visitor_hash) as n FROM visits
-       WHERE country IS NOT NULL GROUP BY country ORDER BY n DESC, country`,
-    ).all<{ country: string; n: number }>();
-    visitorCountries = c.results;
-    const knownSum = visitorCountries.reduce((sum, r) => sum + r.n, 0);
-    const unknown = totalVisitors - knownSum;
-    if (unknown > 0) visitorCountries.push({ country: "??", n: unknown });
-  } catch {
-    /* tabellen/kolumnen finns inte än */
-  }
+  const visitorPromise = (async () => {
+    try {
+      const v = await env.DB.prepare("SELECT COUNT(DISTINCT visitor_hash) as n FROM visits").first<{ n: number }>();
+      const c = await env.DB.prepare(
+        `SELECT country, COUNT(DISTINCT visitor_hash) as n FROM visits
+         WHERE country IS NOT NULL GROUP BY country ORDER BY n DESC, country`,
+      ).all<{ country: string; n: number }>();
+      const rows = c.results;
+      const total = v?.n ?? 0;
+      const knownSum = rows.reduce((sum, r) => sum + r.n, 0);
+      if (total > knownSum) rows.push({ country: "??", n: total - knownSum });
+      return { total, rows };
+    } catch {
+      return { total: 0, rows: [] as { country: string; n: number }[] };
+    }
+  })();
 
-  const since365 = Date.now() - 365 * 24 * 60 * 60 * 1000;
-  const { results: dailySeries } = await env.DB.prepare(
+  const dailyPromise = env.DB.prepare(
     `SELECT date(sent_at / 1000, 'unixepoch') as day, COUNT(*) as sent
      FROM send_log WHERE status = 'ok' AND sent_at >= ?
      GROUP BY day ORDER BY day`,
@@ -48,22 +71,31 @@ export async function getAdminStats(env: Env): Promise<AdminStats> {
     .bind(since365)
     .all<{ day: string; sent: number }>();
 
-  const { results: leaderboard } = await env.DB.prepare(
+  const leaderboardPromise = env.DB.prepare(
     `SELECT a.id as accountId, a.email as email, COUNT(sl.id) as sentCount
      FROM accounts a LEFT JOIN send_log sl ON sl.account_id = a.id AND sl.status = 'ok'
      GROUP BY a.id ORDER BY sentCount DESC LIMIT 50`,
   ).all<{ accountId: string; email: string; sentCount: number }>();
 
-  return {
+  const [totals, visitors, daily, leaderboard] = await Promise.all([
+    totalsPromise,
+    visitorPromise,
+    dailyPromise,
+    leaderboardPromise,
+  ]);
+
+  const result: AdminStats = {
     totalAccounts: totals?.totalAccounts ?? 0,
     totalLetters: totals?.totalLetters ?? 0,
     totalSent: totals?.totalSent ?? 0,
     totalBounced: totals?.totalBounced ?? 0,
-    totalVisitors,
-    visitorCountries,
-    dailySeries,
-    leaderboard,
+    totalVisitors: visitors.total,
+    visitorCountries: visitors.rows,
+    dailySeries: daily.results,
+    leaderboard: leaderboard.results,
   };
+  await writeCache(env, "admin-stats:v2", result);
+  return result;
 }
 
 export type Granularity = "minute" | "hour" | "day" | "week" | "month" | "quarter" | "half" | "year";
@@ -87,10 +119,14 @@ const GRAN: Record<Granularity, { expr: (col: string) => string; windowMs: numbe
 };
 
 export async function getTimeSeries(env: Env, granularity: Granularity): Promise<TimeSeriesPoint[]> {
-  const g = GRAN[granularity] ?? GRAN.month;
+  const selected: Granularity = GRAN[granularity] ? granularity : "month";
+  const cached = await readCache<TimeSeriesPoint[]>(env, `timeseries:v2:${selected}`);
+  if (cached) return cached;
+
+  const g = GRAN[selected];
   const since = g.windowMs === null ? 0 : Date.now() - g.windowMs;
 
-  const sentRows = await env.DB.prepare(
+  const sentPromise = env.DB.prepare(
     `SELECT ${g.expr("sent_at")} as bucket, COUNT(*) as n
      FROM send_log WHERE status = 'ok' AND sent_at >= ?
      GROUP BY bucket`,
@@ -98,29 +134,32 @@ export async function getTimeSeries(env: Env, granularity: Granularity): Promise
     .bind(since)
     .all<{ bucket: string; n: number }>();
 
-  let visitorRows: { bucket: string; n: number }[] = [];
-  try {
-    const r = await env.DB.prepare(
-      `SELECT ${g.expr("visited_at")} as bucket, COUNT(DISTINCT visitor_hash) as n
-       FROM visits WHERE visited_at >= ?
-       GROUP BY bucket`,
-    )
-      .bind(since)
-      .all<{ bucket: string; n: number }>();
-    visitorRows = r.results;
-  } catch {
-    /* visits-tabellen finns inte än */
-  }
+  const visitorsPromise = (async () => {
+    try {
+      return await env.DB.prepare(
+        `SELECT ${g.expr("visited_at")} as bucket, COUNT(DISTINCT visitor_hash) as n
+         FROM visits WHERE visited_at >= ?
+         GROUP BY bucket`,
+      )
+        .bind(since)
+        .all<{ bucket: string; n: number }>();
+    } catch {
+      return { results: [] as { bucket: string; n: number }[] };
+    }
+  })();
 
+  const [sentRows, visitorRows] = await Promise.all([sentPromise, visitorsPromise]);
   const byBucket = new Map<string, TimeSeriesPoint>();
   for (const { bucket, n } of sentRows.results) byBucket.set(bucket, { bucket, sent: n, visitors: 0 });
-  for (const { bucket, n } of visitorRows) {
-    const p = byBucket.get(bucket) ?? { bucket, sent: 0, visitors: 0 };
-    p.visitors = n;
-    byBucket.set(bucket, p);
+  for (const { bucket, n } of visitorRows.results) {
+    const point = byBucket.get(bucket) ?? { bucket, sent: 0, visitors: 0 };
+    point.visitors = n;
+    byBucket.set(bucket, point);
   }
 
-  return [...byBucket.values()].sort((a, b) => (a.bucket < b.bucket ? -1 : a.bucket > b.bucket ? 1 : 0));
+  const result = [...byBucket.values()].sort((a, b) => (a.bucket < b.bucket ? -1 : a.bucket > b.bucket ? 1 : 0));
+  await writeCache(env, `timeseries:v2:${selected}`, result);
+  return result;
 }
 
 function toCsv(rows: Record<string, unknown>[]): string {
