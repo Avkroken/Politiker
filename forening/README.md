@@ -1,33 +1,15 @@
 # Bilda föreningen — praktiska steg
 
-Dessa dokument är mallar, inte juridisk rådgivning. Stäm av med Skatteverket
-(för allmännyttig-bedömningen) innan ni går vidare på riktigt.
+Dokumenten i den här katalogen är arbetsmallar, inte juridisk rådgivning. Kontrollera aktuella krav hos Skatteverket och andra berörda aktörer innan föreningen bildas eller uppgifter skickas in.
 
-## 1. Fyll i platshållarna
-- `stadgar.md` och `konstituerande-mote-protokoll.md` — namn, ort, datum, deltagare.
-- Du behöver minst 2–3 personer (kan vara vänner/familj) som grundare/styrelse.
+## Dokument
 
-## 2. Håll det konstituerande mötet
-Kan vara ett videosamtal på 15–20 minuter. Gå igenom punkterna i
-`konstituerande-mote-protokoll.md`, fatta besluten, skriv under protokollet
-(digital signatur eller utskrift+signatur räcker).
+- `stadgar.md` — mall för föreningens stadgar.
+- `konstituerande-mote-protokoll.md` — mall för mötet där föreningen bildas.
+- `arsmote-mall.md` — mall för ordinarie årsmöte.
 
-## 3. Ansök om organisationsnummer
-Skicka in blankett SKV 8400 ("Anmälan om föreningens bildande") till
-Skatteverket tillsammans med stadgar och det undertecknade protokollet.
-Gratis, brukar gå relativt snabbt. Ger er ett organisationsnummer —
-behövs för bankkonto och PayPal-företagskonto.
+Mallarna innehåller avsiktliga platshållare för namn, datum, ort, styrelse och beslut. Fyll i dem först när föreningens faktiska uppgifter är fastställda.
 
-## 4. Öppna bankkonto + PayPal i föreningens namn
-Med organisationsnumret kan ni öppna ett föreningskonto hos en bank, och
-registrera ett PayPal-konto för organisationen (inte din privata adress).
+## När föreningen finns
 
-## 5. Uppdatera webbtjänsten
-När PayPal-kontot finns, byt donationslänken i
-`~/GitHub/politiker/app/public/index.html` och `.github/FUNDING.yml`
-från `business=anders.eriksson@denied.se` till föreningens PayPal-adress/ID.
-Säg till så fixar jag det direkt.
-
-## 6. Håll årsmöte en gång per år
-Använd `arsmote-mall.md` som checklista. Ta 15 minuter, dokumentera,
-klart.
+Drift-, betalnings- och sponsoruppgifter ska därefter ändras där de faktiskt används. GitHubs sponsringslänkar hanteras i `.github/FUNDING.yml`; andra betalningsuppgifter ska endast ändras i de tjänster eller konfigurationsfiler som vid den tidpunkten använder dem.
