@@ -55,10 +55,48 @@
     setTimeout(() => observer.disconnect(), 10000);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => enhanceExistingNumericInputs(), { once: true });
-  } else {
+  function attachClearLetter() {
+    const body = document.querySelector('#letter-body');
+    if (!body || document.querySelector('[data-clear-letter]')) return;
+    const field = body.closest('.field');
+    if (!field) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'ghost';
+    button.dataset.clearLetter = '1';
+    button.textContent = 'Rensa brev';
+    button.setAttribute('aria-label', 'Rensa brevtext');
+    button.addEventListener('click', () => {
+      if (!body.value) return;
+      body.value = '';
+      sessionStorage.removeItem('draft:body');
+      const preview = document.querySelector('#letter-html-preview');
+      if (preview) { preview.innerHTML = ''; preview.hidden = true; }
+      body.hidden = false;
+      const previewButton = document.querySelector('#preview-html');
+      if (previewButton) { previewButton.disabled = true; previewButton.textContent = 'Förhandsvisa brevet'; }
+      const badge = document.querySelector('#format-badge');
+      if (badge) badge.hidden = true;
+      body.focus();
+    });
+    field.append(button);
+  }
+
+  function enhanceView() {
     enhanceExistingNumericInputs();
+    attachClearLetter();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', enhanceView, { once: true });
+  } else {
+    enhanceView();
+  }
+
+  const root = document.querySelector('#root');
+  if (root) {
+    const observer = new MutationObserver(attachClearLetter);
+    observer.observe(root, { childList: true, subtree: true });
   }
 
   document.addEventListener('focusin', (event) => enhanceNumericInput(event.target));
