@@ -28,19 +28,19 @@ export const PROVIDER_PRESETS: Record<
     host: "smtp.gmail.com",
     port: 587,
     helpUrl: "https://myaccount.google.com/apppasswords",
-    providerDailyLimit: 100, // SMTP-specifik gräns för fria Gmail-konton (verifierad jun 2026) — lägre än de 500 som ofta nämns, vilket gäller webbgränssnittet/API, inte SMTP-relä
+    providerDailyLimit: 100,
   },
   outlook: {
     host: "smtp.office365.com",
     port: 587,
     helpUrl: "https://account.live.com/proofs/AppPassword",
-    providerDailyLimit: 300, // personligt Outlook.com-konto
+    providerDailyLimit: 300,
   },
   icloud: {
     host: "smtp.mail.me.com",
     port: 587,
     helpUrl: "https://appleid.apple.com/account/manage",
-    providerDailyLimit: 1000, // verifierat empiriskt tidigare i projektet
+    providerDailyLimit: 1000,
   },
   yahoo: {
     host: "smtp.mail.yahoo.com",
@@ -51,15 +51,12 @@ export const PROVIDER_PRESETS: Record<
   generic: { host: "", port: 587, helpUrl: "", providerDailyLimit: null },
 };
 
-// Taket (leverantörsgräns * 0.9), innan användarens egna procentval tillämpas.
 export function getCeiling(provider: string): number | null {
   const limit = provider === "microsoft_graph" ? MICROSOFT_GRAPH_DAILY_LIMIT : PROVIDER_PRESETS[provider]?.providerDailyLimit;
   if (limit === null || limit === undefined) return null;
   return Math.floor(limit * HARDCODED_CEILING_PCT);
 }
 
-// Slutgiltig dygnsgräns: alltid ett heltal, minst 1 om leverantören har ett
-// känt tak. userCapPct begränsas till 1-100 — kan bara sänka taket, aldrig höja det.
 export function computeDailyCap(provider: string, userCapPct: number): number | null {
   const ceiling = getCeiling(provider);
   if (ceiling === null) return null;
@@ -115,13 +112,17 @@ export async function addMicrosoftGraphMailCredential(env: Env, accountId: strin
 }
 
 export async function updateMailCredentialCapPct(env: Env, accountId: string, credentialId: string, userCapPct: number): Promise<{ dailyCap: number | null }> {
-  const cred = await env.DB.prepare("SELECT provider FROM mail_credentials WHERE id = ? AND account_id = ?")
+  const cred = await env.DB.prepare(
+    "SELECT provider FROM mail_credentials WHERE id = ? AND account_id = ? AND revoked_at IS NULL",
+  )
     .bind(credentialId, accountId)
     .first<{ provider: string }>();
-  if (!cred) throw new Error("Mailkonto saknas");
+  if (!cred) throw new Error("Mailkonto saknas eller är borttaget");
 
   const dailyCap = computeDailyCap(cred.provider, userCapPct);
-  await env.DB.prepare("UPDATE mail_credentials SET user_cap_pct = ?, daily_cap = ? WHERE id = ? AND account_id = ?")
+  await env.DB.prepare(
+    "UPDATE mail_credentials SET user_cap_pct = ?, daily_cap = ? WHERE id = ? AND account_id = ? AND revoked_at IS NULL",
+  )
     .bind(Math.min(100, Math.max(1, Math.round(userCapPct))), dailyCap, credentialId, accountId)
     .run();
   return { dailyCap };
@@ -129,13 +130,45 @@ export async function updateMailCredentialCapPct(env: Env, accountId: string, cr
 
 export async function listMailCredentials(env: Env, accountId: string) {
   const { results } = await env.DB.prepare(
-    "SELECT id, provider, smtp_host, smtp_port, from_address, verified_at, daily_cap, user_cap_pct, created_at FROM mail_credentials WHERE account_id = ?",
+    `SELECT id, provider, smtp_host, smtp_port, from_address, verified_at, daily_cap, user_cap_pct, created_at
+     FROM mail_credentials
+     WHERE account_id = ? AND revoked_at IS NULL
+     ORDER BY created_at DESC`,
   )
     .bind(accountId)
     .all();
-  return results; // observera: lösenord/encrypted_password skickas aldrig till klienten
+  return results;
 }
 
 export async function deleteMailCredential(env: Env, accountId: string, credentialId: string): Promise<void> {
-  await env.DB.prepare("DELETE FROM mail_credentials WHERE id = ? AND account_id = ?").bind(credentialId, accountId).run();
+  const credential = await env.DB.prepare(
+    "SELECT id FROM mail_credentials WHERE id = ? AND account_id = ? AND revoked_at IS NULL",
+  ).bind(credentialId, accountId).first<{ id: string }>();
+  if (!credential) return;
+
+  const now = Date.now();
+
+  // Historiska send_jobs har en FK till credential-raden. Hårdradering skulle
+  // därför bryta referensintegriteten. Revokera i stället credentialen, ta bort
+  // alla hemligheter och stoppa aktiva jobb som fortfarande använder den.
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE send_jobs
+       SET status = 'cancelled', finished_at = ?
+       WHERE account_id = ? AND mail_credential_id = ? AND status IN ('pending', 'sending')`,
+    ).bind(now, accountId, credentialId),
+    env.DB.prepare(
+      `UPDATE send_job_recipients
+       SET status = 'cancelled', queued_at = NULL, finished_at = ?
+       WHERE send_job_id IN (
+         SELECT id FROM send_jobs WHERE account_id = ? AND mail_credential_id = ?
+       ) AND status IN ('pending', 'queued')`,
+    ).bind(now, accountId, credentialId),
+    env.DB.prepare(
+      `UPDATE mail_credentials
+       SET encrypted_password = '', oauth_access_token = NULL, oauth_refresh_token = NULL,
+           oauth_token_expires_at = NULL, revoked_at = ?
+       WHERE id = ? AND account_id = ? AND revoked_at IS NULL`,
+    ).bind(now, credentialId, accountId),
+  ]);
 }

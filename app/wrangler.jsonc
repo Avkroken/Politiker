@@ -18,6 +18,11 @@
       "head_sampling_rate": 0.05
     }
   },
+  "tail_consumers": [
+    {
+      "service": "politiker-log-archive"
+    }
+  ],
   // Exponera inte på *.workers.dev — appen nås bara via politiker.denied.se
   // (custom domain). Stänger workers.dev-attackytan (Security Center-fynd).
   "workers_dev": false,
@@ -68,7 +73,8 @@
         "queue": "politiker-send-jobs",
         "max_batch_size": 10,
         "max_retries": 10,
-        "max_concurrency": 5
+        "max_concurrency": 5,
+        "dead_letter_queue": "politiker-send-jobs-dlq"
       }
     ]
   },
@@ -111,8 +117,8 @@
   ],
   // Nyhetsbrevets bekräftelsemail: Cloudflare Email Service (bindingen nedan)
   // -> Resend (RESEND_API_KEY) -> system-SMTP, i den ordningen.
-  // Systemmailen (verifieringskod, lösenordsåterställning, feedback) går
-  // Resend -> system-SMTP.
+  // Automatiska systemmail (verifieringskod och lösenordsåterställning) går
+  // Resend -> system-SMTP och använder noreply-adressen.
   // Cloudflare Email Service och system-SMTP skickar som noreply@denied.se;
   // adressen måste vara onboardad i Email Sending, annars avvisas
   // send_email-anropen. Resend-ledet skickar från noreply@send.denied.se —
@@ -127,12 +133,11 @@
     "SYSTEM_SMTP_HOST": "smtp.mail.me.com",
     "SYSTEM_SMTP_PORT": "587",
     "SYSTEM_SMTP_USER": "nils.anders.eriksson@icloud.com",
-    // Maskingenererade systemmail — avsändaren är obevakad med flit. Måste vara
-    // ett alias på iCloud-kontot i SYSTEM_SMTP_USER, annars nekas MAIL FROM i
-    // SMTP-ledet.
+    // Automatiska konto- och systemmail ska vara tydligt maskinella.
     "SYSTEM_FROM_ADDRESS": "noreply@denied.se",
-    "FEEDBACK_NOTIFY_EMAIL": "noreply@denied.se",
-    "ERROR_FIXER_INBOX": "steedpower3@gmail.com",
+    // Kontakt/admin samt AI-agenternas sporadiska brev och framtida nyhetsbrev.
+    "FEEDBACK_NOTIFY_EMAIL": "politiker@denied.se",
+    "ERROR_FIXER_INBOX": "politiker@denied.se",
     "OAUTH_GOOGLE_CLIENT_ID": "1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com",
     "OAUTH_MICROSOFT_CLIENT_ID": "dd6d7bb1-3a2d-46ad-8d4f-12fe09691414",
 

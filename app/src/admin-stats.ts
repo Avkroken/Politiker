@@ -8,7 +8,7 @@ export interface AdminStats {
   totalVisitors: number; // unika besökare (COUNT DISTINCT), all tid
   visitorCountries: { country: string; n: number }[]; // unika besökare per land
   dailySeries: { day: string; sent: number }[]; // senaste 365 dagarna, ok-status
-  leaderboard: { email: string; sentCount: number }[]; // topp 50
+  leaderboard: { accountId: string; email: string; sentCount: number }[]; // topp 50
 }
 
 export async function getAdminStats(env: Env): Promise<AdminStats> {
@@ -32,10 +32,6 @@ export async function getAdminStats(env: Env): Promise<AdminStats> {
        WHERE country IS NOT NULL GROUP BY country ORDER BY n DESC, country`,
     ).all<{ country: string; n: number }>();
     visitorCountries = c.results;
-    // Besökare vars land aldrig kunde resolvas (country IS NULL) faller ur
-    // frågan ovan. Lägg dem i en "Okänt"-hink så landsuppdelningen blir en
-    // äkta partition som summerar till totalVisitors — annars ser siffrorna
-    // ut att inte stämma (t.ex. 24 totalt men bara 17 fördelat på länder).
     const knownSum = visitorCountries.reduce((sum, r) => sum + r.n, 0);
     const unknown = totalVisitors - knownSum;
     if (unknown > 0) visitorCountries.push({ country: "??", n: unknown });
@@ -53,10 +49,10 @@ export async function getAdminStats(env: Env): Promise<AdminStats> {
     .all<{ day: string; sent: number }>();
 
   const { results: leaderboard } = await env.DB.prepare(
-    `SELECT a.email as email, COUNT(sl.id) as sentCount
+    `SELECT a.id as accountId, a.email as email, COUNT(sl.id) as sentCount
      FROM accounts a LEFT JOIN send_log sl ON sl.account_id = a.id AND sl.status = 'ok'
      GROUP BY a.id ORDER BY sentCount DESC LIMIT 50`,
-  ).all<{ email: string; sentCount: number }>();
+  ).all<{ accountId: string; email: string; sentCount: number }>();
 
   return {
     totalAccounts: totals?.totalAccounts ?? 0,
@@ -78,10 +74,6 @@ export interface TimeSeriesPoint {
   visitors: number;
 }
 
-// Vitlista granularitet → (SQL-bucketuttryck, tidsfönster). Kolumnnamnet
-// substitueras in — granularitet kommer aldrig in i SQL:en som fri text, så
-// ingen injektionsyta. Fönstret begränsar antalet rader/buckets per
-// upplösning så frågorna förblir billiga (fina upplösningar = kort fönster).
 const DAY = 24 * 60 * 60 * 1000;
 const GRAN: Record<Granularity, { expr: (col: string) => string; windowMs: number | null }> = {
   minute: { expr: (c) => `strftime('%Y-%m-%d %H:%M', ${c} / 1000, 'unixepoch')`, windowMs: 6 * 60 * 60 * 1000 },
@@ -89,20 +81,11 @@ const GRAN: Record<Granularity, { expr: (col: string) => string; windowMs: numbe
   day: { expr: (c) => `date(${c} / 1000, 'unixepoch')`, windowMs: 365 * DAY },
   week: { expr: (c) => `strftime('%Y-W%W', ${c} / 1000, 'unixepoch')`, windowMs: 2 * 365 * DAY },
   month: { expr: (c) => `strftime('%Y-%m', ${c} / 1000, 'unixepoch')`, windowMs: 5 * 365 * DAY },
-  quarter: {
-    expr: (c) => `strftime('%Y', ${c} / 1000, 'unixepoch') || '-Q' || ((cast(strftime('%m', ${c} / 1000, 'unixepoch') as integer) + 2) / 3)`,
-    windowMs: null,
-  },
-  half: {
-    expr: (c) => `strftime('%Y', ${c} / 1000, 'unixepoch') || '-H' || ((cast(strftime('%m', ${c} / 1000, 'unixepoch') as integer) + 5) / 6)`,
-    windowMs: null,
-  },
+  quarter: { expr: (c) => `strftime('%Y', ${c} / 1000, 'unixepoch') || '-Q' || ((cast(strftime('%m', ${c} / 1000, 'unixepoch') as integer) + 2) / 3)`, windowMs: null },
+  half: { expr: (c) => `strftime('%Y', ${c} / 1000, 'unixepoch') || '-H' || ((cast(strftime('%m', ${c} / 1000, 'unixepoch') as integer) + 5) / 6)`, windowMs: null },
   year: { expr: (c) => `strftime('%Y', ${c} / 1000, 'unixepoch')`, windowMs: null },
 };
 
-// Tidsserie för admin-grafen: skickade brev (additivt) OCH unika besökare
-// (COUNT DISTINCT — INTE additivt, måste beräknas per bucket i SQL, inte
-// rollas upp från en finare serie i frontend). Slås ihop per bucket.
 export async function getTimeSeries(env: Env, granularity: Granularity): Promise<TimeSeriesPoint[]> {
   const g = GRAN[granularity] ?? GRAN.month;
   const since = g.windowMs === null ? 0 : Date.now() - g.windowMs;
@@ -169,8 +152,6 @@ export async function exportAdminData(
     ).all<Record<string, unknown>>();
     return results;
   };
-  // Politiker-tabellen är helt separat från konton — innehåller ALDRIG
-  // användardata, bara offentliga tjänsteadresser till folkvalda.
   const politiciansRows = async () => {
     const { results } = await env.DB.prepare(
       "SELECT id, name, email, area_name, area_type, last_scraped_at FROM politicians ORDER BY area_type, area_name, name",
@@ -209,8 +190,6 @@ export async function exportAdminData(
     };
   }
 
-  // CSV stödjer bara en tabell i taget — "all" som CSV exporterar kontona (vanligaste behovet);
-  // för fullständig export rekommenderas JSON.
   const rows = Array.isArray(data) ? data : section === "all" ? ((data as { accounts: Record<string, unknown>[] }).accounts) : [data as Record<string, unknown>];
   return {
     filename: `politiker-${baseName}-${date}.csv`,

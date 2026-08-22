@@ -6,15 +6,16 @@
     "dev": "wrangler dev --remote",
     "types": "wrangler types",
     "typecheck": "wrangler types && tsc --noEmit",
-    "validate": "wrangler types && tsc --noEmit && wrangler deploy --dry-run",
+    "validate": "node --check public/v2.js && node --check public/route-bootstrap.js && node --check public/ui-inputs.js && node --check public/auth-ui.js && node --check public/ux-safety.js && node --check public/feedback-ui.js && node --check public/scroll-top.js && wrangler types && tsc --noEmit && wrangler deploy --dry-run",
     "deploy": "wrangler deploy --outdir dist",
     "versions:upload": "wrangler versions upload --outdir dist",
     "secret:set-mail-key": "wrangler secret put MAIL_CRED_KEY"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260816.1",
+    "@types/node": "^26.2.0",
     "typescript": "^7.0.2",
-    "wrangler": "^4.123.0"
+    "wrangler": "^4.125.0"
   },
   "dependencies": {
     "mammoth": "^1.12.1",
