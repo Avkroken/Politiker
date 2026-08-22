@@ -17,6 +17,95 @@
   color:var(--accent);
 }
 
+/* Provider identity is part of the design system, not a post-render patch. */
+.provider-mark{
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  font-size:0;
+  line-height:1;
+  overflow:hidden;
+  position:relative;
+}
+.provider-mark::before{
+  font-size:22px;
+  font-weight:800;
+  line-height:1;
+}
+.provider-mark.github{
+  border-radius:50%;
+  background:#f5f5f7;
+  color:#11131a;
+}
+.provider-mark.github::before{content:'GH';font-size:13px;letter-spacing:-.04em}
+.provider-mark.microsoft{
+  border-radius:5px;
+  background:
+    linear-gradient(#f25022 0 0) 0 0/47% 47% no-repeat,
+    linear-gradient(#7fba00 0 0) 100% 0/47% 47% no-repeat,
+    linear-gradient(#00a4ef 0 0) 0 100%/47% 47% no-repeat,
+    linear-gradient(#ffb900 0 0) 100% 100%/47% 47% no-repeat;
+}
+.provider-mark.google{
+  background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 0 40%,#fbbc05 0 65%,#ea4335 0 82%,#4285f4 0);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.provider-mark.google::before{content:'G';font-size:30px;font-family:Arial,sans-serif}
+
+/* Login provider buttons use the same visual language. */
+.oauth-btn{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.7rem;
+}
+.oauth-btn::before{
+  width:24px;
+  height:24px;
+  flex:0 0 24px;
+  display:grid;
+  place-items:center;
+  font-weight:800;
+  line-height:1;
+}
+.oauth-btn[href*="/google/"]::before{
+  content:'G';
+  font-family:Arial,sans-serif;
+  font-size:21px;
+  background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 0 40%,#fbbc05 0 65%,#ea4335 0 82%,#4285f4 0);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.oauth-btn[href*="/github/"]::before{
+  content:'GH';
+  border-radius:50%;
+  background:#f5f5f7;
+  color:#11131a;
+  font-size:10px;
+}
+.oauth-btn[href*="/microsoft/"]::before{
+  content:'';
+  border-radius:2px;
+  background:
+    linear-gradient(#f25022 0 0) 0 0/47% 47% no-repeat,
+    linear-gradient(#7fba00 0 0) 100% 0/47% 47% no-repeat,
+    linear-gradient(#00a4ef 0 0) 0 100%/47% 47% no-repeat,
+    linear-gradient(#ffb900 0 0) 100% 100%/47% 47% no-repeat;
+}
+
+/* Keep KPI text on separate lines; avoid "KontonVisa konto" collisions. */
+.kpi > strong,.kpi > span,.kpi > small{display:block}
+.kpi > small{margin-top:.45rem;color:var(--accent);font-size:.9rem;font-weight:600}
+.stat-link{text-decoration:none;color:inherit}
+.stat-link:hover,.stat-link:focus-visible{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));outline:none}
+
 @media(max-width:860px){
   .settings-nav{
     display:grid;
