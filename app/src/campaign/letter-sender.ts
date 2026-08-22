@@ -1,52 +1,50 @@
 import type { Env } from "./index";
-import { sendSmtpMail, escapeHtml } from "../../../shared/smtp";
+import { decryptLetterData } from "../letter-privacy";
 
 const MAX_PER_RUN = 20;
+const EDITORIAL_NAME = "Politikerredaktionen";
+const EDITORIAL_EMAIL = "politiker@denied.se";
 
 interface PendingRecipient {
-  id: string; politician_email: string; politician_name: string;
+  id: string; draft_id: string; politician_email: string; politician_name: string;
   subject: string; html_body: string;
 }
 
 export async function runLetterSender(env: Env): Promise<void> {
-  // Kvartalsbrevets mottagare (17 000+) dräneras av quarterly-drain via
-  // Resend — de skulle kväva Gmail-kvoten och blockera de dagliga
-  // breven i månader om de gick den här vägen.
+  if (!env.EMAIL) { console.warn("letter-sender: EMAIL-binding saknas"); return; }
   const { results } = await env.DB.prepare(`
-    SELECT cr.id, cr.politician_email, cr.politician_name, cld.subject, cld.html_body
-    FROM campaign_recipients cr
-    JOIN civic_letter_drafts cld ON cld.id = cr.draft_id
+    SELECT cr.id,cr.draft_id,cr.politician_email,cr.politician_name,cld.subject,cld.html_body
+    FROM campaign_recipients cr JOIN civic_letter_drafts cld ON cld.id=cr.draft_id
     WHERE cr.status='pending' AND cld.status='approved'
-      AND (cld.topic_source_url IS NULL OR cld.topic_source_url != 'internal:quarterly')
+      AND (cld.topic_source_url IS NULL OR cld.topic_source_url!='internal:quarterly')
     ORDER BY cr.rowid ASC LIMIT ?
   `).bind(MAX_PER_RUN).all<PendingRecipient>();
-
   if (!results.length) { console.log("letter-sender: inga väntande brev"); return; }
 
-  const config = {
-    host: "smtp.gmail.com", port: 587,
-    user: env.GMAIL_EMAIL, password: env.GMAIL_PASSWORD,
-    fromAddress: env.GMAIL_EMAIL,
-  };
-
-  let sent = 0, failed = 0;
-  const now = Date.now();
-
-  for (const rec of results) {
-    try {
-      await sendSmtpMail(config, {
-        to: rec.politician_email,
-        subject: rec.subject,
-        html: `<pre style="font-family:inherit;white-space:pre-wrap">${escapeHtml(rec.html_body)}</pre>`,
+  let sent=0,failed=0;
+  for(const rec of results){
+    const now=Date.now();
+    try{
+      const body=await decryptLetterData(env,rec.html_body);
+      if(!body)throw new Error("Brevtexten har raderats");
+      await env.EMAIL.send({
+        to:rec.politician_email,
+        from:{email:EDITORIAL_EMAIL,name:EDITORIAL_NAME},
+        replyTo:EDITORIAL_EMAIL,
+        subject:rec.subject,
+        html:`<pre style="font-family:system-ui,-apple-system,sans-serif;white-space:pre-wrap;line-height:1.55">${body.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre>`,
+        text:body,
       });
-      await env.DB.prepare("UPDATE campaign_recipients SET status='sent', sent_at=? WHERE id=?").bind(now, rec.id).run();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE campaign_recipients SET status='sent',sent_at=? WHERE id=?").bind(now,rec.id),
+        env.DB.prepare("UPDATE civic_letter_drafts SET status='done' WHERE id=? AND NOT EXISTS (SELECT 1 FROM campaign_recipients WHERE draft_id=? AND status='pending')").bind(rec.draft_id,rec.draft_id),
+      ]);
       sent++;
-    } catch (e) {
-      const err = String(e).slice(0, 200);
-      await env.DB.prepare("UPDATE campaign_recipients SET status='failed', error=? WHERE id=?").bind(err, rec.id).run();
+    }catch(e){
+      const err=String(e).slice(0,200);
+      await env.DB.prepare("UPDATE campaign_recipients SET status='failed',error=? WHERE id=?").bind(err,rec.id).run();
       failed++;
     }
   }
-
   console.log(`letter-sender: ${sent} skickade, ${failed} misslyckade`);
 }
