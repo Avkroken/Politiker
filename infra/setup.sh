@@ -14,8 +14,8 @@ SERVICE_DIR="/etc/systemd/system"
 CURRENT_USER="$(id -un)"
 WR="npx --yes wrangler"
 
-PLACEHOLDER_DB_ID="e9ecf94f-fa71-4004-a5b8-f9317eb4d4e9"
-DB_NAME="politiker"
+PLACEHOLDER_DB_ID="78777055-bf37-4388-86ad-69bdf782e2cd"
+DB_NAME="politiker-eu"
 KV_TITLE="politiker_sessions"
 QUEUE_NAME="politiker-send-jobs"
 WORKER_NAME="politiker"
@@ -76,7 +76,7 @@ log "[4/8] Provisionerar Cloudflare-resurser…"
 DB_ID="$($WR d1 list --json 2>/dev/null | jq -r ".[] | select(.name==\"$DB_NAME\") | (.uuid // .database_id // .id)" | head -1)"
 NEW_DB=0
 if [ -z "$DB_ID" ] || [ "$DB_ID" = "null" ]; then
-  log "  Skapar D1-databas $DB_NAME…"; $WR d1 create "$DB_NAME" >/dev/null
+  log "  Skapar D1-databas $DB_NAME med EU-jurisdiktion…"; $WR d1 create "$DB_NAME" --jurisdiction=eu >/dev/null
   DB_ID="$($WR d1 list --json 2>/dev/null | jq -r ".[] | select(.name==\"$DB_NAME\") | (.uuid // .database_id // .id)" | head -1)"; NEW_DB=1
 fi
 [ -n "$DB_ID" ] && [ "$DB_ID" != "null" ] || die "Kunde inte fastställa D1 database_id."
@@ -145,8 +145,8 @@ if command -v systemctl >/dev/null && [ -n "$GMAIL_EMAIL" ] && [ -n "$GMAIL_PASS
   done
   sudo systemctl daemon-reload
   sudo systemctl enable --now bounce-processor.timer
-  systemctl is-active --quiet bounce-processor.timer && ok "  bounce-processor.timer aktiv (kör dagligen 06:00)" || warn "  bounce-processor.timer inte aktiv"
-else warn "  Hoppar över (kräver systemd + GMAIL_EMAIL/GMAIL_PASSWORD)"; fi
+  systemctl is-active --quiet bounce-processor.timer && ok "bounce-processor.timer aktiv (kör dagligen 06:00)" || warn "bounce-processor.timer inte aktiv"
+else warn "Hoppar över (kräver systemd + GMAIL_EMAIL/GMAIL_PASSWORD)"; fi
 
 echo
 echo "=== Klar ==="
