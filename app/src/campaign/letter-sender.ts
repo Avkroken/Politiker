@@ -10,6 +10,12 @@ interface PendingRecipient {
   subject: string; html_body: string;
 }
 
+async function finalizeDraftIfTerminal(env: Env, draftId: string): Promise<void> {
+  await env.DB.prepare(
+    "UPDATE civic_letter_drafts SET status='done' WHERE id=? AND status='approved' AND NOT EXISTS (SELECT 1 FROM campaign_recipients WHERE draft_id=? AND status='pending')",
+  ).bind(draftId, draftId).run();
+}
+
 export async function runLetterSender(env: Env): Promise<void> {
   if (!env.EMAIL) { console.warn("letter-sender: EMAIL-binding saknas"); return; }
   const { results } = await env.DB.prepare(`
@@ -35,16 +41,14 @@ export async function runLetterSender(env: Env): Promise<void> {
         html:`<pre style="font-family:system-ui,-apple-system,sans-serif;white-space:pre-wrap;line-height:1.55">${body.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre>`,
         text:body,
       });
-      await env.DB.batch([
-        env.DB.prepare("UPDATE campaign_recipients SET status='sent',sent_at=? WHERE id=?").bind(now,rec.id),
-        env.DB.prepare("UPDATE civic_letter_drafts SET status='done' WHERE id=? AND NOT EXISTS (SELECT 1 FROM campaign_recipients WHERE draft_id=? AND status='pending')").bind(rec.draft_id,rec.draft_id),
-      ]);
+      await env.DB.prepare("UPDATE campaign_recipients SET status='sent',sent_at=? WHERE id=?").bind(now,rec.id).run();
       sent++;
     }catch(e){
       const err=String(e).slice(0,200);
       await env.DB.prepare("UPDATE campaign_recipients SET status='failed',error=? WHERE id=?").bind(err,rec.id).run();
       failed++;
     }
+    await finalizeDraftIfTerminal(env, rec.draft_id);
   }
   console.log(`letter-sender: ${sent} skickade, ${failed} misslyckade`);
 }
