@@ -52,9 +52,6 @@ export async function reportClientError(
     await env.DB.prepare("UPDATE client_errors SET email_notified_at = ? WHERE signature = ?")
       .bind(now, signature)
       .run();
-    if (env.ERROR_FIXER_INBOX) {
-      await sendSystemMail(env, env.ERROR_FIXER_INBOX, subject, html).catch(() => {});
-    }
     return { reported: true };
   } catch {
     // Best effort — felet är redan sparat i client_errors.
@@ -132,9 +129,6 @@ export async function submitFeedback(
   ].join("");
 
   await sendSystemMail(env, env.FEEDBACK_NOTIFY_EMAIL, mailSubject, mailHtml);
-  if (!isContact && env.ERROR_FIXER_INBOX) {
-    await sendSystemMail(env, env.ERROR_FIXER_INBOX, mailSubject, mailHtml).catch(() => {});
-  }
 
   return { received: true, id: feedbackId };
 }
