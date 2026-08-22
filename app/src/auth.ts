@@ -1,4 +1,4 @@
-import { hashPassword, verifyPassword, randomId, randomVerificationCode } from "../../shared/crypto";
+import { hashPassword, verifyPassword, randomId, randomVerificationCode, sha256Hex } from "../../shared/crypto";
 import { sendSmtpMail } from "../../shared/smtp";
 import { sendResendMail } from "../../shared/resend";
 import { htmlToText } from "../../shared/html";
@@ -8,6 +8,7 @@ import { enforceAttemptLimit, recordFailedAttempt, clearAttempts } from "./rate-
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 dagar
 const RESET_TTL_MS = 30 * 60 * 1000; // 30 min
+const TOTP_SETUP_TTL_SECONDS = 10 * 60;
 
 // Resend skickar från send.denied.se — den domänen är verifierad på
 // Resend-kontot sedan tidigare. denied.se är det inte, och Resend avvisar
@@ -29,6 +30,69 @@ const CODE_WINDOW_SECONDS = 60 * 60;
 // annars skulle svarstiden avslöja vilka adresser som är registrerade.
 const DUMMY_SALT = "AAAAAAAAAAAAAAAAAAAAAA=="; // 16 nollbytes, base64
 const DUMMY_HASH = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+interface SessionEnvelope {
+  accountId: string;
+  credentialVersion: string;
+  authenticatedAt: number;
+}
+
+export interface SessionContext {
+  account: Awaited<ReturnType<typeof getAccountById>>;
+  authenticatedAt: number;
+}
+
+async function credentialVersion(account: Record<string, unknown>): Promise<string> {
+  // Bind sessionen till de autentiseringsuppgifter som gällde när den skapades.
+  // Lösenordsbyte/reset och TOTP-byte ändrar fingeravtrycket och återkallar
+  // därmed alla gamla sessioner utan att KV-nycklar behöver räknas upp.
+  return sha256Hex([
+    String(account.id ?? ""),
+    String(account.password_hash ?? ""),
+    String(account.password_salt ?? ""),
+    String(account.totp_enabled ?? 0),
+    String(account.totp_secret ?? ""),
+  ].join("|"));
+}
+
+export async function writeSession(
+  env: Env,
+  sessionToken: string,
+  accountId: string,
+  authenticatedAt = Date.now(),
+): Promise<void> {
+  const account = await getAccountById(env.DB, accountId);
+  if (!account || account.disabled) throw new Error("Konto saknas eller är inaktiverat");
+  const envelope: SessionEnvelope = {
+    accountId,
+    credentialVersion: await credentialVersion(account as Record<string, unknown>),
+    authenticatedAt,
+  };
+  await env.SESSIONS.put(`session:${sessionToken}`, JSON.stringify(envelope), { expirationTtl: SESSION_TTL_SECONDS });
+}
+
+export async function getSessionContext(env: Env, sessionToken: string | null): Promise<SessionContext | null> {
+  if (!sessionToken) return null;
+  const raw = await env.SESSIONS.get(`session:${sessionToken}`);
+  if (!raw) return null;
+
+  let session: SessionEnvelope;
+  try {
+    session = JSON.parse(raw) as SessionEnvelope;
+  } catch {
+    // Äldre sessioner lagrade bara accountId som klartext och kan därför inte
+    // bindas till aktuell credential-version. Säkerhetsuppgraderingen gör en
+    // avsiktlig engångsutloggning i stället för att låta sådana sessioner leva.
+    return null;
+  }
+  if (!session.accountId || !session.credentialVersion || !Number.isFinite(session.authenticatedAt)) return null;
+
+  const account = await getAccountById(env.DB, session.accountId);
+  if (!account || account.disabled) return null;
+  const currentVersion = await credentialVersion(account as Record<string, unknown>);
+  if (currentVersion !== session.credentialVersion) return null;
+  return { account, authenticatedAt: session.authenticatedAt };
+}
 
 export async function signup(env: Env, email: string, password: string): Promise<{ accountId: string }> {
   const existing = await getAccountByEmail(env.DB, email);
@@ -73,9 +137,6 @@ export async function login(
   // visas för den som redan bevisat lösenordet — annars kan felmeddelandena
   // användas för att kartlägga vilka adresser som är registrerade. Okända
   // konton verifieras mot en dummy så svarstiden blir densamma.
-  // (Konton skapade via OAuth har ett slumpat oanvändbart lösenord och
-  // faller därför naturligt igenom som "fel lösenord" — de loggar in via
-  // leverantörsknappen istället.)
   const passwordOk = await verifyPassword(
     password,
     (account?.password_hash as string) ?? DUMMY_HASH,
@@ -100,17 +161,12 @@ export async function login(
 
   await clearAttempts(env, "login", email);
   const sessionToken = randomId() + randomId();
-  await env.SESSIONS.put(`session:${sessionToken}`, account.id as string, { expirationTtl: SESSION_TTL_SECONDS });
+  await writeSession(env, sessionToken, account.id as string);
   return { sessionToken };
 }
 
 export async function getAccountFromSession(env: Env, sessionToken: string | null) {
-  if (!sessionToken) return null;
-  const accountId = await env.SESSIONS.get(`session:${sessionToken}`);
-  if (!accountId) return null;
-  const account = await getAccountById(env.DB, accountId);
-  if (account?.disabled) return null; // inaktiverade konton tappar omedelbart åtkomst, även med giltig sessionskaka
-  return account;
+  return (await getSessionContext(env, sessionToken))?.account ?? null;
 }
 
 export async function requestPasswordReset(env: Env, email: string): Promise<void> {
@@ -143,10 +199,9 @@ export async function resetPassword(env: Env, token: string, newPassword: string
 
   const { hash, salt } = await hashPassword(newPassword);
 
-  // Nollställ inloggningsspärren FÖRE token-/lösenordsuppdateringen (CodeRabbit-
-  // fynd): om clearAttempts skulle kasta efter att UPDATE lyckats hade
-  // användaren redan bytt lösenord men återstått utelåst med en nu ogiltig
-  // återställningslänk — omöjlig att lösa själv.
+  // Nollställ inloggningsspärren FÖRE token-/lösenordsuppdateringen. När
+  // lösenordet skrivs ändras sessionernas credential-fingerprint automatiskt,
+  // så alla gamla sessioner blir ogiltiga vid nästa request.
   await clearAttempts(env, "login", account.email);
 
   await env.DB.prepare(
@@ -160,21 +215,25 @@ export async function startTotpSetup(env: Env, accountId: string): Promise<{ sec
   const account = await getAccountById(env.DB, accountId);
   if (!account) throw new Error("Konto saknas");
   const secret = generateTotpSecret();
-  await env.DB.prepare("UPDATE accounts SET totp_secret = ?, totp_enabled = 0 WHERE id = ?").bind(secret, accountId).run();
+
+  // Byt inte ut en aktiv TOTP-hemlighet förrän den nya koden verifierats.
+  // Pending-hemligheten ligger kortlivat i KV; befintlig 2FA fortsätter gälla.
+  await env.SESSIONS.put(`totp-pending:${accountId}`, secret, { expirationTtl: TOTP_SETUP_TTL_SECONDS });
   return { secret, authUri: totpAuthUri(secret, account.email as string) };
 }
 
 export async function confirmTotpSetup(env: Env, accountId: string, code: string): Promise<void> {
   await enforceAttemptLimit(env, "totp-setup", accountId, { max: CODE_MAX_ATTEMPTS, windowSeconds: CODE_WINDOW_SECONDS });
-  const account = await getAccountById(env.DB, accountId);
-  if (!account || !account.totp_secret) throw new Error("Ingen TOTP-uppsättning pågår");
-  const valid = await verifyTotpCode(account.totp_secret as string, code);
+  const secret = await env.SESSIONS.get(`totp-pending:${accountId}`);
+  if (!secret) throw new Error("Ingen TOTP-uppsättning pågår eller så har den gått ut");
+  const valid = await verifyTotpCode(secret, code);
   if (!valid) {
     await recordFailedAttempt(env, "totp-setup", accountId, CODE_WINDOW_SECONDS);
     throw new Error("Fel kod — kontrollera att klockan på din enhet är rätt");
   }
   await clearAttempts(env, "totp-setup", accountId);
-  await env.DB.prepare("UPDATE accounts SET totp_enabled = 1 WHERE id = ?").bind(accountId).run();
+  await env.DB.prepare("UPDATE accounts SET totp_secret = ?, totp_enabled = 1 WHERE id = ?").bind(secret, accountId).run();
+  await env.SESSIONS.delete(`totp-pending:${accountId}`);
 }
 
 export async function setPassword(env: Env, accountId: string, newPassword: string): Promise<void> {
@@ -185,6 +244,7 @@ export async function setPassword(env: Env, accountId: string, newPassword: stri
 
 export async function disableTotp(env: Env, accountId: string): Promise<void> {
   await env.DB.prepare("UPDATE accounts SET totp_enabled = 0, totp_secret = NULL WHERE id = ?").bind(accountId).run();
+  await env.SESSIONS.delete(`totp-pending:${accountId}`);
 }
 
 // Admin-initierad: till skillnad från requestPasswordReset (självbetjäning,
@@ -237,14 +297,6 @@ export async function deleteOwnAccount(env: Env, accountId: string, password?: s
 // Kanalordning: Resend -> system-SMTP (iCloud). Cloudflare Email Service ingår
 // inte i kedjan än; nu när send_email-bindingen släpper samma noreply-adress
 // finns inget som hindrar den, men att lägga in ledet är ett eget beslut.
-//
-// Varför fallback alls: systemmailen bär verifieringskoden och
-// återställningslänken, alltså de enda vägarna tillbaka in i ett konto. Med
-// bara SMTP kvar räckte ett utgånget iCloud-appspecifikt lösenord (Apple
-// återkallar dem när Apple-ID:t ändras) för att slå ut hela
-// lösenordsåterställningen: 535 gick rakt igenom till användaren och ingen
-// annan kanal försökte. Nyhetsbrevet hade redan den här kedjan; auth-mailen,
-// som betyder mer, hade den inte.
 export async function sendSystemMail(env: Env, to: string, subject: string, html: string): Promise<void> {
   if (env.RESEND_API_KEY) {
     try {
