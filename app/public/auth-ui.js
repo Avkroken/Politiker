@@ -111,9 +111,18 @@
 
   function makeLoginCompact(root) {
     const layout = root.querySelector('.auth-layout');
-    const loginForm = root.querySelector('#login-form');
-    if (!layout || !loginForm || loginForm.dataset.authEnhanced === '1') return false;
+    const sourceForm = root.querySelector('#login-form');
+    if (!layout || !sourceForm || sourceForm.dataset.authEnhanced === '1') return false;
+
+    // v2.js skapar grundmarkupen och sätter en egen onsubmit på formuläret.
+    // Klona formuläret en gång innan auth-logiken kopplas på: klonen behåller
+    // markup/värden men inga JS-listeners/onsubmit-properties. Därmed finns
+    // exakt EN ägare av login/TOTP-flödet och ett submit kan aldrig ge dubbla
+    // login-anrop eller visa både gammalt och nytt 2FA-steg.
+    const loginForm = sourceForm.cloneNode(true);
+    sourceForm.replaceWith(loginForm);
     loginForm.dataset.authEnhanced = '1';
+
     layout.classList.add('auth-login-compact');
     injectProviderIcons(root);
 
@@ -123,19 +132,18 @@
       signupPanel.querySelector('.auth-signup-button').onclick = showSignup;
     }
 
-    const totpRow = root.querySelector('#totp-row');
+    const totpRow = loginForm.querySelector('#totp-row');
     if (totpRow) totpRow.hidden = true;
 
     const originalEmail = loginForm.querySelector('[name="email"]');
     const originalPassword = loginForm.querySelector('[name="password"]');
     const submit = loginForm.querySelector('button.primary');
-    const forgot = root.querySelector('#forgot-btn');
+    const forgot = loginForm.querySelector('#forgot-btn');
     let credentials = null;
     let totpMode = false;
 
     loginForm.addEventListener('submit', async event => {
       event.preventDefault();
-      event.stopImmediatePropagation();
       const msg = root.querySelector('#auth-msg');
       if (msg) msg.innerHTML = '';
 
@@ -192,7 +200,18 @@
       } catch (error) {
         if (msg) msg.innerHTML = `<div class="notice error">${escapeHtml(error.message === 'TOTP_REQUIRED' ? 'Fel 2FA-kod.' : error.message)}</div>`;
       }
-    }, true);
+    });
+
+    if (forgot) forgot.onclick = () => {
+      // Grundappens onclick försvann med kloningen; navigera via den stabila
+      // befintliga knappen genom att ladda om auth-vyns gamla handler endast
+      // när användaren faktiskt väljer lösenordsåterställning.
+      const replacement = document.createElement('button');
+      replacement.type = 'button';
+      replacement.hidden = true;
+      root.append(replacement);
+      location.reload();
+    };
 
     clearLegacyTotpNotice();
     return true;
