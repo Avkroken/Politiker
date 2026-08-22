@@ -1,18 +1,17 @@
 import type { Env } from "./index";
 import { callAnthropic, ANTHROPIC_SONNET, AnthropicBudgetExceededError } from "../../../shared/anthropic";
 import { notifyBudgetExhausted } from "./notify";
+import { sendApprovalNotification } from "../civic-outreach";
 
 // Kvartalsbrevet: EN gång per kvartal researchas och författas ETT brev
-// (utifrån kvartalets socialt relevanta bevakade ärenden) som skickas till
-// SAMTLIGA politiker i databasen — alla nivåer, hela landet — och samtidigt
-// till nyhetsbrevsprenumeranterna (newsletter-sender plockar upp brevet via
-// public_letters source='quarterly').
+// (utifrån kvartalets socialt relevanta bevakade ärenden) som går till manuell
+// granskning innan något skickas. Efter godkännande skickas samma brev till
+// samtliga politiker i databasen — alla nivåer, hela landet — och samtidigt
+// till nyhetsbrevsprenumeranterna.
 //
 // Skiljer sig från det dagliga kampanjflödet (letter-generator), som skickar
 // personaliserade brev till ett litet urval per ärende. Kvartalsbrevet är ett
-// gemensamt brev till alla, och dräneras via Resend
-// (quarterly-drain) istället för Gmail — 17 000+ mottagare ryms inte i en
-// Gmail-kvot.
+// gemensamt brev till alla och dräneras via Cloudflare Email Service.
 
 // Markör som skiljer kvartalsutkast från dagliga utkast i civic_letter_drafts
 // (tabellen har ingen source-kolumn; topic_source_url är fri text).
@@ -72,7 +71,6 @@ Svara med EXAKT detta format:
   } catch (e) {
     if (e instanceof AnthropicBudgetExceededError) {
       console.warn("quarterly: daglig budget slut — avbryter");
-      console.warn("quarterly: Anthropic daglig budget slut — kvartalsbrevet hoppades över", "warning");
       await notifyBudgetExhausted(env, "quarterly-campaign", "Kvartalsbrevet hoppades över denna körning.");
       return;
     }
@@ -85,22 +83,23 @@ Svara med EXAKT detta format:
   const body = match[2].trim();
 
   const draftId = crypto.randomUUID();
+  const approveToken = crypto.randomUUID() + crypto.randomUUID();
   const now = Date.now();
 
+  // Kvartalsbrev får aldrig bli utskicksbara genom att modellen bara lyckas
+  // generera dem. De börjar som pending och kräver explicit godkännande.
   await env.DB.batch([
     env.DB.prepare(
-      "INSERT INTO civic_letter_drafts (id, subject, html_body, topic_source_url, status, approve_token, created_at) VALUES (?, ?, ?, ?, 'approved', ?, ?)",
-    ).bind(draftId, subject, body, QUARTERLY_MARKER, draftId.slice(0, 32), now),
-    // Samma brev publiceras för nyhetsbrevet — newsletter-sender skickar allt
-    // med source='quarterly' till bekräftade prenumeranter.
+      "INSERT INTO civic_letter_drafts (id, subject, html_body, topic_source_url, status, approve_token, created_at) VALUES (?, ?, ?, ?, 'pending', ?, ?)",
+    ).bind(draftId, subject, body, QUARTERLY_MARKER, approveToken, now),
     env.DB.prepare(
       "INSERT INTO public_letters (id, source, account_id, subject, body, area_name, published_at) VALUES (?, 'quarterly', NULL, ?, ?, NULL, ?)",
     ).bind(crypto.randomUUID(), subject, body, now),
   ]);
 
-  // Mottagare: SAMTLIGA politiker, alla nivåer, dedupliceriat på e-postadress
-  // (samma person kan finnas i flera områden). En INSERT...SELECT istället för
-  // 17 000 separata anrop.
+  // Mottagare: SAMTLIGA politiker, alla nivåer, deduplicerat på e-postadress.
+  // De ligger pending tills själva utkastet godkänts; drain läser endast
+  // approved-utkast.
   const res = await env.DB.prepare(`
     INSERT INTO campaign_recipients (id, draft_id, politician_id, politician_email, politician_name, area_name)
     SELECT lower(hex(randomblob(16))), ?, id, email, name, area_name
@@ -109,21 +108,32 @@ Svara med EXAKT detta format:
     GROUP BY email
   `).bind(draftId).run();
 
-  console.log(`quarterly: brev "${subject}" skapat, ${res.meta.changes} mottagare köade`);
+  try {
+    await sendApprovalNotification(env, {
+      id: draftId,
+      subject,
+      htmlBody: body,
+      topicSourceUrl: QUARTERLY_MARKER,
+      status: "pending",
+      approveToken,
+      createdAt: now,
+      approvedAt: null,
+    });
+  } catch (e) {
+    // Ett misslyckat granskningsmail får aldrig göra brevet utskicksbart.
+    // Utkastet ligger kvar som pending och kan hanteras senare.
+    console.error("quarterly: kunde inte skicka granskningsmail:", e);
+  }
+
+  console.log(`quarterly: brev "${subject}" skapat för granskning, ${res.meta.changes} mottagare köade`);
 }
 
-// Dränerar kvartalsbrevets mottagare via Cloudflare Email Service — körs i
-// varje cron-slot (4 ggr/dag), 300/körning = max 1 200/dag => hela landet på
-// ~2 veckor. Gmail-vägen (letter-sender) rör aldrig kvartalsutkast, och
-// Resend används medvetet INTE här (fri-kvoten på 100/dag är reserverad för
-// nyhetsbrevet) — utan EMAIL-binding väntar kön orörd.
+// Dränerar godkända kvartalsbrev via Cloudflare Email Service — körs i
+// varje cron-slot (4 ggr/dag), 300/körning. Utan EMAIL-binding väntar kön.
 //
-// KOSTNADSTAK (skydd mot skenande volym à la claude-loop-incidenten):
-// Email Service kostar $0.35/1k utöver 3 000/mån. Utöver den naturliga
-// gränsen (kön är ändlig, skapas EN gång per kvartal, idempotent) finns ett
-// hårt månadstak: har fler än MONTHLY_SEND_CAP kvartalsmail redan skickats
-// den här kalendermånaden skickas inget mer — även om en bugg skulle
-// återköa mottagare. 25 000/mån = max ~$8/mån i teoretisk värsta-fall.
+// KOSTNADSTAK: 25 000 skickade kvartalsmail per kalendermånad. Batchstorleken
+// klipps mot återstående månadsutrymme så att en sista körning aldrig kan gå
+// över taket.
 const DRAIN_PER_RUN = 300;
 const MONTHLY_SEND_CAP = 25_000;
 
@@ -137,10 +147,13 @@ export async function runQuarterlyDrain(env: Env): Promise<void> {
     JOIN civic_letter_drafts cld ON cld.id = cr.draft_id
     WHERE cr.status = 'sent' AND cr.sent_at >= ? AND cld.topic_source_url = ?
   `).bind(monthStart.getTime(), QUARTERLY_MARKER).first<{ n: number }>();
-  if ((sentThisMonth?.n ?? 0) >= MONTHLY_SEND_CAP) {
-    console.error(`quarterly-drain: MÅNADSTAK nått (${sentThisMonth?.n}/${MONTHLY_SEND_CAP}) — skickar inget mer denna månad`);
+  const sentCount = sentThisMonth?.n ?? 0;
+  const remainingMonthly = Math.max(0, MONTHLY_SEND_CAP - sentCount);
+  if (remainingMonthly === 0) {
+    console.error(`quarterly-drain: MÅNADSTAK nått (${sentCount}/${MONTHLY_SEND_CAP}) — skickar inget mer denna månad`);
     return;
   }
+  const runLimit = Math.min(DRAIN_PER_RUN, remainingMonthly);
 
   const { results } = await env.DB.prepare(`
     SELECT cr.id, cr.politician_email, cld.subject, cld.html_body
@@ -148,7 +161,7 @@ export async function runQuarterlyDrain(env: Env): Promise<void> {
     JOIN civic_letter_drafts cld ON cld.id = cr.draft_id
     WHERE cr.status = 'pending' AND cld.status = 'approved' AND cld.topic_source_url = ?
     ORDER BY cr.rowid ASC LIMIT ?
-  `).bind(QUARTERLY_MARKER, DRAIN_PER_RUN).all<{ id: string; politician_email: string; subject: string; html_body: string }>();
+  `).bind(QUARTERLY_MARKER, runLimit).all<{ id: string; politician_email: string; subject: string; html_body: string }>();
 
   if (!results.length) return;
 
@@ -159,7 +172,7 @@ export async function runQuarterlyDrain(env: Env): Promise<void> {
       await env.EMAIL.send({
         to: rec.politician_email,
         from: { email: "noreply@denied.se", name: env.SENDER_NAME },
-        replyTo: env.GMAIL_EMAIL, // svar ska nå en riktig, läst inkorg
+        replyTo: env.GMAIL_EMAIL,
         subject: rec.subject,
         html: `<pre style="font-family:inherit;white-space:pre-wrap">${rec.html_body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`,
         text: rec.html_body,

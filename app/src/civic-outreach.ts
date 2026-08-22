@@ -1,5 +1,5 @@
 import { randomId } from "../../shared/crypto";
-import { sendSmtpMail } from "../../shared/smtp";
+import { sendSmtpMail, escapeHtml } from "../../shared/smtp";
 import type { Env } from "./db";
 
 // Kvartalsvis civilsamhälls-utskick: forskar fram ett aktuellt samhällsämne,
@@ -10,7 +10,7 @@ import type { Env } from "./db";
 // Granskningsmailet skickas MEDVETET via det dedikerade Outlook-kontot, inte
 // plattformens systemmail (denied.se) — hela den här funktionen ska hållas
 // helt skild från användarens egen identifierbara adress.
-const APPROVAL_NOTIFY_EMAIL = "noreply@denied.se";
+const APPROVAL_NOTIFY_EMAIL = "politiker@denied.se";
 const OUTLOOK_SMTP_HOST = "smtp.office365.com";
 const OUTLOOK_SMTP_PORT = 587;
 const OUTLOOK_SMTP_USER = "RichMissile@outlook.com";
@@ -71,15 +71,18 @@ export async function sendApprovalNotification(env: Env, draft: CivicLetterDraft
 export function approvalEmailBody(draft: CivicLetterDraft): { to: string; subject: string; html: string } {
   const approveUrl = `https://politiker.denied.se/api/civic-letter/${draft.id}/approve?token=${draft.approveToken}`;
   const rejectUrl = `https://politiker.denied.se/api/civic-letter/${draft.id}/reject?token=${draft.approveToken}`;
+  const source = draft.topicSourceUrl ? escapeHtml(draft.topicSourceUrl) : null;
+  const safeSubject = escapeHtml(draft.subject);
+  const safeBody = escapeHtml(draft.htmlBody);
   return {
     to: APPROVAL_NOTIFY_EMAIL,
     subject: `Granska civilsamhälls-brev: ${draft.subject}`,
     html: `
       <p>Ett nytt förslag till kvartalsbrev väntar på ditt godkännande. Inget skickas förrän du klickar "Godkänn".</p>
-      ${draft.topicSourceUrl ? `<p>Källa: <a href="${draft.topicSourceUrl}">${draft.topicSourceUrl}</a></p>` : ""}
+      ${source ? `<p>Källa: ${source}</p>` : ""}
       <hr>
-      <h3>${draft.subject}</h3>
-      ${draft.htmlBody}
+      <h3>${safeSubject}</h3>
+      <pre style="font-family:inherit;white-space:pre-wrap">${safeBody}</pre>
       <hr>
       <p>
         <a href="${approveUrl}" style="background:#2e7d32;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;">Godkänn och skicka</a>

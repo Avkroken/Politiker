@@ -124,6 +124,13 @@
 .stat-link{text-decoration:none;color:inherit}
 .stat-link:hover,.stat-link:focus-visible{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));outline:none}
 
+/* Grid gap is the sole source of spacing inside grid/stack containers. */
+.grid-2 > .panel + .panel,
+.grid-3 > .panel + .panel,
+.stack > .panel + .panel{margin-top:0}
+.review-kpis + .review-kpis{margin-top:8px}
+.review-kpis + .grid-2{margin-top:12px}
+
 @media(max-width:860px){
   .settings-nav{
     display:grid;
