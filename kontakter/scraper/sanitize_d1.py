@@ -26,7 +26,6 @@ import tempfile
 DB_NAME = "politiker-eu"
 SWEDISH_EU_AREA = "Europaparlamentet (Sverige)"
 REPO_ROOT = Path(__file__).resolve().parents[2]
-APP_DIR = REPO_ROOT / "app"
 
 # Medvetet konservativt: endast säkra alias normaliseras. Lokala listor som
 # Bergspartiet, Götenes framtid, Vårddemokraterna osv lämnas orörda.
@@ -93,7 +92,10 @@ END;
 def wrangler(*args: str) -> None:
     cmd = ["npx", "wrangler", *args]
     try:
-        subprocess.run(cmd, cwd=APP_DIR, check=True)
+        # Kör från repots rot. Det är samma kontext som de manuella Wrangler-
+        # kommandon som används för politiker-eu på servern och undviker att
+        # app/wrangler.jsonc påverkar fristående databasunderhåll.
+        subprocess.run(cmd, cwd=REPO_ROOT, check=True)
     except FileNotFoundError:
         sys.exit("FEL: npx hittades inte. Kör jobben på servern där Wrangler redan används.")
     except subprocess.CalledProcessError as exc:
