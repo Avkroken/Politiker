@@ -1,5 +1,6 @@
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
+  let mammothPromise = null;
 
   function subjectFromFilename(name) {
     return name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -16,12 +17,34 @@
     bodyInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  function loadMammoth() {
+    if (window.mammoth) return Promise.resolve(window.mammoth);
+    if (mammothPromise) return mammothPromise;
+    mammothPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-mammoth-loader]');
+      const script = existing || document.createElement('script');
+      const done = () => window.mammoth ? resolve(window.mammoth) : reject(new Error('DOCX-konverteraren kunde inte laddas. Försök igen.'));
+      script.addEventListener('load', done, { once: true });
+      script.addEventListener('error', () => reject(new Error('DOCX-konverteraren kunde inte laddas. Försök igen.')), { once: true });
+      if (!existing) {
+        script.dataset.mammothLoader = '1';
+        script.src = 'https://cdn.jsdelivr.net/npm/mammoth@1.10.0/mammoth.browser.min.js';
+        script.defer = true;
+        document.head.append(script);
+      }
+    }).catch(error => {
+      mammothPromise = null;
+      throw error;
+    });
+    return mammothPromise;
+  }
+
   async function fileToHtml(file) {
     const ext = file.name.toLowerCase().split('.').pop();
     if (ext === 'docx') {
-      if (!window.mammoth) throw new Error('DOCX-konverteraren kunde inte laddas. Försök igen.');
+      const mammoth = await loadMammoth();
       const buffer = await file.arrayBuffer();
-      const result = await window.mammoth.convertToHtml({ arrayBuffer: buffer });
+      const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
       return result.value || '';
     }
     if (ext === 'html' || ext === 'htm') return await file.text();
@@ -44,6 +67,7 @@
   }
 
   function injectComposerTools() {
+    if (location.hash !== '#send/2') return;
     const fileInput = $('#letter-files');
     if (!fileInput || fileInput.dataset.enhanced === '1') return;
     fileInput.dataset.enhanced = '1';
@@ -69,7 +93,7 @@
       }
       const button = $('#use-file-as-letter');
       button.disabled = true;
-      status.textContent = 'Läser dokumentet…';
+      status.textContent = file.name.toLowerCase().endsWith('.docx') ? 'Laddar DOCX-stöd och läser dokumentet…' : 'Läser dokumentet…';
       try {
         const html = await fileToHtml(file);
         if (!html.trim()) throw new Error('Dokumentet innehöll ingen läsbar text.');
@@ -106,7 +130,15 @@
     };
   }
 
-  const observer = new MutationObserver(injectComposerTools);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-  injectComposerTools();
+  function observeRoot() {
+    const root = $('#root');
+    if (!root) return;
+    new MutationObserver(() => {
+      if (location.hash === '#send/2') queueMicrotask(injectComposerTools);
+    }).observe(root, { childList: true, subtree: true });
+  }
+
+  window.addEventListener('hashchange', () => queueMicrotask(injectComposerTools));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { observeRoot(); injectComposerTools(); });
+  else { observeRoot(); injectComposerTools(); }
 })();
