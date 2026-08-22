@@ -15,7 +15,6 @@ export interface Env {
   SYSTEM_SMTP_PASSWORD: string;
   SYSTEM_FROM_ADDRESS: string;
   FEEDBACK_NOTIFY_EMAIL: string;
-  ERROR_FIXER_INBOX?: string;
   OAUTH_GOOGLE_CLIENT_ID?: string;
   OAUTH_GOOGLE_CLIENT_SECRET?: string;
   OAUTH_GITHUB_CLIENT_ID?: string;
