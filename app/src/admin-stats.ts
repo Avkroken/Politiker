@@ -4,7 +4,6 @@ export interface AdminStats {
   totalAccounts: number;
   totalLetters: number;
   totalSent: number;
-  totalBounced: number;
   totalVisitors: number; // pseudonyma unika besökare/dag inom retentionstiden
   visitorCountries: { country: string; n: number }[];
   dailySeries: { day: string; sent: number }[];
@@ -31,20 +30,17 @@ async function writeCache(env: Env, key: string, value: unknown): Promise<void> 
 }
 
 export async function getAdminStats(env: Env): Promise<AdminStats> {
-  const cached = await readCache<AdminStats>(env, "admin-stats:v2");
+  const cached = await readCache<AdminStats>(env, "admin-stats:v3");
   if (cached) return cached;
 
   const since365 = Date.now() - 365 * 24 * 60 * 60 * 1000;
 
-  // De fyra tunga läsningarna är oberoende. Kör dem parallellt och cacha det
-  // färdiga svaret kort så upprepade admin-refreshar inte räknar om historiken.
   const totalsPromise = env.DB.prepare(
     `SELECT
        (SELECT COUNT(*) FROM accounts) as totalAccounts,
        (SELECT COUNT(*) FROM letters) as totalLetters,
-       (SELECT COUNT(*) FROM send_log WHERE status = 'ok') as totalSent,
-       (SELECT COUNT(*) FROM send_log WHERE status = 'bounce') as totalBounced`,
-  ).first<{ totalAccounts: number; totalLetters: number; totalSent: number; totalBounced: number }>();
+       (SELECT COUNT(*) FROM send_log WHERE status = 'ok') as totalSent`,
+  ).first<{ totalAccounts: number; totalLetters: number; totalSent: number }>();
 
   const visitorPromise = (async () => {
     try {
@@ -88,13 +84,12 @@ export async function getAdminStats(env: Env): Promise<AdminStats> {
     totalAccounts: totals?.totalAccounts ?? 0,
     totalLetters: totals?.totalLetters ?? 0,
     totalSent: totals?.totalSent ?? 0,
-    totalBounced: totals?.totalBounced ?? 0,
     totalVisitors: visitors.total,
     visitorCountries: visitors.rows,
     dailySeries: daily.results,
     leaderboard: leaderboard.results,
   };
-  await writeCache(env, "admin-stats:v2", result);
+  await writeCache(env, "admin-stats:v3", result);
   return result;
 }
 
