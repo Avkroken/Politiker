@@ -3,43 +3,21 @@
   "name": "politiker",
   "main": "src/secure-index.ts",
   "compatibility_date": "2026-08-21",
-  "observability": {
-    "enabled": true,
-    "head_sampling_rate": 0.1,
-    "logs": { "enabled": true, "head_sampling_rate": 0.1, "persist": true, "invocation_logs": true },
-    "traces": { "enabled": true, "persist": true, "head_sampling_rate": 0.05 }
-  },
+  "observability": {"enabled":true,"head_sampling_rate":0.1,"logs":{"enabled":true,"head_sampling_rate":0.1,"persist":true,"invocation_logs":true},"traces":{"enabled":true,"persist":true,"head_sampling_rate":0.05}},
   "tail_consumers": [{ "service": "politiker-log-archive" }],
   "workers_dev": false,
   "upload_source_maps": true,
-  "assets": {
-    "directory": "./public",
-    "not_found_handling": "single-page-application",
-    "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/"]
-  },
+  "assets": {"directory":"./public","not_found_handling":"single-page-application","binding":"ASSETS","run_worker_first":["/api/*","/"]},
   "routes": [{ "pattern": "politiker.denied.se", "custom_domain": true }],
   "d1_databases": [{ "binding": "DB", "database_name": "politiker", "database_id": "e9ecf94f-fa71-4004-a5b8-f9317eb4d4e9" }],
   "kv_namespaces": [{ "binding": "SESSIONS", "id": "23255cc6e67a4a19b19e5ea67a676b40" }],
-  "queues": {
-    "producers": [{ "queue": "politiker-send-jobs", "binding": "SEND_QUEUE" }],
-    "consumers": [{ "queue": "politiker-send-jobs", "max_batch_size": 10, "max_retries": 10, "max_concurrency": 5, "dead_letter_queue": "politiker-send-jobs-dlq" }]
-  },
+  "queues": {"producers":[{"queue":"politiker-send-jobs","binding":"SEND_QUEUE"}],"consumers":[{"queue":"politiker-send-jobs","max_batch_size":10,"max_retries":10,"max_concurrency":5,"dead_letter_queue":"politiker-send-jobs-dlq"}]},
   "durable_objects": { "bindings": [{ "name": "RATE_LIMITER", "class_name": "CredentialRateLimiter" }] },
   "exports": { "CredentialRateLimiter": { "type": "durable-object", "storage": "sqlite" } },
-  "triggers": { "crons": ["0 8 * * *"] },
+  "triggers": { "crons": ["0 5 * * *"] },
   "r2_buckets": [{ "binding": "ATTACHMENTS", "bucket_name": "politiker-attachments" }],
   "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@denied.se"] }],
   "vars": {
-    "SYSTEM_SMTP_HOST": "smtp.mail.me.com",
-    "SYSTEM_SMTP_PORT": "587",
-    "SYSTEM_SMTP_USER": "nils.anders.eriksson@icloud.com",
-    "SYSTEM_FROM_ADDRESS": "noreply@denied.se",
-    "FEEDBACK_NOTIFY_EMAIL": "politiker@denied.se",
-    "ERROR_FIXER_INBOX": "politiker@denied.se",
-    "OAUTH_GOOGLE_CLIENT_ID": "1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com",
-    "OAUTH_MICROSOFT_CLIENT_ID": "dd6d7bb1-3a2d-46ad-8d4f-12fe09691414",
-    "SENDER_NAME": "Politikerkontakt",
-    "GITHUB_REPO": "blixten85/politiker"
+    "SYSTEM_SMTP_HOST":"smtp.mail.me.com","SYSTEM_SMTP_PORT":"587","SYSTEM_SMTP_USER":"nils.anders.eriksson@icloud.com","SYSTEM_FROM_ADDRESS":"noreply@denied.se","FEEDBACK_NOTIFY_EMAIL":"politiker@denied.se","ERROR_FIXER_INBOX":"politiker@denied.se","OAUTH_GOOGLE_CLIENT_ID":"1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com","OAUTH_MICROSOFT_CLIENT_ID":"dd6d7bb1-3a2d-46ad-8d4f-12fe09691414","SENDER_NAME":"Politikerkontakt","GITHUB_REPO":"blixten85/politiker"
   }
 }
