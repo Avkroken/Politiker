@@ -1,49 +1,68 @@
-// Small browser-specific UX enhancements that belong at the shell level rather
-// than in each individual dynamically-rendered form.
+// Small browser-level input and clipboard helpers. These do not fetch data or
+// re-render application views.
 (() => {
-  const providerLabels = {
-    google: 'Google',
-    github: 'GitHub',
-    microsoft: 'Microsoft',
-  };
-
-  function enhanceNumericInputs(root = document) {
-    root.querySelectorAll('input[type="number"]').forEach((input) => {
-      // All current number fields in Politikerkontakt are whole numbers
-      // (ports, day counts and send limits). iOS gives type=number a keyboard
-      // with punctuation and currency keys, so use a digit-only text input.
-      input.type = 'text';
-      input.inputMode = 'numeric';
-      input.pattern = '[0-9]*';
-      input.autocomplete = 'off';
-    });
+  function enhanceNumericInput(input) {
+    if (!(input instanceof HTMLInputElement) || input.type !== 'number') return;
+    input.type = 'text';
+    input.inputMode = 'numeric';
+    input.pattern = '[0-9]*';
+    input.autocomplete = 'off';
   }
 
-  function enhanceOAuthLabels(root = document) {
-    const list = root.querySelector('#oauth-list');
-    if (!list) return;
-    list.querySelectorAll('.credential-card strong').forEach((el) => {
-      const key = el.textContent.trim().toLowerCase();
-      if (providerLabels[key]) el.textContent = providerLabels[key];
-    });
+  function enhanceExistingNumericInputs(root = document) {
+    root.querySelectorAll('input[type="number"]').forEach(enhanceNumericInput);
   }
 
-  function enhance(root = document) {
-    enhanceNumericInputs(root);
-    enhanceOAuthLabels(root);
+  async function copyText(text, button) {
+    try {
+      await navigator.clipboard.writeText(text);
+      const old = button.textContent;
+      button.textContent = 'Kopierad';
+      setTimeout(() => { button.textContent = old; }, 1400);
+    } catch {
+      const range = document.createRange();
+      const code = button.parentElement?.querySelector('code');
+      if (!code) return;
+      range.selectNodeContents(code);
+      const selection = getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+
+  function attachApiCopy(result) {
+    if (!result || result.querySelector('[data-api-copy]')) return false;
+    const code = result.querySelector('code');
+    if (!code || !code.textContent.trim()) return false;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'secondary';
+    button.dataset.apiCopy = '1';
+    button.textContent = 'Kopiera nyckel';
+    button.addEventListener('click', () => copyText(code.textContent.trim(), button));
+    result.append(button);
+    return true;
+  }
+
+  function watchApiResultOnce() {
+    const result = document.querySelector('#api-result');
+    if (!result) return;
+    if (attachApiCopy(result)) return;
+    const observer = new MutationObserver(() => {
+      if (attachApiCopy(result)) observer.disconnect();
+    });
+    observer.observe(result, { childList: true, subtree: true });
+    setTimeout(() => observer.disconnect(), 10000);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => enhance());
+    document.addEventListener('DOMContentLoaded', () => enhanceExistingNumericInputs(), { once: true });
   } else {
-    enhance();
+    enhanceExistingNumericInputs();
   }
 
-  new MutationObserver((records) => {
-    for (const record of records) {
-      for (const node of record.addedNodes) {
-        if (node.nodeType === Node.ELEMENT_NODE) enhance(node);
-      }
-    }
-  }).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('focusin', (event) => enhanceNumericInput(event.target));
+  document.addEventListener('click', (event) => {
+    if (event.target.closest?.('#api-create')) watchApiResultOnce();
+  });
 })();
