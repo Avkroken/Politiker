@@ -1,7 +1,7 @@
 (() => {
-  const POLICY_PREFIX = 'policy-area:';
+  const EXCLUDE_BODY_PREFIX = 'exclude-body:';
   const MEDIA_PREFIX = 'media-category:';
-  const selectedPolicyAreas = new Set();
+  const excludedPolicyAreas = new Set();
   const selectedMediaCategories = new Set();
   const mediaAreaNames = new Set();
   let lastFilterPayload = null;
@@ -56,11 +56,11 @@
         scheduleDraw();
       }
       const normalRoles = Array.isArray(payload.includeRoles)
-        ? payload.includeRoles.filter(x => typeof x === 'string' && !x.startsWith(POLICY_PREFIX) && !x.startsWith(MEDIA_PREFIX) && !x.startsWith('exclude-body:'))
+        ? payload.includeRoles.filter(x => typeof x === 'string' && !x.startsWith('policy-area:') && !x.startsWith(MEDIA_PREFIX) && !x.startsWith(EXCLUDE_BODY_PREFIX))
         : [];
       payload.includeRoles = [
         ...normalRoles,
-        ...[...selectedPolicyAreas].map(x => POLICY_PREFIX + x),
+        ...[...excludedPolicyAreas].map(x => EXCLUDE_BODY_PREFIX + x),
         ...[...selectedMediaCategories].map(x => MEDIA_PREFIX + x),
       ];
       return originalFetch(input, { ...init, body: JSON.stringify(payload) });
@@ -124,10 +124,10 @@
 
     advanced.prepend(makeFilter(
       'policy-area-filter-disclosure',
-      'Begränsa kommuner/regioner efter ansvarsområde',
-      'Valfritt. Utan val ingår alla politiker i valda kommuner och regioner. Riksdag, regering, EU, media och andra valda mottagargrupper påverkas inte.',
+      'Uteslut nämnder och ansvarsområden',
+      'Alla politiker i valda kommuner och regioner ingår som standard. Kryssa bara i de områden du vill utesluta. Riksdag, regering, EU, media och andra valda mottagargrupper påverkas inte.',
       POLICY_AREAS,
-      selectedPolicyAreas,
+      excludedPolicyAreas,
     ));
   }
 

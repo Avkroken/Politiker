@@ -43,7 +43,7 @@ export async function verifyAccountEmail(db:D1Database,accountId:string,code:str
   if(!a||a.verification_code!==code||Date.now()>a.verification_expires_at)return false; await db.prepare("UPDATE accounts SET email_verified = 1 WHERE id = ?").bind(accountId).run(); return true;
 }
 export async function listAreas(db:D1Database){const{results}=await db.prepare("SELECT area_name, area_type, COUNT(*) as count FROM politicians GROUP BY area_name, area_type ORDER BY area_type, area_name").all();return results;}
-export async function listParties(db:D1Database){const{results}=await db.prepare(`SELECT area_type, area_name, TRIM(party) AS party, COUNT(*) as count FROM politicians WHERE party IS NOT NULL AND TRIM(party) NOT IN ('', '-', '--') AND LOWER(TRIM(party)) NOT LIKE 'fd %' AND LOWER(TRIM(party)) NOT LIKE '% fd %' AND LOWER(TRIM(party)) NOT LIKE '%, fd %' GROUP BY area_type, area_name, TRIM(party) ORDER BY area_type, area_name, TRIM(party)`).all();return results;}
+export async function listParties(db:D1Database){const{results}=await db.prepare(`SELECT area_type, area_name, TRIM(party) AS party, COUNT(*) as count FROM politicians WHERE party IS NOT NULL AND TRIM(party) != '' GROUP BY area_type, area_name, TRIM(party) ORDER BY area_type, area_name, TRIM(party)`).all();return results;}
 
 export async function listRoles(db:D1Database){
   const{results}=await db.prepare(`SELECT role, COUNT(*) as count FROM politicians WHERE role IS NOT NULL AND TRIM(role) != '' GROUP BY role`).all<{role:string;count:number}>();
@@ -64,6 +64,7 @@ export async function searchPoliticiansInAreas(db:D1Database,areaNames:string[],
 
 const POLICY_PREFIX="policy-area:";
 const MEDIA_PREFIX="media-category:";
+const EXCLUDE_BODY_PREFIX="exclude-body:";
 const POLICY_TERMS:Record<string,string[]>={
   "ledning":["kommunstyrelse","regionstyrelse"],
   "social-omsorg":["social","omsorg","äldre","aldre","individ","familj","välfärd","valfard","funktionsstöd","funktionsstod"],
@@ -97,7 +98,8 @@ function mediaCategoryMatch(role:string|null,email:string,keys:string[]):boolean
 export async function getRecipientsForAreas(db:D1Database,areaNames:string[],excludeParties:string[]=[],excludeEmails:string[]=[],includeRoles:string[]=[],includeEmails:string[]=[]){
   const policyKeys=includeRoles.filter(k=>k.startsWith(POLICY_PREFIX)).map(k=>k.slice(POLICY_PREFIX.length));
   const mediaKeys=includeRoles.filter(k=>k.startsWith(MEDIA_PREFIX)).map(k=>k.slice(MEDIA_PREFIX.length));
-  const includedRoleKeys=includeRoles.filter(k=>!k.startsWith(POLICY_PREFIX)&&!k.startsWith(MEDIA_PREFIX)&&!k.startsWith("exclude-body:"));
+  const excludedBodyKeys=includeRoles.filter(k=>k.startsWith(EXCLUDE_BODY_PREFIX)).map(k=>k.slice(EXCLUDE_BODY_PREFIX.length));
+  const includedRoleKeys=includeRoles.filter(k=>!k.startsWith(POLICY_PREFIX)&&!k.startsWith(MEDIA_PREFIX)&&!k.startsWith(EXCLUDE_BODY_PREFIX));
   const byEmail=new Map<string,{name:string;email:string;area_name:string}>();
   const hasPoolIntent=areaNames.length>0||includedRoleKeys.length>0;
   if(hasPoolIntent){
@@ -119,6 +121,19 @@ export async function getRecipientsForAreas(db:D1Database,areaNames:string[],exc
       const{results:locals}=await db.prepare(`SELECT DISTINCT lower(trim(email)) AS email_key FROM politicians WHERE area_type IN ('kommun','region') AND area_name IN (SELECT value FROM json_each(?))`).bind(JSON.stringify(areaNames)).all<{email_key:string}>();
       for(const r of locals)if(!allowed.has(r.email_key))byEmail.delete(r.email_key);
     }catch{}
+  }
+  if(excludedBodyKeys.length&&byEmail.size&&areaNames.length){
+    const p=policySql(excludedBodyKeys);
+    if(p.sql!=="0"){
+      try{
+        const{results}=await db.prepare(`SELECT DISTINCT lower(trim(pol.email)) AS email_key FROM politician_assignments a JOIN politicians pol ON pol.id=a.politician_id WHERE pol.area_type IN ('kommun','region') AND pol.area_name IN (SELECT value FROM json_each(?)) AND ${p.sql}`)
+          .bind(JSON.stringify(areaNames),...p.params).all<{email_key:string}>();
+        const excluded=new Set(results.map(r=>r.email_key));
+        const{results:otherBranches}=await db.prepare(`SELECT DISTINCT lower(trim(email)) AS email_key FROM politicians WHERE area_name IN (SELECT value FROM json_each(?)) AND area_type NOT IN ('kommun','region') AND email IS NOT NULL AND TRIM(email) != ''`).bind(JSON.stringify(areaNames)).all<{email_key:string}>();
+        const preserved=new Set(otherBranches.map(r=>r.email_key));
+        for(const key of excluded)if(!preserved.has(key))byEmail.delete(key);
+      }catch{}
+    }
   }
   if(mediaKeys.length&&byEmail.size){
     const{results:mediaRows}=await db.prepare(`SELECT email, role FROM politicians WHERE area_type='media' AND area_name IN (SELECT value FROM json_each(?)) AND email IS NOT NULL AND TRIM(email) != ''`).bind(JSON.stringify(areaNames)).all<{email:string;role:string|null}>();
