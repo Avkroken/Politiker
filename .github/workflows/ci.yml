@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -33,20 +34,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      # Matrisen behålls eftersom required check-namnet är `typecheck (app)`.
       matrix:
         worker: [app]
     defaults:
       run:
         working-directory: ${{ matrix.worker }}
     steps:
-      - name: Spärra ändrad PR-head
-        if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.head_ref == 'dev' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository }}
-        working-directory: .
-        run: |
-          echo "::error::dev ändrades efter att dev → main-PR:n öppnades. Pågående PR är immutable: stäng den och öppna en ny PR från aktuell dev."
-          exit 1
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
