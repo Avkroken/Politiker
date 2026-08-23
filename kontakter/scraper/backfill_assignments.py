@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Bakåtfyll politiska nämnder/organ från Troman-profiler till D1.
+"""Bakåtfyll relevanta politiska huvudnämnder/organ från Troman-profiler till D1.
 
-Endast nämndens/organets namn sparas. Detaljerade befattningar som ledamot,
-ersättare, ordförande eller sekreterare samlas inte in eftersom de inte behövs
-för Politikerkontakts mottagarurval.
+Endast organ som faktiskt är användbara som mottagarfilter sparas: kommun-/
+regionstyrelse och riktiga nämnder. Fullmäktige, utskott, beredningar, råd,
+rollistor och andra administrativa sidouppdrag ignoreras redan vid skrapningen.
+Detaljerade befattningar som ledamot, ersättare, ordförande eller sekreterare
+samlas inte in.
 
 D1 läses och skrivs via Wrangler. Därmed återanvänds den Cloudflare-inloggning
 som redan används av resten av repot och skriptet kräver inga separata
@@ -36,6 +38,25 @@ D1_NAME = "politiker-eu"
 CACHE_PATH = Path("/tmp/politiker-assignments-backfill.json")
 BATCH_PEOPLE = 200
 
+# Dessa namn beskriver inte en avgränsad huvudnämnd som är rimlig att rikta ett
+# massutskick mot. Filtreringen görs här, vid källan, så bruset aldrig lagras.
+EXCLUDED_BODY_TERMS = (
+    "fullmäktige",
+    "utskott",
+    "beredning",
+    "råd",
+    "nämndemän",
+    "nämndeman",
+    "vigselförrätt",
+    "gruppledare",
+    "kommunalråd",
+    "regionråd",
+    "partiföreträdare",
+    "politisk sekreter",
+    "politiska sekreter",
+    "kommunalförbund",
+)
+
 
 def load_regioner() -> list[dict]:
     return json.loads(Path(__file__).with_name("regioner.json").read_text(encoding="utf-8"))
@@ -66,6 +87,38 @@ def email_from_page(page_html: str) -> set[str]:
     return emails
 
 
+def normalize_body(raw_body: str) -> str | None:
+    """Returnera kanoniskt namn för ett relevant huvudorgan, annars None."""
+    body = re.sub(r"\s+", " ", raw_body).strip()
+    if not body:
+        return None
+    folded = body.casefold()
+
+    if any(term in folded for term in EXCLUDED_BODY_TERMS):
+        return None
+
+    if folded in {"kommunstyrelse", "kommunstyrelsen"}:
+        return "Kommunstyrelsen"
+    if folded in {"regionstyrelse", "regionstyrelsen"}:
+        return "Regionstyrelsen"
+
+    # Riktiga nämnder kan heta både "Socialnämnden" och exempelvis
+    # "Nämnden för arbete och välfärd". Därför kräver vi nämnd i namnet, men
+    # exkluderar ovan alla underutskott och andra irrelevanta konstruktioner.
+    if "nämnd" not in folded:
+        return None
+
+    # Nämnd -> Nämnden ger en enkel gemensam form för vanliga singularvarianter.
+    if folded.endswith("nämnd"):
+        body += "en"
+
+    # Troman innehåller ibland versala listnamn. Normalisera dem utan att röra
+    # normal svensk versalisering i övriga namn.
+    if body.isupper():
+        body = body.capitalize()
+    return body
+
+
 def bodies(page_html: str) -> list[str]:
     match = re.search(r'id="engagementTable:tbody_element"(.*?)</table>', page_html, re.S | re.I)
     if not match:
@@ -78,9 +131,11 @@ def bodies(page_html: str) -> list[str]:
         cells = re.findall(r"<td[^>]*>(.*?)</td>", row.group(1), re.S | re.I)
         if not cells:
             continue
-        body = clean_text(cells[0])
+        body = normalize_body(clean_text(cells[0]))
+        if not body:
+            continue
         key = body.casefold()
-        if body and key not in seen:
+        if key not in seen:
             seen.add(key)
             found.append(body)
     return found
@@ -326,7 +381,7 @@ def scrape_changes() -> tuple[dict[str, tuple[str, set[str]]], int, int, int, in
         total_bodies += area_bodies
         total_missing += area_missing
         print(
-            f"  {area_bodies} nämnd/organ-kopplingar hittade, "
+            f"  {area_bodies} relevanta nämnd/organ-kopplingar hittade, "
             f"{area_missing} profiler utan D1-match",
             flush=True,
         )
@@ -352,7 +407,7 @@ def main() -> None:
 
     write_assignments(changes, now_ms)
     print(
-        f"\nKlart: {total_people} personer, {total_bodies} nämnd/organ-kopplingar, "
+        f"\nKlart: {total_people} personer, {total_bodies} relevanta nämnd/organ-kopplingar, "
         f"{total_missing} profiler utan D1-match.",
         flush=True,
     )
