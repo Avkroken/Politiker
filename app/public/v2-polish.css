@@ -4,6 +4,12 @@
 #desktop-nav .nav-btn:nth-child(5),
 #drawer-nav .drawer-btn:nth-child(5){display:none!important}
 
+/* Recipient selection: main cards define the included pool. Advanced only
+   narrows that pool. The old inclusive role picker is hidden until we have a
+   real committee/body field that can be exposed as an exclusion tree. */
+#send-step .filter-columns>section:first-child{display:none!important}
+#send-step .filter-columns{grid-template-columns:minmax(0,1fr)!important}
+
 .settings-nav{gap:8px}
 .settings-nav .subnav-btn{min-height:44px;padding:9px 14px;border:1px solid transparent;border-radius:10px;white-space:nowrap;text-align:center}
 .settings-nav .subnav-btn.active{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));background:color-mix(in srgb,var(--accent) 14%,var(--panel2));color:var(--accent)}

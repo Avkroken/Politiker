@@ -27,6 +27,9 @@ cd scraper
 echo "--- Synkar kommun/region till D1 ---"
 python3 sync_to_d1.py
 
+echo "--- Hämtar nämnder/styrelser från Troman ---"
+python3 backfill_assignments.py
+
 echo "--- Hämtar Sveriges EU-parlamentariker ---"
 python3 fetch_eu_meps.py
 

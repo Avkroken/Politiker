@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Synkar skraparens resultat till D1-tabellen `politicians` i politiker-
-projektet. Körs som ett extra steg efter en skrapningskörning.
+"""Synka skrapad mottagardata till D1.
+
+Applikationsdata innehåller bara det som behövs för mottagarurvalet:
+namn, e-post, politisk nivå/område och parti. Detaljerade befattningar
+sparas inte i politicians; nämnd/organ hanteras separat.
 """
 
 import csv
@@ -14,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 
 from d1 import D1Client
-from politiker_common import normalize_party, normalize_role
+from politiker_common import normalize_party
 
 RESULTAT_CSV = os.environ.get(
     "RESULTAT_CSV",
@@ -24,20 +26,19 @@ MAX_WORKERS = 10
 
 UPSERT_SQL = (
     "INSERT INTO politicians (id, name, email, area_name, area_type, party, role, last_scraped_at) "
-    "VALUES (lower(hex(randomblob(11))), ?, ?, ?, ?, ?, ?, ?) "
-    "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, party = excluded.party, role = excluded.role, last_scraped_at = excluded.last_scraped_at"
+    "VALUES (lower(hex(randomblob(11))), ?, ?, ?, ?, ?, NULL, ?) "
+    "ON CONFLICT(email, area_name) DO UPDATE SET "
+    "name = excluded.name, party = excluded.party, role = NULL, last_scraped_at = excluded.last_scraped_at"
 )
 
-REGION_NAMES = frozenset(
-    {
-        "Region Blekinge", "Region Dalarna", "Region Gotland", "Region Gävleborg",
-        "Region Halland", "Region Jämtland Härjedalen", "Region Jönköpings län",
-        "Region Kalmar län", "Region Kronoberg", "Region Norrbotten", "Region Skåne",
-        "Region Stockholm", "Region Sörmland", "Region Uppsala", "Region Värmland",
-        "Region Västerbotten", "Region Västernorrland", "Region Västmanland",
-        "Region Örebro län", "Region Östergötland", "Västra Götalandsregionen",
-    }
-)
+REGION_NAMES = frozenset({
+    "Region Blekinge", "Region Dalarna", "Region Gotland", "Region Gävleborg",
+    "Region Halland", "Region Jämtland Härjedalen", "Region Jönköpings län",
+    "Region Kalmar län", "Region Kronoberg", "Region Norrbotten", "Region Skåne",
+    "Region Stockholm", "Region Sörmland", "Region Uppsala", "Region Värmland",
+    "Region Västerbotten", "Region Västernorrland", "Region Västmanland",
+    "Region Örebro län", "Region Östergötland", "Västra Götalandsregionen",
+})
 
 
 def area_type_for(area_name: str) -> str:
@@ -51,12 +52,6 @@ def area_type_for(area_name: str) -> str:
 
 
 def parse_csv(path: str):
-    """Returnerar normaliserade rader för D1.
-
-    Rå CSV får innehålla källans exakta roll-/partitext. Precis innan data blir
-    applikationsdata normaliseras partier och endast politiskt relevanta
-    huvudroller behålls.
-    """
     rows = []
     with open(path, newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
@@ -64,31 +59,21 @@ def parse_csv(path: str):
             if not email:
                 continue
             area = (r.get("area_name") or "").strip()
-            rows.append((
-                (r.get("name") or "").strip(),
-                email.lower(),
-                area,
-                area_type_for(area),
-                normalize_party(r.get("party")),
-                normalize_role(r.get("role")),
-            ))
+            rows.append(((r.get("name") or "").strip(), email.lower(), area, area_type_for(area), normalize_party(r.get("party"))))
     return rows
 
 
 def load_rows():
     if not os.path.exists(RESULTAT_CSV):
-        sys.exit(
-            f"FEL: {RESULTAT_CSV} saknas. Kör scrapern (som skriver CSV:n) "
-            f"eller peka RESULTAT_CSV på en befintlig exportfil."
-        )
+        sys.exit(f"FEL: {RESULTAT_CSV} saknas. Kör scrapern eller ange RESULTAT_CSV.")
     print(f"Läser {RESULTAT_CSV}")
     return parse_csv(RESULTAT_CSV)
 
 
 def upsert_row(client: D1Client, row) -> tuple[bool, str]:
-    name, email, area_name, area_type, party, role = row
+    name, email, area_name, area_type, party = row
     try:
-        client.run(UPSERT_SQL, [name, email, area_name, area_type, party, role, int(time.time() * 1000)])
+        client.run(UPSERT_SQL, [name, email, area_name, area_type, party, int(time.time() * 1000)])
         return True, email
     except (requests.RequestException, RuntimeError) as err:
         return False, f"{email}: {err}"
@@ -96,8 +81,7 @@ def upsert_row(client: D1Client, row) -> tuple[bool, str]:
 
 def sync(rows) -> tuple[int, int]:
     client = D1Client()
-    ok_count = 0
-    fail_count = 0
+    ok_count = fail_count = 0
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         futures = {pool.submit(upsert_row, client, row): row for row in rows}
         for i, future in enumerate(as_completed(futures), 1):
@@ -115,12 +99,11 @@ def sync(rows) -> tuple[int, int]:
 def main():
     rows = load_rows()
     if not rows:
-        print("Inga rader hittades att synka", file=sys.stderr)
-        sys.exit(1)
-    print(f"Hittade {len(rows)} (namn, email, område)-rader. Synkar till D1...")
+        sys.exit("Inga rader hittades att synka")
+    print(f"Hittade {len(rows)} mottagarrader. Synkar till D1...")
     ok_count, fail_count = sync(rows)
     print(f"Klart. {ok_count} synkade, {fail_count} misslyckades.")
-    if fail_count > 0:
+    if fail_count:
         sys.exit(1)
 
 

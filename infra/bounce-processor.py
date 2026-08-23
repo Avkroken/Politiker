@@ -5,6 +5,7 @@ Läser studsade mail från Outlook IMAP, markerar döda adresser i Cloudflare D1
 Körs av systemd-timer (se bounce-processor.timer).
 """
 import imaplib, re, sys, os, json, urllib.request, urllib.error, logging
+from pathlib import Path
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,19 +14,19 @@ logging.basicConfig(
 )
 log = logging.getLogger()
 
-ENV_FILE = os.path.expanduser("~/.claude/credentials.env")
+ENV_FILE = Path(__file__).resolve().with_name(".env")
 CF_ACCOUNT_ID = "b74f8c0c6a92f3006483840cf27372fd"
 CF_DB_ID = "78777055-bf37-4388-86ad-69bdf782e2cd"
 
 def load_env():
-    env = {}
-    if os.path.exists(ENV_FILE):
-        with open(ENV_FILE) as f:
+    env = dict(os.environ)
+    if ENV_FILE.exists():
+        with ENV_FILE.open() as f:
             for line in f:
                 line = line.strip()
                 if "=" in line and not line.startswith("#"):
                     k, _, v = line.partition("=")
-                    env[k.strip()] = v.strip().strip('"').strip("'")
+                    env.setdefault(k.strip(), v.strip().strip('"').strip("'"))
     return env
 
 

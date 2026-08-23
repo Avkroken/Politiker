@@ -39,7 +39,7 @@ Tjänsten är byggd för att behandla så lite användardata som möjligt.
 
 ## Utskick
 
-Utskick går via användarens egen mailkoppling, exempelvis SMTP eller Microsoft Graph. `noreply@denied.se` används endast för tekniska systemmail som verifiering och lösenordsåterställning. `politiker@denied.se` är projektets kontaktadress.
+Utskick går via användarens egen mailkoppling, exempelvis SMTP eller Microsoft Graph. Systemmail används endast för tekniska mail som verifiering och lösenordsåterställning och konfigureras separat av den som driver installationen.
 
 Kösystemet använder Cloudflare Queues och D1. En Durable Object per mailkoppling upprätthåller delad sändningstakt mellan parallella jobb och skyddar mot att leverantörens gränser överskrids.
 
@@ -56,13 +56,19 @@ Viktiga delar i `app/src/` är `send-queue.ts` för faktisk sändning, `rate-lim
 
 ## Köra en egen kopia
 
-Förutsättningar: Cloudflare-konto och Node.js 24.
+Förutsättningar: Git, Cloudflare-konto, Node.js 24+, npm, Python 3 och OpenSSL.
 
 ```bash
 git clone https://github.com/blixten85/politiker.git
 cd politiker
+bash infra/configure.sh
+bash infra/check-config.sh
 bash infra/setup.sh
 ```
+
+`configure.sh` skapar en git-ignorerad `infra/.env` och frågar bara efter den externa konfiguration som inte kan skapas automatiskt. `setup.sh` hanterar Cloudflare-inloggning, D1, KV, Queues, R2, schema/migrationer, Worker-secrets och deploy. OAuth och bounce-hantering är valfria.
+
+Fullständig installationsguide, inklusive var varje Client ID, secret, SMTP-uppgift och API-token hämtas: **[`docs/SETUP.md`](docs/SETUP.md)**.
 
 För lokal utveckling:
 
@@ -90,4 +96,4 @@ SMTP-/mailhemligheter och temporärt brevinnehåll skyddas med applikationskrypt
 
 ## Kontakt och källkod
 
-Källkoden finns öppet i detta GitHub-repo. Frågor om tjänsten kan skickas till `politiker@denied.se` eller via tjänstens kontaktfunktion.
+Källkoden finns öppet i detta GitHub-repo. Frågor om tjänsten kan skickas via tjänstens kontaktfunktion eller den kontaktadress som anges av den aktuella installationen.

@@ -1,20 +1,26 @@
 # Kopiera till .dev.vars för lokal utveckling (wrangler dev --remote läser denna).
-# I produktion sätts dessa med `wrangler secret put <NAMN>` istället.
+# I produktion sätts hemligheter med `wrangler secret put <NAMN>` eller via infra/setup.sh.
 
-MAIL_CRED_KEY=<32 random bytes, base64 — generera med: openssl rand -base64 32>
+MAIL_CRED_KEY=<generera med: openssl rand -base64 32>
 
-# Systemmail (verifieringskoder, feedback-notiser) — återanvänder Anders'
-# redan fungerande iCloud-relä (samma uppgifter som /etc/msmtprc på mp100).
-SYSTEM_SMTP_HOST=smtp.mail.me.com
+# Systemmail
+SYSTEM_SMTP_HOST=smtp.example.com
 SYSTEM_SMTP_PORT=587
-SYSTEM_SMTP_USER=nils.anders.eriksson@icloud.com
-SYSTEM_SMTP_PASSWORD=<app-specifikt lösenord>
-SYSTEM_FROM_ADDRESS=noreply@denied.se
+SYSTEM_SMTP_USER=system@example.com
+SYSTEM_SMTP_PASSWORD=<app-lösenord eller SMTP-lösenord>
+SYSTEM_FROM_ADDRESS=system@example.com
+FEEDBACK_NOTIFY_EMAIL=admin@example.com
 
-GITHUB_FEEDBACK_TOKEN=<fine-grained PAT med Issues:Write på blixten85/politiker>
-OAUTH_GITHUB_CLIENT_ID=<GitHub OAuth-appens klient-ID>
-FEEDBACK_NOTIFY_EMAIL=noreply@denied.se
+# Publik bas-URL för OAuth callbacks i denna miljö.
+APP_BASE_URL=http://localhost:8787
 
-# Cloudflare Turnstile siteverify-hemlighet (bot-skydd på signup/reset)
+# Valfri OAuth
+OAUTH_GOOGLE_CLIENT_ID=
+OAUTH_GOOGLE_CLIENT_SECRET=
+OAUTH_GITHUB_CLIENT_ID=
+OAUTH_GITHUB_CLIENT_SECRET=
+OAUTH_MICROSOFT_CLIENT_ID=
+OAUTH_MICROSOFT_CLIENT_SECRET=
+
+# Valfritt bot-skydd på signup/reset
 TURNSTILE_SECRET=
-
