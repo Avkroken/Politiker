@@ -1,6 +1,6 @@
 # Politiker-kontakter
 
-`kontakter/` hämtar offentligt publicerade kontaktuppgifter till politiska företrädare i svenska kommuner och regioner samt från bland annat Europaparlamentet, Riksdagen och regeringen. Resultatet synkas till D1-databasen som används av Politikerkontakt.
+`kontakter/` hämtar offentligt publicerade kontaktuppgifter till politiska företrädare i svenska kommuner och regioner samt från bland annat Europaparlamentet, Riksdagen, regeringen och media. Resultatet synkas till D1-databasen som används av Politikerkontakt.
 
 ## Datamodell
 
@@ -11,7 +11,13 @@ Mottagardatan hålls medvetet liten. För en politiker sparas endast det som beh
 - parti när det kan fastställas,
 - nämnd/organ som separat koppling när källan erbjuder tillförlitlig information.
 
-Detaljerade befattningar som ledamot, ersättare, suppleant, ordförande, sekreterare och liknande används inte som huvuddata eller mottagarfilter. Nämnd/organ lagras separat eftersom samma person kan tillhöra flera organ.
+Detaljerade befattningar som ledamot, ersättare, suppleant, ordförande, sekreterare och liknande används inte som huvuddata eller mottagarfilter. Nämnd/organ lagras separat eftersom samma person kan tillhöra flera organ, men råa nämndnamn exponeras inte som huvudfilter i användargränssnittet.
+
+Kommun- och regionorgan grupperas i stället efter politiskt sakområde. Exempel på huvudområden är Social & omsorg, Skola & utbildning, Hälso- & sjukvård, Samhällsbyggnad, Miljö, Teknik & infrastruktur, Kultur & fritid, Arbetsmarknad & näringsliv och Regional utveckling. Ett lokalt organ kan höra till flera huvudområden när namnet och uppdraget kombinerar flera ansvarsområden.
+
+Mottagarfiltreringen är frivillig på varje nivå. Ett urval kan därför bestå av exempelvis hela Riksdagen tillsammans med kommunpolitiker inom Social & omsorg och regionpolitiker inom Hälso- & sjukvård. Parti eller enskilda mottagare är ytterligare frivilliga filter och behöver inte väljas.
+
+Media använder samma princip men med redaktionell inriktning i stället för politiskt sakområde. Media utan underkategori inkluderar alla valda mediekontakter. Media med underkategori begränsar endast media-grenen, exempelvis till Politik, Opinion & debatt eller Nyhetsredaktion. Granskande redaktioner räknas till Politik när deras inriktning är politiskt relevant. Generiska tips- och redaktionsadresser tillhör ingen precisionskategori, medan ämnesspecifika funktionsadresser kan klassificeras efter sitt faktiska område.
 
 ## Publicerad data
 
@@ -60,8 +66,11 @@ Scrapern skriver bland annat `Alla_kommuner_och_regioner.csv`, som används av `
 - `scraper/sync_party_from_val.py` — kompletterar parti från Valmyndighetens data.
 - `scraper/sync_to_d1.py` — synkar namn/e-post/område/nivå/parti till `politicians`.
 - `scraper/backfill_assignments.py` — kompletterar nämnd/organ utan att spara detaljroller.
+- `scraper/media_scraper.py` — samlar mediaadresser och redaktionell inriktning för mottagarfiltrering.
 - `export/` — exportverktyg, bland annat CSV/JSON/SQL och VCF.
 
 ## Lägga till eller rätta en källa
 
-Ändra posten i `scraper/regioner.json` och välj en scraperstrategi som motsvarar hur källan faktiskt publicerar politikerna. Fokus ska vara identitet, kontaktuppgift, område/nivå, parti och vid behov nämnd/organ — inte detaljerade befattningstitlar. När en tidigare osupportad kommun får en verifierbar komplett källa ska även `UNSUPPORTED_KOMMUNER.md` uppdateras.
+Ändra posten i `scraper/regioner.json` och välj en scraperstrategi som motsvarar hur källan faktiskt publicerar politikerna. Fokus ska vara identitet, kontaktuppgift, område/nivå, parti och vid behov nämnd/organ — inte detaljerade befattningstitlar. Organinformation ska vara relevant för sakområdesfiltrering; fullmäktige, utskott, beredningar, råd, administrativa funktioner och liknande brus ska inte byggas upp som egna publika filter.
+
+För media ska en precisionskategori beskriva redaktionens faktiska inriktning. Generiska tips- och redaktionsadresser ska förbli okategoriserade så att de bara följer med vid ett brett Media-val. När en tidigare osupportad kommun får en verifierbar komplett källa ska även `UNSUPPORTED_KOMMUNER.md` uppdateras.
