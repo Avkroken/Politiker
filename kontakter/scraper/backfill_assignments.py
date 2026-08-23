@@ -185,7 +185,10 @@ def load_cache() -> tuple[dict[str, tuple[str, set[str]]], int] | None:
 
 
 def write_batch(batch: list[tuple[str, tuple[str, set[str]]]], now_ms: int, number: int, total: int) -> None:
-    statements = ["BEGIN TRANSACTION;"]
+    # D1:s remote execute tillåter inte BEGIN TRANSACTION/SAVEPOINT i SQL-filer.
+    # Varje politiker är ändå idempotent: DELETE följt av INSERT OR IGNORE. Om en
+    # batch avbryts kan cachen köras om säkert; samma politiker byggs då om igen.
+    statements: list[str] = []
     body_count = 0
     for politician_id, (area_name, person_bodies) in batch:
         statements.append(
@@ -200,7 +203,6 @@ def write_batch(batch: list[tuple[str, tuple[str, set[str]]]], now_ms: int, numb
                 f"NULL, 'troman', {now_ms});"
             )
             body_count += 1
-    statements.append("COMMIT;")
 
     tmp_path: Path | None = None
     try:
