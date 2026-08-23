@@ -1,11 +1,6 @@
 import { randomId, hashPassword } from "../../shared/crypto";
 import { getAccountByEmail, type Env } from "./db";
 
-// Apple ("Sign in with Apple") hanteras INTE här ännu — Apple kräver en
-// JWT-signerad client secret (ES256, roterande) istället för en statisk
-// hemlighet, vilket kräver ett Apple Developer-konto + nyckelgenerering.
-// Google/GitHub/Microsoft delar ett standard OAuth2 authorization-code-flöde.
-
 interface ProviderConfig {
   authorizeUrl: string;
   tokenUrl: string;
@@ -13,11 +8,10 @@ interface ProviderConfig {
   scope: string;
   clientIdEnvKey: keyof Env;
   clientSecretEnvKey: keyof Env;
-  // GitHub stödjer bara EN callback-URL per OAuth-app — länkflödet återanvänder
-  // login-callbacken och kodar "link:<accountId>" i state-värdet istället.
-  sharesLoginCallback?: boolean;
 }
 
+// Webbinloggning stöds bara för de providers som fortfarande är konfigurerade
+// i Workern. GitHub-login och extern kontolänkning är avvecklade.
 const PROVIDERS: Record<string, ProviderConfig> = {
   google: {
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
@@ -26,15 +20,6 @@ const PROVIDERS: Record<string, ProviderConfig> = {
     scope: "openid email profile",
     clientIdEnvKey: "OAUTH_GOOGLE_CLIENT_ID",
     clientSecretEnvKey: "OAUTH_GOOGLE_CLIENT_SECRET",
-  },
-  github: {
-    authorizeUrl: "https://github.com/login/oauth/authorize",
-    tokenUrl: "https://github.com/login/oauth/access_token",
-    userinfoUrl: "https://api.github.com/user",
-    scope: "read:user user:email",
-    clientIdEnvKey: "OAUTH_GITHUB_CLIENT_ID",
-    clientSecretEnvKey: "OAUTH_GITHUB_CLIENT_SECRET",
-    sharesLoginCallback: true,
   },
   microsoft: {
     authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
@@ -47,35 +32,10 @@ const PROVIDERS: Record<string, ProviderConfig> = {
 };
 
 const REDIRECT_BASE = "https://politiker.denied.se/api/oauth";
-const REDIRECT_BASE_LINK = "https://politiker.denied.se/api/oauth-link";
-
-export function providerSharesLoginCallback(provider: string): boolean {
-  return !!PROVIDERS[provider]?.sharesLoginCallback;
-}
-
-export function getLinkAuthorizeUrl(provider: string, env: Env, state: string): string {
-  const cfg = PROVIDERS[provider];
-  if (!cfg) throw new Error("Okänd leverantör");
-  const clientId = env[cfg.clientIdEnvKey] as string | undefined;
-  if (!clientId) throw new Error(`${provider}-inloggning är inte konfigurerad än`);
-
-  const redirectUri = cfg.sharesLoginCallback
-    ? `${REDIRECT_BASE}/${provider}/callback`
-    : `${REDIRECT_BASE_LINK}/${provider}/callback`;
-
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: "code",
-    scope: cfg.scope,
-    state,
-  });
-  return `${cfg.authorizeUrl}?${params.toString()}`;
-}
 
 export function getAuthorizeUrl(provider: string, env: Env, state: string): string {
   const cfg = PROVIDERS[provider];
-  if (!cfg) throw new Error("Okänd leverantör");
+  if (!cfg) throw new Error("Okänd eller avvecklad inloggningsleverantör");
   const clientId = env[cfg.clientIdEnvKey] as string | undefined;
   if (!clientId) throw new Error(`${provider}-inloggning är inte konfigurerad än`);
 
@@ -93,14 +53,14 @@ async function exchangeCodeForUserInfo(
   provider: string,
   env: Env,
   code: string,
-  redirectUri: string,
 ): Promise<{ providerUserId: string; email: string }> {
   const cfg = PROVIDERS[provider];
-  if (!cfg) throw new Error("Okänd leverantör");
+  if (!cfg) throw new Error("Okänd eller avvecklad inloggningsleverantör");
   const clientId = env[cfg.clientIdEnvKey] as string | undefined;
   const clientSecret = env[cfg.clientSecretEnvKey] as string | undefined;
   if (!clientId || !clientSecret) throw new Error(`${provider}-inloggning är inte konfigurerad än`);
 
+  const redirectUri = `${REDIRECT_BASE}/${provider}/callback`;
   const tokenResp = await fetch(cfg.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
@@ -122,21 +82,8 @@ async function exchangeCodeForUserInfo(
   const userData = await userResp.json<Record<string, unknown>>();
 
   const providerUserId = String(userData.sub ?? userData.id);
-  let email = (userData.email as string | undefined) ?? null;
-
-  if (!email && provider === "github") {
-    const emailsResp = await fetch("https://api.github.com/user/emails", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}`, "User-Agent": "politiker" },
-    });
-    if (emailsResp.ok) {
-      const emails = await emailsResp.json<Array<{ email: string; primary: boolean; verified?: boolean }>>();
-      email = emails.find((e) => e.primary && e.verified !== false)?.email
-        ?? emails.find((e) => e.verified !== false)?.email
-        ?? null;
-    }
-  }
+  const email = (userData.email as string | undefined) ?? null;
   if (!email) throw new Error(`Kunde inte hämta en verifierad e-postadress från ${provider}`);
-
   return { providerUserId, email };
 }
 
@@ -145,7 +92,7 @@ export async function handleOAuthCallback(
   env: Env,
   code: string,
 ): Promise<{ accountId: string }> {
-  const { providerUserId, email } = await exchangeCodeForUserInfo(provider, env, code, `${REDIRECT_BASE}/${provider}/callback`);
+  const { providerUserId, email } = await exchangeCodeForUserInfo(provider, env, code);
 
   const existingIdentity = await env.DB.prepare("SELECT account_id FROM oauth_identities WHERE provider = ? AND provider_user_id = ?")
     .bind(provider, providerUserId)
@@ -157,13 +104,11 @@ export async function handleOAuthCallback(
     return { accountId: existingIdentity.account_id };
   }
 
-  // Auto-länka aldrig en NY extern identitet till ett existerande lokalt
-  // konto enbart för att e-poststrängen råkar matcha. Användaren måste först
-  // logga in på det lokala kontot och uttryckligen länka providern därifrån.
-  // Det gör den befintliga kontoinloggningen till den gemensamma trust-boundaryn.
+  // Auto-länka aldrig en ny extern identitet till ett existerande lokalt konto
+  // enbart för att e-poststrängen matchar.
   const existingAccount = await getAccountByEmail(env.DB, email);
   if (existingAccount) {
-    throw new Error("Det finns redan ett konto med den här e-postadressen. Logga in på kontot och länka inloggningssättet under Inställningar.");
+    throw new Error("Det finns redan ett konto med den här e-postadressen. Logga in med e-post och lösenord.");
   }
 
   const accountId = randomId();
@@ -182,52 +127,16 @@ export async function handleOAuthCallback(
   return { accountId };
 }
 
-export async function handleOAuthLinkCallback(provider: string, env: Env, code: string, currentAccountId: string): Promise<void> {
-  const cfg = PROVIDERS[provider];
-  const redirectUri = cfg?.sharesLoginCallback
-    ? `${REDIRECT_BASE}/${provider}/callback`
-    : `${REDIRECT_BASE_LINK}/${provider}/callback`;
-  const { providerUserId, email } = await exchangeCodeForUserInfo(provider, env, code, redirectUri);
-
-  const existingIdentity = await env.DB.prepare("SELECT account_id FROM oauth_identities WHERE provider = ? AND provider_user_id = ?")
-    .bind(provider, providerUserId)
-    .first<{ account_id: string }>();
-  if (existingIdentity) {
-    if (existingIdentity.account_id === currentAccountId) {
-      await env.DB.prepare("UPDATE oauth_identities SET provider_email = ? WHERE provider = ? AND provider_user_id = ?")
-        .bind(email, provider, providerUserId)
-        .run();
-      return;
-    }
-    throw new Error(`Det här ${provider}-kontot är redan kopplat till ett annat politiker-konto`);
-  }
-
-  await env.DB.prepare("INSERT INTO oauth_identities (id, account_id, provider, provider_user_id, provider_email, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(randomId(), currentAccountId, provider, providerUserId, email, Date.now())
-    .run();
+// Tillfälliga kompatibilitetsexporter för gamla routes i index.ts. Ingen av dem
+// erbjuder längre kontolänkning. De kan tas bort helt när routefilen delas upp.
+export function providerSharesLoginCallback(_provider: string): boolean { return false; }
+export function getLinkAuthorizeUrl(_provider: string, _env: Env, _state: string): string {
+  throw new Error("Kontolänkning är borttagen");
 }
-
-export interface OAuthIdentitySummary {
-  provider: string;
-  provider_email: string | null;
-  created_at: number;
+export async function handleOAuthLinkCallback(_provider: string, _env: Env, _code: string, _currentAccountId: string): Promise<void> {
+  throw new Error("Kontolänkning är borttagen");
 }
-
-export async function getOAuthIdentities(env: Env, accountId: string): Promise<OAuthIdentitySummary[]> {
-  const { results } = await env.DB.prepare("SELECT provider, provider_email, created_at FROM oauth_identities WHERE account_id = ? ORDER BY created_at ASC")
-    .bind(accountId)
-    .all<OAuthIdentitySummary>();
-  return results;
-}
-
-export async function unlinkOAuthIdentity(env: Env, accountId: string, provider: string): Promise<void> {
-  const account = await env.DB.prepare("SELECT password_set_by_user FROM accounts WHERE id = ?").bind(accountId).first<{ password_set_by_user: number }>();
-  const identities = await getOAuthIdentities(env, accountId);
-  const hasUsablePassword = !!account?.password_set_by_user;
-
-  if (!hasUsablePassword && identities.length <= 1) {
-    throw new Error("Det här är ditt enda sätt att logga in — sätt ett lösenord innan du tar bort den här kopplingen");
-  }
-
-  await env.DB.prepare("DELETE FROM oauth_identities WHERE account_id = ? AND provider = ?").bind(accountId, provider).run();
+export async function getOAuthIdentities(_env: Env, _accountId: string): Promise<never[]> { return []; }
+export async function unlinkOAuthIdentity(_env: Env, _accountId: string, _provider: string): Promise<void> {
+  throw new Error("Kontolänkning är borttagen");
 }
