@@ -63,6 +63,7 @@ export async function searchPoliticiansInAreas(db:D1Database,areaNames:string[],
 }
 
 const POLICY_PREFIX="policy-area:";
+const MEDIA_PREFIX="media-category:";
 const POLICY_TERMS:Record<string,string[]>={
   "ledning":["kommunstyrelse","regionstyrelse"],
   "social-omsorg":["social","omsorg","äldre","aldre","individ","familj","välfärd","valfard","funktionsstöd","funktionsstod"],
@@ -76,14 +77,27 @@ const POLICY_TERMS:Record<string,string[]>={
   "regional-utveckling":["regional utveck","regionutveck","regionala utveck"],
   "raddning-samhallsskydd":["räddning","raddning","samhällsskydd","samhallsskydd"],
 };
+const MEDIA_TERMS:Record<string,string[]>={
+  "politik":["politik","granskning"],
+  "opinion-debatt":["ledare","opinion","debatt"],
+  "nyhetsredaktion":["nyhetsredaktion","redaktionsledning"],
+};
+const GENERIC_MEDIA_LOCALS=new Set(["tips","tipsa","redaktionen"]);
 function policySql(keys:string[]):{sql:string;params:string[]}{
   const terms=[...new Set(keys.flatMap(k=>POLICY_TERMS[k]??[]))]; if(!terms.length)return{sql:"0",params:[]};
   return{sql:`(${terms.map(()=>"LOWER(a.body) LIKE ?").join(" OR ")})`,params:terms.map(t=>`%${t}%`)};
 }
+function mediaCategoryMatch(role:string|null,email:string,keys:string[]):boolean{
+  const local=email.trim().toLocaleLowerCase("sv-SE").split("@",1)[0];
+  if(GENERIC_MEDIA_LOCALS.has(local))return false;
+  const hay=(role??"").toLocaleLowerCase("sv-SE");
+  return keys.some(key=>(MEDIA_TERMS[key]??[]).some(term=>hay.includes(term)));
+}
 
 export async function getRecipientsForAreas(db:D1Database,areaNames:string[],excludeParties:string[]=[],excludeEmails:string[]=[],includeRoles:string[]=[],includeEmails:string[]=[]){
   const policyKeys=includeRoles.filter(k=>k.startsWith(POLICY_PREFIX)).map(k=>k.slice(POLICY_PREFIX.length));
-  const includedRoleKeys=includeRoles.filter(k=>!k.startsWith(POLICY_PREFIX)&&!k.startsWith("exclude-body:"));
+  const mediaKeys=includeRoles.filter(k=>k.startsWith(MEDIA_PREFIX)).map(k=>k.slice(MEDIA_PREFIX.length));
+  const includedRoleKeys=includeRoles.filter(k=>!k.startsWith(POLICY_PREFIX)&&!k.startsWith(MEDIA_PREFIX)&&!k.startsWith("exclude-body:"));
   const byEmail=new Map<string,{name:string;email:string;area_name:string}>();
   const hasPoolIntent=areaNames.length>0||includedRoleKeys.length>0;
   if(hasPoolIntent){
@@ -105,6 +119,11 @@ export async function getRecipientsForAreas(db:D1Database,areaNames:string[],exc
       const{results:locals}=await db.prepare(`SELECT DISTINCT lower(trim(email)) AS email_key FROM politicians WHERE area_type IN ('kommun','region') AND area_name IN (SELECT value FROM json_each(?))`).bind(JSON.stringify(areaNames)).all<{email_key:string}>();
       for(const r of locals)if(!allowed.has(r.email_key))byEmail.delete(r.email_key);
     }catch{}
+  }
+  if(mediaKeys.length&&byEmail.size){
+    const{results:mediaRows}=await db.prepare(`SELECT email, role FROM politicians WHERE area_type='media' AND area_name IN (SELECT value FROM json_each(?)) AND email IS NOT NULL AND TRIM(email) != ''`).bind(JSON.stringify(areaNames)).all<{email:string;role:string|null}>();
+    const allowed=new Set(mediaRows.filter(r=>mediaCategoryMatch(r.role,r.email,mediaKeys)).map(r=>r.email.trim().toLocaleLowerCase("sv-SE")));
+    for(const r of mediaRows){const key=r.email.trim().toLocaleLowerCase("sv-SE");if(!allowed.has(key))byEmail.delete(key);}
   }
   if(includeEmails.length){const{results}=await db.prepare(`SELECT name,email,area_name FROM politicians WHERE email IN (SELECT value FROM json_each(?)) AND (verification_status IS NULL OR verification_status NOT IN ('dead','dead_via_send'))`).bind(JSON.stringify(includeEmails)).all<{name:string;email:string;area_name:string}>();for(const r of results)byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"),{...r,email:r.email.trim()});}
   for(const e of excludeEmails)byEmail.delete(e.trim().toLocaleLowerCase("sv-SE"));return[...byEmail.values()];
