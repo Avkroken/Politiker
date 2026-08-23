@@ -12,7 +12,9 @@ CLOUDFLARE_* eller D1_* miljövariabler. HTTP-hämtning använder endast Pythons
 standardbibliotek, så inga pip-paket behövs heller.
 
 Skrapresultatet cachelagras i /tmp innan D1-skrivningen. Om en D1-batch skulle
-misslyckas kan skriptet köras igen utan att skrapa om alla 150 källor.
+misslyckas kan skriptet köras igen utan att skrapa om alla 150 källor. Cachen
+tas först bort efter att en separat D1-SELECT verifierat både antal kopplingar
+och antal politiker för den aktuella körningen.
 """
 from __future__ import annotations
 
@@ -196,11 +198,13 @@ def write_batch(batch: list[tuple[str, tuple[str, set[str]]]], now_ms: int, numb
             f"WHERE politician_id = {sql_quote(politician_id)} AND source = 'troman';"
         )
         for body in sorted(person_bodies, key=str.casefold):
+            # Schema 002 har role TEXT NOT NULL DEFAULT ''. Vi sparar ingen
+            # detaljroll, men måste därför skriva tom sträng (inte NULL).
             statements.append(
                 "INSERT OR IGNORE INTO politician_assignments "
                 "(politician_id, area_name, body, role, source, last_scraped_at) VALUES ("
                 f"{sql_quote(politician_id)}, {sql_quote(area_name)}, {sql_quote(body)}, "
-                f"NULL, 'troman', {now_ms});"
+                f"'', 'troman', {now_ms});"
             )
             body_count += 1
 
@@ -229,6 +233,31 @@ def write_batch(batch: list[tuple[str, tuple[str, set[str]]]], now_ms: int, numb
             tmp_path.unlink(missing_ok=True)
 
 
+def verify_assignments(expected_people: int, expected_bodies: int, now_ms: int) -> None:
+    payload = wrangler_json(
+        "SELECT COUNT(*) AS assignments, COUNT(DISTINCT politician_id) AS politicians "
+        "FROM politician_assignments "
+        f"WHERE source = 'troman' AND last_scraped_at = {now_ms};"
+    )
+    rows = find_result_rows(payload)
+    if not rows:
+        sys.exit(
+            f"FEL: kunde inte verifiera D1 efter skrivningen. Cachen finns kvar i {CACHE_PATH}."
+        )
+    actual_bodies = int(rows[0].get("assignments") or 0)
+    actual_people = int(rows[0].get("politicians") or 0)
+    print(
+        f"Efterkontroll D1: {actual_people} politiker, {actual_bodies} nämnd/organ-kopplingar.",
+        flush=True,
+    )
+    if actual_people != expected_people or actual_bodies != expected_bodies:
+        sys.exit(
+            "FEL: D1-efterkontrollen matchar inte skrapresultatet: "
+            f"förväntade {expected_people} politiker/{expected_bodies} kopplingar, "
+            f"fick {actual_people}/{actual_bodies}. Cachen lämnas kvar i {CACHE_PATH}."
+        )
+
+
 def write_assignments(changes: dict[str, tuple[str, set[str]]], now_ms: int) -> None:
     if not changes:
         print("Inga nämnd/organ-kopplingar att skriva.", flush=True)
@@ -243,8 +272,9 @@ def write_assignments(changes: dict[str, tuple[str, set[str]]], now_ms: int) -> 
     )
     for number, batch in enumerate(batches, 1):
         write_batch(batch, now_ms, number, len(batches))
+    verify_assignments(len(items), total_bodies, now_ms)
     CACHE_PATH.unlink(missing_ok=True)
-    print("Alla D1-batchar skrivna; backfill-cachen borttagen.", flush=True)
+    print("Alla D1-batchar verifierade; backfill-cachen borttagen.", flush=True)
 
 
 def scrape_changes() -> tuple[dict[str, tuple[str, set[str]]], int, int, int, int]:
