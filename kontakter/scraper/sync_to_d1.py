@@ -63,6 +63,13 @@ def parse_csv(path: str):
     return rows
 
 
+def load_rows():
+    if not os.path.exists(RESULTAT_CSV):
+        sys.exit(f"FEL: {RESULTAT_CSV} saknas. Kör scrapern eller ange RESULTAT_CSV.")
+    print(f"Läser {RESULTAT_CSV}")
+    return parse_csv(RESULTAT_CSV)
+
+
 def upsert_row(client: D1Client, row) -> tuple[bool, str]:
     name, email, area_name, area_type, party = row
     try:
@@ -90,10 +97,7 @@ def sync(rows) -> tuple[int, int]:
 
 
 def main():
-    if not os.path.exists(RESULTAT_CSV):
-        sys.exit(f"FEL: {RESULTAT_CSV} saknas. Kör scrapern eller ange RESULTAT_CSV.")
-    print(f"Läser {RESULTAT_CSV}")
-    rows = parse_csv(RESULTAT_CSV)
+    rows = load_rows()
     if not rows:
         sys.exit("Inga rader hittades att synka")
     print(f"Hittade {len(rows)} mottagarrader. Synkar till D1...")
