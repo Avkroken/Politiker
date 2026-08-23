@@ -19,9 +19,15 @@ Politikerkontakt producerar, publicerar eller skickar **inte egna politiska brev
 
 ## Mottagare
 
-Databasen byggs från offentliga källor och omfattar bland annat Europaparlamentet, Riksdagen, regeringen/departement, Sveriges regioner och kommuner samt relevanta valda organ inom Svenska kyrkan. Insamlings- och uppdateringslogiken finns i `kontakter/`.
+Databasen byggs från offentliga källor och omfattar bland annat Europaparlamentet, Riksdagen, regeringen/departement, Sveriges regioner och kommuner, media samt relevanta valda organ inom Svenska kyrkan. Insamlings- och uppdateringslogiken finns i `kontakter/`.
 
-Importerade parti- och befattningsuppgifter normaliseras innan de används för mottagarfiltrering. Syftet är att hålla filtren inriktade på relevanta politiska mottagare även när källorna använder varierande benämningar eller innehåller administrativa uppdrag.
+Mottagarurvalet är inte en tvingande tratt. Användaren kan sluta filtrera på valfri nivå och kombinera flera mottagargrenar i samma utskick. Det går exempelvis att välja hela Riksdagen samtidigt som kommun- och regiondelen begränsas till ett visst sakområde. Parti och enskilda mottagare är ytterligare frivilliga filter, inte obligatoriska steg.
+
+Kommun- och regionorgan normaliseras till begripliga politiska huvudområden i stället för att exponera hundratals lokala nämndnamn. Exempel är Social & omsorg, Skola & utbildning, Hälso- & sjukvård, Samhällsbyggnad, Miljö, Teknik & infrastruktur, Kultur & fritid och Arbetsmarknad & näringsliv. Originalnamnet på nämnden kan fortfarande finnas i källdatan, men används inte som huvudnavigering.
+
+Media kan väljas brett eller begränsas med en redaktionell underkategori. Utan underkategori ingår alla valda mediekontakter. Med en underkategori begränsas endast media-grenen till den valda inriktningen, exempelvis Politik, Opinion & debatt eller Nyhetsredaktion. Politik omfattar även relevanta granskande redaktioner. Generiska tips- och redaktionsadresser hör inte till någon precisionskategori och följer därför bara med när Media väljs utan underkategori; ämnesspecifika funktionsadresser kan däremot klassificeras efter sitt faktiska område.
+
+Importerade parti-, organ- och rolluppgifter normaliseras innan de används för mottagarfiltrering. Syftet är att hålla filtren inriktade på relevanta mottagare även när källorna använder varierande benämningar eller innehåller administrativa uppdrag.
 
 ## Integritet och dataminimering
 
