@@ -5,19 +5,29 @@
 Endast nämndens/organets namn sparas. Detaljerade befattningar som ledamot,
 ersättare, ordförande eller sekreterare samlas inte in eftersom de inte behövs
 för Politikerkontakts mottagarurval.
+
+D1 läses och skrivs via Wrangler. Därmed återanvänds den Cloudflare-inloggning
+som redan används av resten av repot och skriptet kräver inga separata
+CLOUDFLARE_* eller D1_* miljövariabler. HTTP-hämtning använder endast Pythons
+standardbibliotek, så inga pip-paket behövs heller.
 """
 from __future__ import annotations
 
 import html
 import json
 import re
+import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
+from urllib.request import Request, urlopen
 
-import requests
-from d1 import D1Client
+REPO_ROOT = Path(__file__).resolve().parents[2]
+WRANGLER_CONFIG = REPO_ROOT / "app" / "wrangler.jsonc"
+D1_NAME = "politiker-eu"
 
 
 def load_regioner() -> list[dict]:
@@ -26,10 +36,11 @@ def load_regioner() -> list[dict]:
 
 def fetch(url: str, timeout: int = 30) -> str | None:
     try:
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        return response.text
-    except requests.RequestException as exc:
+        request = Request(url, headers={"User-Agent": "Politikerkontakt scraper/1.0"})
+        with urlopen(request, timeout=timeout) as response:
+            charset = response.headers.get_content_charset() or "utf-8"
+            return response.read().decode(charset, errors="replace")
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
         print(f"  FEL {url}: {exc}", file=sys.stderr, flush=True)
         return None
 
@@ -68,11 +79,120 @@ def bodies(page_html: str) -> list[str]:
     return found
 
 
+def wrangler_args() -> list[str]:
+    return [
+        "npx", "wrangler", "d1", "execute", D1_NAME,
+        "--remote", "--config", str(WRANGLER_CONFIG),
+    ]
+
+
+def wrangler_json(sql: str) -> object:
+    proc = subprocess.run(
+        wrangler_args() + ["--command", sql, "--json"],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        if proc.stdout:
+            print(proc.stdout, file=sys.stderr)
+        if proc.stderr:
+            print(proc.stderr, file=sys.stderr)
+        sys.exit("FEL: kunde inte läsa D1 via Wrangler.")
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        print(proc.stdout, file=sys.stderr)
+        sys.exit("FEL: Wrangler returnerade inte giltig JSON.")
+
+
+def find_result_rows(value: object) -> list[dict]:
+    """Hitta Wranglers SELECT-rader utan att låsa oss till en viss CLI-version."""
+    if isinstance(value, dict):
+        results = value.get("results")
+        if isinstance(results, list) and (not results or isinstance(results[0], dict)):
+            return results
+        for child in value.values():
+            rows = find_result_rows(child)
+            if rows:
+                return rows
+    elif isinstance(value, list):
+        for child in value:
+            rows = find_result_rows(child)
+            if rows:
+                return rows
+    return []
+
+
+def load_politician_index() -> dict[tuple[str, str], str]:
+    print("Läser befintliga politiker från D1 via Wrangler...", flush=True)
+    payload = wrangler_json(
+        "SELECT id, lower(trim(email)) AS email, area_name FROM politicians "
+        "WHERE email IS NOT NULL AND trim(email) <> '';"
+    )
+    rows = find_result_rows(payload)
+    if not rows:
+        sys.exit("FEL: kunde inte läsa några politiker från D1.")
+    index: dict[tuple[str, str], str] = {}
+    for row in rows:
+        pid = str(row.get("id") or "").strip()
+        email = str(row.get("email") or "").strip().lower()
+        area = str(row.get("area_name") or "").strip()
+        if pid and email and area:
+            index[(area, email)] = pid
+    print(f"  {len(index)} D1-rader indexerade.", flush=True)
+    return index
+
+
+def sql_quote(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def write_assignments(changes: dict[str, tuple[str, set[str]]], now_ms: int) -> None:
+    if not changes:
+        print("Inga nämnd/organ-kopplingar att skriva.", flush=True)
+        return
+
+    statements = ["BEGIN TRANSACTION;"]
+    for politician_id, (area_name, person_bodies) in changes.items():
+        statements.append(
+            "DELETE FROM politician_assignments "
+            f"WHERE politician_id = {sql_quote(politician_id)} AND source = 'troman';"
+        )
+        for body in sorted(person_bodies, key=str.casefold):
+            statements.append(
+                "INSERT OR IGNORE INTO politician_assignments "
+                "(politician_id, area_name, body, role, source, last_scraped_at) VALUES ("
+                f"{sql_quote(politician_id)}, {sql_quote(area_name)}, {sql_quote(body)}, "
+                f"NULL, 'troman', {now_ms});"
+            )
+    statements.append("COMMIT;")
+
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", suffix=".sql", prefix="politiker-assignments-", delete=False
+        ) as tmp:
+            tmp.write("\n".join(statements) + "\n")
+            tmp_path = Path(tmp.name)
+        print(f"Skriver {sum(len(v[1]) for v in changes.values())} nämnd/organ-kopplingar till D1...", flush=True)
+        proc = subprocess.run(
+            wrangler_args() + ["--file", str(tmp_path)],
+            cwd=REPO_ROOT,
+        )
+        if proc.returncode != 0:
+            sys.exit("FEL: Wrangler kunde inte skriva nämnd/organ-data till D1.")
+    finally:
+        if tmp_path is not None:
+            tmp_path.unlink(missing_ok=True)
+
+
 def main() -> None:
-    client = D1Client()
+    politician_index = load_politician_index()
     targets = [row for row in load_regioner() if row.get("typ") == "troman"]
     now_ms = int(time.time() * 1000)
     total_people = total_bodies = total_missing = 0
+    changes: dict[str, tuple[str, set[str]]] = {}
 
     print(f"{len(targets)} Troman-kommuner/regioner att läsa.", flush=True)
     for index, region in enumerate(targets, 1):
@@ -94,32 +214,39 @@ def main() -> None:
             emails = email_from_page(page)
             if not person_bodies or not emails:
                 continue
-            matched = False
+
+            politician_id = None
             for email in emails:
-                rows = client.run("SELECT id FROM politicians WHERE area_name = ? AND lower(trim(email)) = ? LIMIT 1", [area_name, email])
-                result = rows.get("results", []) if isinstance(rows, dict) else []
-                if not result:
-                    continue
-                matched = True
-                politician_id = result[0]["id"]
-                client.run("DELETE FROM politician_assignments WHERE politician_id = ? AND source = 'troman'", [politician_id])
-                for body in person_bodies:
-                    client.run(
-                        "INSERT OR IGNORE INTO politician_assignments "
-                        "(politician_id, area_name, body, role, source, last_scraped_at) VALUES (?, ?, ?, '', 'troman', ?)",
-                        [politician_id, area_name, body, now_ms],
-                    )
-                    area_bodies += 1
-                total_people += 1
-                break
-            if not matched:
+                politician_id = politician_index.get((area_name, email))
+                if politician_id:
+                    break
+            if not politician_id:
                 area_missing += 1
-            time.sleep(0.15)
+                continue
+
+            previous = changes.get(politician_id)
+            body_set = set(person_bodies)
+            if previous:
+                body_set.update(previous[1])
+            changes[politician_id] = (area_name, body_set)
+            area_bodies += len(person_bodies)
+            total_people += 1
+            time.sleep(0.05)
+
         total_bodies += area_bodies
         total_missing += area_missing
-        print(f"  {area_bodies} nämnd/organ-kopplingar sparade, {area_missing} profiler utan D1-match", flush=True)
+        print(
+            f"  {area_bodies} nämnd/organ-kopplingar hittade, "
+            f"{area_missing} profiler utan D1-match",
+            flush=True,
+        )
 
-    print(f"\nKlart: {total_people} personer, {total_bodies} nämnd/organ-kopplingar, {total_missing} profiler utan D1-match.", flush=True)
+    write_assignments(changes, now_ms)
+    print(
+        f"\nKlart: {total_people} personer, {total_bodies} nämnd/organ-kopplingar, "
+        f"{total_missing} profiler utan D1-match.",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
