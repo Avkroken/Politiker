@@ -1,23 +1,12 @@
 name: Exportera politiker-data från D1
 
 # Läser politicians-tabellen i tjänstens D1 (read-only) och committar en
-# uppdaterad kontakter/data/-export via PR med auto-merge. Ingen extern
-# skrapning sker här — datan kommer från den redan publika D1:n som scrapern
-# matar.
-#
-# Secrets och variabler (Repo → Settings → Environments → produktion):
-#   POLITIKER_D1_READ — Cloudflare API-token, endast D1 Read. Medvetet
-#     snävare än deploy-tokenet POLITIKER; jobbet läser bara en tabell.
-#     Skickas vidare som CLOUDFLARE_API_TOKEN_POLITIKER, som är namnet
-#     kontakter/scraper/d1.py läser.
-#   POLITIKER_OCH_IDEMPOTENT — GitHub-appens ID (variabel) och privata nyckel
-#     (secret); samma namn, skilda namnrymder. PR:er öppnade med inbyggda
-#     GITHUB_TOKEN startar inga workflows, så auto-merge uteblir.
-#   D1_DATABASE_ID, CLOUDFLARE_ACCOUNT_ID — variabler, inte secrets.
+# uppdaterad kontakter/data/-export samt statisk recipient-meta.json via PR.
+# Ingen extern skrapning sker här — datan kommer från den publika D1:n.
 
 on:
   schedule:
-    - cron: '30 4 * * 1' # måndagar 04:30 UTC
+    - cron: '30 4 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -31,18 +20,11 @@ concurrency:
 jobs:
   export:
     runs-on: ubuntu-latest
-    # Appens ID/nyckel och D1-tokenet ligger som environment-värden på
-    # produktion. Utan den här raden är vars.POLITIKER_OCH_IDEMPOTENT tom och
-    # tokenprägligen faller direkt.
     environment: produktion
     defaults:
       run:
         working-directory: kontakter
     steps:
-      # Kortlivad apptoken i stället för en långlivad PAT. PR:er öppnade med
-      # den inbyggda GITHUB_TOKEN startar inga andra workflows, så required
-      # checks och auto-merge uteblir. Appens token gör det, och dör efter en
-      # timme.
       - name: Prägla apptoken
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -50,9 +32,6 @@ jobs:
           app-id: ${{ vars.POLITIKER_OCH_IDEMPOTENT }}
           private-key: ${{ secrets.POLITIKER_OCH_IDEMPOTENT }}
 
-      # dev, inte main: repot har två fasta grenar och rulesetet tillåter
-      # inte att nya skapas. Jobbet committar på dev och låter PR:en dev->main
-      # bära ändringen vidare.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: dev
@@ -70,30 +49,29 @@ jobs:
           CLOUDFLARE_API_TOKEN_POLITIKER: ${{ secrets.POLITIKER_D1_READ }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
-        run: python3 export/export_d1.py
+        run: |
+          python3 export/export_d1.py
+          cp data/recipient-meta.json ../app/public/recipient-meta.json
 
       - name: Öppna PR vid ändring
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        working-directory: .
         run: |
-          if [ -z "$(git status --porcelain data/)" ]; then
-            echo "Ingen ändring i data/ — hoppar över."
+          if [ -z "$(git status --porcelain kontakter/data/ app/public/recipient-meta.json)" ]; then
+            echo "Ingen ändring i export eller metadata — hoppar över."
             exit 0
           fi
           git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
           git config user.email "${{ steps.app-token.outputs.installation-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
-          git add data/
-          git commit -m "data: uppdatera politiker-export från D1"
-          # Hämta in vad som hunnit landa på dev sedan checkouten, så pushen
-          # förblir fast-forward.
+          git add kontakter/data/ app/public/recipient-meta.json
+          git commit -m "data: uppdatera politiker-export och mottagarmetadata"
           git pull --rebase origin dev
           git push origin dev
-          # En öppen PR dev->main kan redan finnas från annat pågående arbete.
-          # gh pr create felar på en dubblett, så återanvänd den i så fall.
           PR_URL=$(gh pr list --base main --head dev --state open --json url --jq '.[0].url // empty')
           if [ -z "$PR_URL" ]; then
             PR_URL=$(gh pr create --base main --head dev \
               --title "data: uppdatera politiker-export från D1" \
-              --body 'Automatisk export av `politicians`-tabellen från live-D1 (read-only).')
+              --body 'Automatisk export av aktiva kontakter samt statisk mottagarmetadata från live-D1.')
           fi
           gh pr merge --auto --squash "$PR_URL"
