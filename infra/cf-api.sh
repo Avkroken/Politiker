@@ -2,7 +2,11 @@
 # Wrapper för alla Cloudflare API-anrop i politiker-projektet.
 # Usage: cf-api.sh <METHOD> <path-efter-/client/v4> [data-fil]
 set -euo pipefail
-source ~/.claude/credentials.env
+
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ENV_FILE="$REPO_DIR/infra/.env"
+[[ -f "$ENV_FILE" ]] && source "$ENV_FILE"
+: "${CLOUDFLARE_API_TOKEN_POLITIKER:?Sätt CLOUDFLARE_API_TOKEN_POLITIKER i miljön eller infra/.env}"
 
 METHOD="$1"
 API_PATH="$2"
