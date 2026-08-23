@@ -1,21 +1,53 @@
 name: Auto-merge dev PR
 
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, reopened]
+  workflow_run:
+    workflows:
+      - Node typecheck & Python tests
+      - Docker build & Trivy
+      - OSV-Scanner
+    types: [completed]
 
 permissions:
+  actions: read
   contents: write
   pull-requests: write
 
+concurrency:
+  group: dev-pr-auto-merge
+  cancel-in-progress: true
+
 jobs:
-  enable:
-    if: ${{ github.head_ref == 'dev' && github.event.pull_request.head.repo.full_name == github.repository }}
+  merge:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Aktivera auto-merge
+      - name: Mergea dev när alla CI-kedjor är gröna
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge "$PR_URL" --auto --merge
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pr_json="$(gh pr list --repo "$GITHUB_REPOSITORY" --head dev --base main --state open --limit 1 --json url,headRefOid)"
+          pr_url="$(jq -r '.[0].url // empty' <<<"$pr_json")"
+          head_sha="$(jq -r '.[0].headRefOid // empty' <<<"$pr_json")"
+
+          if [[ -z "$pr_url" || -z "$head_sha" ]]; then
+            echo "Ingen öppen dev → main-PR."
+            exit 0
+          fi
+
+          runs="$(gh run list --repo "$GITHUB_REPOSITORY" --commit "$head_sha" --event pull_request --limit 100 --json name,status,conclusion,headSha)"
+          required=("Node typecheck & Python tests" "Docker build & Trivy" "OSV-Scanner")
+
+          for workflow in "${required[@]}"; do
+            conclusion="$(jq -r --arg name "$workflow" '[.[] | select(.name == $name)][0].conclusion // ""' <<<"$runs")"
+            if [[ "$conclusion" != "success" ]]; then
+              echo "$workflow är inte grön ännu: ${conclusion:-saknas}"
+              exit 0
+            fi
+          done
+
+          echo "Alla CI-kedjor är gröna för $head_sha. Mergear $pr_url."
+          gh pr merge "$pr_url" --merge
