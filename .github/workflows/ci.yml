@@ -42,6 +42,7 @@ jobs:
     steps:
       - name: Spärra ändrad PR-head
         if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' && github.head_ref == 'dev' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository }}
+        working-directory: .
         run: |
           echo "::error::dev ändrades efter att dev → main-PR:n öppnades. Pågående PR är immutable: stäng den och öppna en ny PR från aktuell dev."
           exit 1
