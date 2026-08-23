@@ -6,7 +6,13 @@
 #
 # Usage: az-graph-api.sh <METHOD> <path-efter-/v1.0> [data-fil]
 set -euo pipefail
-source ~/.claude/credentials.env
+
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ENV_FILE="$REPO_DIR/infra/.env"
+[[ -f "$ENV_FILE" ]] && source "$ENV_FILE"
+: "${AZURE_MGMT_TENANT_ID:?Sätt AZURE_MGMT_TENANT_ID i miljön eller infra/.env}"
+: "${AZURE_MGMT_CLIENT_ID:?Sätt AZURE_MGMT_CLIENT_ID i miljön eller infra/.env}"
+: "${AZURE_MGMT_CLIENT_SECRET:?Sätt AZURE_MGMT_CLIENT_SECRET i miljön eller infra/.env}"
 
 METHOD="$1"
 API_PATH="$2"
