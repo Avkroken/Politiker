@@ -31,9 +31,6 @@ IRRELEVANT_ROLE_SQL = """
 )
 """.strip()
 
-# Ett relevant body är antingen kommun-/regionstyrelsen eller en faktisk nämnd.
-# Fullmäktige, underutskott, beredningar, nämndemän, vigseluppdrag och
-# kommunalförbund är inte användbara som separata massutskicksfilter.
 RELEVANT_BODY_SQL = """
 (
   LOWER(TRIM(body)) IN ('kommunstyrelse', 'kommunstyrelsen', 'regionstyrelse', 'regionstyrelsen')
@@ -50,13 +47,15 @@ RELEVANT_BODY_SQL = """
 )
 """.strip()
 
+# Endast partier som är användbara som publika filter behålls. Lokala och
+# okända råvärden ska inte ligga kvar gömda i databasen.
+KNOWN_PARTIES_SQL = "'S','M','SD','V','C','L','KD','MP','FI','MED','AFS','ÖP','PP'"
+
 APPLY_SQL = f"""
 DELETE FROM politicians
 WHERE area_type = 'eu'
   AND area_name <> '{SWEDISH_EU_AREA}';
 
--- Använd de gamla rollvärdena en sista gång för att ta bort rader som inte
--- representerar relevanta politiska mottagare. Därefter rensas rollfältet helt.
 DELETE FROM politicians
 WHERE area_type IN ('kommun', 'region')
   AND role IS NOT NULL
@@ -89,29 +88,30 @@ SET party = CASE LOWER(TRIM(party))
   WHEN 'feministiskt initiativ' THEN 'FI'
   WHEN 'med' THEN 'MED'
   WHEN 'medborgerlig samling' THEN 'MED'
+  WHEN 'afs' THEN 'AFS'
+  WHEN 'alternativ för sverige' THEN 'AFS'
+  WHEN 'alternativ för sverige (afs)' THEN 'AFS'
+  WHEN 'öp' THEN 'ÖP'
+  WHEN 'örebropartiet' THEN 'ÖP'
+  WHEN 'örebropartiet (öp)' THEN 'ÖP'
+  WHEN 'pp' THEN 'PP'
+  WHEN 'piratpartiet' THEN 'PP'
   ELSE TRIM(party)
 END
 WHERE party IS NOT NULL;
 
+-- Allt utanför den avsiktliga filterlistan tas bort i stället för att döljas.
 UPDATE politicians
 SET party = NULL
 WHERE party IS NOT NULL
-  AND (
-    LOWER(TRIM(party)) IN ('', '-', '--', 'saknas', 'oberoende', 'ober', 'opol', 'opol.', 'partilös', 'partilos', 'utan partitillhörighet', 'parti saknas')
-    OR LOWER(TRIM(party)) LIKE 'fd %'
-    OR LOWER(TRIM(party)) LIKE '%, fd %'
-    OR LOWER(TRIM(party)) LIKE '% fd %'
-  );
+  AND party NOT IN ({KNOWN_PARTIES_SQL});
 
 UPDATE politicians SET role = NULL WHERE role IS NOT NULL;
 UPDATE politician_assignments SET role = '' WHERE role <> '';
 
--- Ta bort allt assignment-brus som inte är en huvudnämnd eller styrelse.
 DELETE FROM politician_assignments
 WHERE NOT {RELEVANT_BODY_SQL};
 
--- Normalisera de vanligaste styrelsevarianterna. INSERT OR IGNORE + DELETE gör
--- detta säkert även om samma politiker redan har den kanoniska varianten.
 INSERT OR IGNORE INTO politician_assignments
   (politician_id, area_name, body, role, source, last_scraped_at)
 SELECT politician_id, area_name, 'Kommunstyrelsen', role, source, last_scraped_at
@@ -130,7 +130,6 @@ DELETE FROM politician_assignments
 WHERE LOWER(TRIM(body)) IN ('regionstyrelse', 'regionstyrelsen')
   AND body <> 'Regionstyrelsen';
 
--- Vanliga singularformer som Socialnämnd/Valnämnd blir Socialnämnden/Valnämnden.
 INSERT OR IGNORE INTO politician_assignments
   (politician_id, area_name, body, role, source, last_scraped_at)
 SELECT politician_id, area_name, TRIM(body) || 'en', role, source, last_scraped_at
@@ -174,6 +173,8 @@ def dry_run() -> None:
     query("SELECT body, COUNT(*) AS rows FROM politician_assignments WHERE " + RELEVANT_BODY_SQL + " GROUP BY body ORDER BY rows DESC LIMIT 100;")
     print("\nPartivärden före normalisering:")
     query("SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL GROUP BY party ORDER BY rows DESC, party LIMIT 200;")
+    print("\nPartivärden som skulle tas bort efter normalisering:")
+    query("SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL AND UPPER(TRIM(party)) NOT IN (" + KNOWN_PARTIES_SQL + ") GROUP BY party ORDER BY rows DESC, party LIMIT 200;")
     print("\nDRY-RUN: inga ändringar skrevs. Kör med --apply efter granskning.")
 
 
@@ -199,6 +200,10 @@ def apply() -> None:
     query("SELECT COUNT(*) AS assignments, COUNT(DISTINCT politician_id) AS politicians FROM politician_assignments;")
     print("\nEfterkontroll: kvarvarande EU-områden:")
     query("SELECT area_name, COUNT(*) AS rows FROM politicians WHERE area_type='eu' GROUP BY area_name;")
+    print("\nEfterkontroll: okända partivärden (ska vara 0):")
+    query("SELECT COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL AND party NOT IN (" + KNOWN_PARTIES_SQL + ");")
+    print("\nEfterkontroll: kvarvarande partivärden:")
+    query("SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL GROUP BY party ORDER BY rows DESC, party;")
 
 
 def main() -> None:
