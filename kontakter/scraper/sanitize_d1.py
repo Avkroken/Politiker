@@ -3,7 +3,8 @@
 """Sanitera befintlig mottagardata i D1 utan att skrapa nya källor.
 
 Behåller endast information som behövs för mottagarurvalet: person, område,
-politisk nivå, parti och separat nämnd/organ. Detaljerade befattningar tas bort.
+politisk nivå, parti och relevanta huvudnämnder/organ. Detaljerade befattningar,
+fullmäktige, utskott, beredningar, råd och andra sidouppdrag tas bort.
 Standardläget är dry-run; ``--apply`` krävs för skrivningar.
 """
 from __future__ import annotations
@@ -27,6 +28,25 @@ IRRELEVANT_ROLE_SQL = """
   OR LOWER(role) LIKE '%partnerskapsförrätt%'
   OR LOWER(role) = 'god man'
   OR LOWER(role) LIKE 'gode män%'
+)
+""".strip()
+
+# Ett relevant body är antingen kommun-/regionstyrelsen eller en faktisk nämnd.
+# Fullmäktige, underutskott, beredningar, nämndemän, vigseluppdrag och
+# kommunalförbund är inte användbara som separata massutskicksfilter.
+RELEVANT_BODY_SQL = """
+(
+  LOWER(TRIM(body)) IN ('kommunstyrelse', 'kommunstyrelsen', 'regionstyrelse', 'regionstyrelsen')
+  OR (
+    LOWER(body) LIKE '%nämnd%'
+    AND LOWER(body) NOT LIKE '%fullmäktige%'
+    AND LOWER(body) NOT LIKE '%utskott%'
+    AND LOWER(body) NOT LIKE '%beredning%'
+    AND LOWER(body) NOT LIKE '%nämndeman%'
+    AND LOWER(body) NOT LIKE '%nämndemän%'
+    AND LOWER(body) NOT LIKE '%vigselförrätt%'
+    AND LOWER(body) NOT LIKE '%kommunalförbund%'
+  )
 )
 """.strip()
 
@@ -85,6 +105,41 @@ WHERE party IS NOT NULL
 
 UPDATE politicians SET role = NULL WHERE role IS NOT NULL;
 UPDATE politician_assignments SET role = '' WHERE role <> '';
+
+-- Ta bort allt assignment-brus som inte är en huvudnämnd eller styrelse.
+DELETE FROM politician_assignments
+WHERE NOT {RELEVANT_BODY_SQL};
+
+-- Normalisera de vanligaste styrelsevarianterna. INSERT OR IGNORE + DELETE gör
+-- detta säkert även om samma politiker redan har den kanoniska varianten.
+INSERT OR IGNORE INTO politician_assignments
+  (politician_id, area_name, body, role, source, last_scraped_at)
+SELECT politician_id, area_name, 'Kommunstyrelsen', role, source, last_scraped_at
+FROM politician_assignments
+WHERE LOWER(TRIM(body)) IN ('kommunstyrelse', 'kommunstyrelsen');
+DELETE FROM politician_assignments
+WHERE LOWER(TRIM(body)) IN ('kommunstyrelse', 'kommunstyrelsen')
+  AND body <> 'Kommunstyrelsen';
+
+INSERT OR IGNORE INTO politician_assignments
+  (politician_id, area_name, body, role, source, last_scraped_at)
+SELECT politician_id, area_name, 'Regionstyrelsen', role, source, last_scraped_at
+FROM politician_assignments
+WHERE LOWER(TRIM(body)) IN ('regionstyrelse', 'regionstyrelsen');
+DELETE FROM politician_assignments
+WHERE LOWER(TRIM(body)) IN ('regionstyrelse', 'regionstyrelsen')
+  AND body <> 'Regionstyrelsen';
+
+-- Vanliga singularformer som Socialnämnd/Valnämnd blir Socialnämnden/Valnämnden.
+INSERT OR IGNORE INTO politician_assignments
+  (politician_id, area_name, body, role, source, last_scraped_at)
+SELECT politician_id, area_name, TRIM(body) || 'en', role, source, last_scraped_at
+FROM politician_assignments
+WHERE LOWER(TRIM(body)) LIKE '%nämnd'
+  AND LOWER(TRIM(body)) NOT LIKE '%nämnden';
+DELETE FROM politician_assignments
+WHERE LOWER(TRIM(body)) LIKE '%nämnd'
+  AND LOWER(TRIM(body)) NOT LIKE '%nämnden';
 """.strip()
 
 
@@ -111,6 +166,12 @@ def dry_run() -> None:
     query("SELECT COUNT(*) AS rows FROM politicians WHERE role IS NOT NULL AND TRIM(role) <> ''; ")
     print("\nDetaljerade nämndroller som skulle rensas:")
     query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE role <> ''; ")
+    print("\nNämnd/organ-brus som skulle tas bort:")
+    query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE NOT " + RELEVANT_BODY_SQL + ";")
+    print("\nVanligaste body-värden som skulle tas bort:")
+    query("SELECT body, COUNT(*) AS rows FROM politician_assignments WHERE NOT " + RELEVANT_BODY_SQL + " GROUP BY body ORDER BY rows DESC LIMIT 50;")
+    print("\nKvarvarande relevanta body-värden, vanligaste först:")
+    query("SELECT body, COUNT(*) AS rows FROM politician_assignments WHERE " + RELEVANT_BODY_SQL + " GROUP BY body ORDER BY rows DESC LIMIT 100;")
     print("\nPartivärden före normalisering:")
     query("SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL GROUP BY party ORDER BY rows DESC, party LIMIT 200;")
     print("\nDRY-RUN: inga ändringar skrevs. Kör med --apply efter granskning.")
@@ -132,6 +193,10 @@ def apply() -> None:
     query("SELECT COUNT(*) AS rows FROM politicians WHERE role IS NOT NULL AND TRIM(role) <> ''; ")
     print("\nEfterkontroll: detaljerade nämndroller (ska vara 0):")
     query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE role <> ''; ")
+    print("\nEfterkontroll: irrelevant nämnd/organ-brus (ska vara 0):")
+    query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE NOT " + RELEVANT_BODY_SQL + ";")
+    print("\nEfterkontroll: kvarvarande nämnd/organ-kopplingar:")
+    query("SELECT COUNT(*) AS assignments, COUNT(DISTINCT politician_id) AS politicians FROM politician_assignments;")
     print("\nEfterkontroll: kvarvarande EU-områden:")
     query("SELECT area_name, COUNT(*) AS rows FROM politicians WHERE area_type='eu' GROUP BY area_name;")
 
