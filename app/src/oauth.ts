@@ -11,7 +11,7 @@ interface ProviderConfig {
 }
 
 // Webbinloggning stöds bara för de providers som fortfarande är konfigurerade
-// i Workern. GitHub-login och extern kontolänkning är avvecklade.
+// i Workern. GitHub-login och manuell kontolänkning är avvecklade.
 const PROVIDERS: Record<string, ProviderConfig> = {
   google: {
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
@@ -32,6 +32,10 @@ const PROVIDERS: Record<string, ProviderConfig> = {
 };
 
 const REDIRECT_BASE = "https://politiker.denied.se/api/oauth";
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLocaleLowerCase("sv-SE");
+}
 
 export function getAuthorizeUrl(provider: string, env: Env, state: string): string {
   const cfg = PROVIDERS[provider];
@@ -82,9 +86,12 @@ async function exchangeCodeForUserInfo(
   const userData = await userResp.json<Record<string, unknown>>();
 
   const providerUserId = String(userData.sub ?? userData.id);
-  const email = (userData.email as string | undefined) ?? null;
-  if (!email) throw new Error(`Kunde inte hämta en verifierad e-postadress från ${provider}`);
-  return { providerUserId, email };
+  const rawEmail = (userData.email as string | undefined) ?? null;
+  if (!rawEmail) throw new Error(`Kunde inte hämta en e-postadress från ${provider}`);
+  if (provider === "google" && userData.email_verified !== true) {
+    throw new Error("Google-kontots e-postadress är inte verifierad");
+  }
+  return { providerUserId, email: normalizeEmail(rawEmail) };
 }
 
 export async function handleOAuthCallback(
@@ -104,13 +111,33 @@ export async function handleOAuthCallback(
     return { accountId: existingIdentity.account_id };
   }
 
-  // Auto-länka aldrig en ny extern identitet till ett existerande lokalt konto
-  // enbart för att e-poststrängen matchar.
-  const existingAccount = await getAccountByEmail(env.DB, email);
+  // Samma verifierade e-postadress är samma Politikerkontakt-konto. En ny
+  // Google/Microsoft-identitet ska därför återanvända befintligt accounts.id,
+  // inte skapa en parallell kontorad.
+  const existingAccount = await env.DB.prepare(
+    "SELECT * FROM accounts WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) LIMIT 1",
+  ).bind(email).first<Record<string, unknown>>();
   if (existingAccount) {
-    throw new Error("Det finns redan ett konto med den här e-postadressen. Logga in med e-post och lösenord.");
+    const accountId = existingAccount.id as string;
+    const providerAlreadyLinked = await env.DB.prepare(
+      "SELECT provider_user_id FROM oauth_identities WHERE account_id = ? AND provider = ?",
+    ).bind(accountId, provider).first<{ provider_user_id: string }>();
+    if (providerAlreadyLinked && providerAlreadyLinked.provider_user_id !== providerUserId) {
+      throw new Error(`Kontot har redan ett annat ${provider}-inloggningssätt kopplat`);
+    }
+    if (!providerAlreadyLinked) {
+      await env.DB.prepare(
+        "INSERT INTO oauth_identities (id, account_id, provider, provider_user_id, provider_email, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      ).bind(randomId(), accountId, provider, providerUserId, email, Date.now()).run();
+    }
+    if (!existingAccount.email_verified) {
+      await env.DB.prepare("UPDATE accounts SET email_verified = 1 WHERE id = ?").bind(accountId).run();
+    }
+    return { accountId };
   }
 
+  // Första inloggningen med Google/Microsoft får skapa kontot. Ett slumpat
+  // internt lösenord används tills användaren själv väljer att sätta ett.
   const accountId = randomId();
   const { hash, salt } = await hashPassword(randomId() + randomId());
   await env.DB.prepare(
@@ -128,15 +155,16 @@ export async function handleOAuthCallback(
 }
 
 // Tillfälliga kompatibilitetsexporter för gamla routes i index.ts. Ingen av dem
-// erbjuder längre kontolänkning. De kan tas bort helt när routefilen delas upp.
+// erbjuder längre manuell kontolänkning. Automatisk koppling sker vid vanlig
+// Google/Microsoft-inloggning när e-postadressen matchar ett befintligt konto.
 export function providerSharesLoginCallback(_provider: string): boolean { return false; }
 export function getLinkAuthorizeUrl(_provider: string, _env: Env, _state: string): string {
-  throw new Error("Kontolänkning är borttagen");
+  throw new Error("Manuell kontolänkning är borttagen");
 }
 export async function handleOAuthLinkCallback(_provider: string, _env: Env, _code: string, _currentAccountId: string): Promise<void> {
-  throw new Error("Kontolänkning är borttagen");
+  throw new Error("Manuell kontolänkning är borttagen");
 }
 export async function getOAuthIdentities(_env: Env, _accountId: string): Promise<never[]> { return []; }
 export async function unlinkOAuthIdentity(_env: Env, _accountId: string, _provider: string): Promise<void> {
-  throw new Error("Kontolänkning är borttagen");
+  throw new Error("Manuell kontolänkning är borttagen");
 }
