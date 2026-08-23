@@ -10,6 +10,9 @@ D1 läses och skrivs via Wrangler. Därmed återanvänds den Cloudflare-inloggni
 som redan används av resten av repot och skriptet kräver inga separata
 CLOUDFLARE_* eller D1_* miljövariabler. HTTP-hämtning använder endast Pythons
 standardbibliotek, så inga pip-paket behövs heller.
+
+Skrapresultatet cachelagras i /tmp innan D1-skrivningen. Om en D1-batch skulle
+misslyckas kan skriptet köras igen utan att skrapa om alla 150 källor.
 """
 from __future__ import annotations
 
@@ -28,6 +31,8 @@ from urllib.request import Request, urlopen
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WRANGLER_CONFIG = REPO_ROOT / "app" / "wrangler.jsonc"
 D1_NAME = "politiker-eu"
+CACHE_PATH = Path("/tmp/politiker-assignments-backfill.json")
+BATCH_PEOPLE = 200
 
 
 def load_regioner() -> list[dict]:
@@ -148,13 +153,41 @@ def sql_quote(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
-def write_assignments(changes: dict[str, tuple[str, set[str]]], now_ms: int) -> None:
-    if not changes:
-        print("Inga nämnd/organ-kopplingar att skriva.", flush=True)
-        return
+def save_cache(changes: dict[str, tuple[str, set[str]]], now_ms: int) -> None:
+    payload = {
+        "created_at_ms": now_ms,
+        "changes": {
+            pid: {"area_name": area, "bodies": sorted(person_bodies, key=str.casefold)}
+            for pid, (area, person_bodies) in changes.items()
+        },
+    }
+    CACHE_PATH.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    print(f"Skrapresultatet cachelagrat i {CACHE_PATH}.", flush=True)
 
+
+def load_cache() -> tuple[dict[str, tuple[str, set[str]]], int] | None:
+    if not CACHE_PATH.exists():
+        return None
+    try:
+        payload = json.loads(CACHE_PATH.read_text(encoding="utf-8"))
+        raw_changes = payload.get("changes", {})
+        changes = {
+            str(pid): (str(item["area_name"]), set(map(str, item.get("bodies", []))))
+            for pid, item in raw_changes.items()
+            if item.get("area_name") and item.get("bodies")
+        }
+        now_ms = int(payload.get("created_at_ms") or int(time.time() * 1000))
+    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return None
+    if not changes:
+        return None
+    return changes, now_ms
+
+
+def write_batch(batch: list[tuple[str, tuple[str, set[str]]]], now_ms: int, number: int, total: int) -> None:
     statements = ["BEGIN TRANSACTION;"]
-    for politician_id, (area_name, person_bodies) in changes.items():
+    body_count = 0
+    for politician_id, (area_name, person_bodies) in batch:
         statements.append(
             "DELETE FROM politician_assignments "
             f"WHERE politician_id = {sql_quote(politician_id)} AND source = 'troman';"
@@ -166,6 +199,7 @@ def write_assignments(changes: dict[str, tuple[str, set[str]]], now_ms: int) -> 
                 f"{sql_quote(politician_id)}, {sql_quote(area_name)}, {sql_quote(body)}, "
                 f"NULL, 'troman', {now_ms});"
             )
+            body_count += 1
     statements.append("COMMIT;")
 
     tmp_path: Path | None = None
@@ -175,19 +209,43 @@ def write_assignments(changes: dict[str, tuple[str, set[str]]], now_ms: int) -> 
         ) as tmp:
             tmp.write("\n".join(statements) + "\n")
             tmp_path = Path(tmp.name)
-        print(f"Skriver {sum(len(v[1]) for v in changes.values())} nämnd/organ-kopplingar till D1...", flush=True)
+        print(
+            f"Batch {number}/{total}: {len(batch)} politiker, {body_count} nämnd/organ-kopplingar...",
+            flush=True,
+        )
         proc = subprocess.run(
-            wrangler_args() + ["--file", str(tmp_path)],
+            wrangler_args() + ["--file", str(tmp_path), "--yes"],
             cwd=REPO_ROOT,
         )
         if proc.returncode != 0:
-            sys.exit("FEL: Wrangler kunde inte skriva nämnd/organ-data till D1.")
+            sys.exit(
+                f"FEL: D1-skrivning misslyckades i batch {number}/{total}. "
+                f"Cachen finns kvar i {CACHE_PATH}; kör skriptet igen för att försöka igen."
+            )
     finally:
         if tmp_path is not None:
             tmp_path.unlink(missing_ok=True)
 
 
-def main() -> None:
+def write_assignments(changes: dict[str, tuple[str, set[str]]], now_ms: int) -> None:
+    if not changes:
+        print("Inga nämnd/organ-kopplingar att skriva.", flush=True)
+        return
+    items = sorted(changes.items(), key=lambda item: (item[1][0].casefold(), item[0]))
+    batches = [items[i:i + BATCH_PEOPLE] for i in range(0, len(items), BATCH_PEOPLE)]
+    total_bodies = sum(len(v[1]) for v in changes.values())
+    print(
+        f"Skriver {total_bodies} nämnd/organ-kopplingar för {len(items)} politiker "
+        f"i {len(batches)} mindre D1-batchar...",
+        flush=True,
+    )
+    for number, batch in enumerate(batches, 1):
+        write_batch(batch, now_ms, number, len(batches))
+    CACHE_PATH.unlink(missing_ok=True)
+    print("Alla D1-batchar skrivna; backfill-cachen borttagen.", flush=True)
+
+
+def scrape_changes() -> tuple[dict[str, tuple[str, set[str]]], int, int, int, int]:
     politician_index = load_politician_index()
     targets = [row for row in load_regioner() if row.get("typ") == "troman"]
     now_ms = int(time.time() * 1000)
@@ -240,6 +298,25 @@ def main() -> None:
             f"{area_missing} profiler utan D1-match",
             flush=True,
         )
+
+    save_cache(changes, now_ms)
+    return changes, now_ms, total_people, total_bodies, total_missing
+
+
+def main() -> None:
+    cached = load_cache()
+    if cached:
+        changes, now_ms = cached
+        total_people = len(changes)
+        total_bodies = sum(len(v[1]) for v in changes.values())
+        total_missing = 0
+        print(
+            f"Återanvänder cache från {CACHE_PATH}: {total_people} politiker, "
+            f"{total_bodies} nämnd/organ-kopplingar. Ingen omskrapning behövs.",
+            flush=True,
+        )
+    else:
+        changes, now_ms, total_people, total_bodies, total_missing = scrape_changes()
 
     write_assignments(changes, now_ms)
     print(
