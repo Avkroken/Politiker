@@ -2,21 +2,9 @@
 # -*- coding: utf-8 -*-
 """Sanitera befintlig mottagardata i D1 utan att skrapa nya källor.
 
-Politikerkontakt ska innehålla svenska politiska företrädare hela vägen från
-kommunnivå till Sveriges representation i Europaparlamentet. Jobbet:
-
-* tar bort EU-ledamöter som representerar andra länder än Sverige,
-* normaliserar kända svenska rikspartier och uppenbara case-varianter,
-* tar bort status-/skräpvärden ur party,
-* tar bort tydligt irrelevanta kommun-/regionuppdrag som inte är politiska
-  mottagarroller för allmänheten,
-* normaliserar säkra politiska huvudroller utan att förstöra okända
-  nämnd-/organbeskrivningar,
-* lämnar regering, media och kyrka orörda i rollfältet.
-
-Jobbet använder projektets redan autentiserade Wrangler-installation. Ingen
-separat .env eller Cloudflare-tokenfil behövs. Standardläget är dry-run;
-``--apply`` krävs för skrivningar.
+Behåller endast information som behövs för mottagarurvalet: person, område,
+politisk nivå, parti och separat nämnd/organ. Detaljerade befattningar tas bort.
+Standardläget är dry-run; ``--apply`` krävs för skrivningar.
 """
 from __future__ import annotations
 
@@ -30,9 +18,6 @@ DB_NAME = "politiker-eu"
 SWEDISH_EU_AREA = "Europaparlamentet (Sverige)"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# Roller som kan vara offentliga uppdrag men inte är den typ av politisk
-# befattning som mottagarväljaren ska räkna som kommun-/regionpolitiker.
-# Håll listan snäv: okända roller sparas för framtida nämnd-/organfilter.
 IRRELEVANT_ROLE_SQL = """
 (
   LOWER(role) LIKE '%revisor%'
@@ -45,13 +30,13 @@ IRRELEVANT_ROLE_SQL = """
 )
 """.strip()
 
-# Medvetet konservativt: endast säkra alias normaliseras. Lokala listor som
-# Bergspartiet, Götenes framtid, Vårddemokraterna osv lämnas orörda.
 APPLY_SQL = f"""
 DELETE FROM politicians
 WHERE area_type = 'eu'
   AND area_name <> '{SWEDISH_EU_AREA}';
 
+-- Använd de gamla rollvärdena en sista gång för att ta bort rader som inte
+-- representerar relevanta politiska mottagare. Därefter rensas rollfältet helt.
 DELETE FROM politicians
 WHERE area_type IN ('kommun', 'region')
   AND role IS NOT NULL
@@ -92,35 +77,22 @@ UPDATE politicians
 SET party = NULL
 WHERE party IS NOT NULL
   AND (
-    LOWER(TRIM(party)) IN (
-      '', '-', '--', 'saknas', 'oberoende', 'ober', 'opol', 'opol.',
-      'partilös', 'partilos', 'utan partitillhörighet', 'parti saknas'
-    )
+    LOWER(TRIM(party)) IN ('', '-', '--', 'saknas', 'oberoende', 'ober', 'opol', 'opol.', 'partilös', 'partilos', 'utan partitillhörighet', 'parti saknas')
     OR LOWER(TRIM(party)) LIKE 'fd %'
     OR LOWER(TRIM(party)) LIKE '%, fd %'
     OR LOWER(TRIM(party)) LIKE '% fd %'
   );
 
-UPDATE politicians
-SET role = CASE
-  WHEN LOWER(role) LIKE '%gruppledare%' THEN 'Gruppledare'
-  WHEN LOWER(role) LIKE '%ordf%' THEN 'Ordförande'
-  WHEN LOWER(role) LIKE '%ledamot%' OR LOWER(TRIM(role)) = 'led' THEN 'Ledamot'
-  WHEN LOWER(role) LIKE '%ersätt%' OR LOWER(role) LIKE '%supple%' OR LOWER(TRIM(role)) = 'ers' THEN 'Ersättare'
-  ELSE role
-END
-WHERE area_type IN ('kommun', 'region', 'riksdag', 'eu')
-  AND role IS NOT NULL
-  AND TRIM(role) <> '';
+UPDATE politicians SET role = NULL WHERE role IS NOT NULL;
+UPDATE politician_assignments SET role = '' WHERE role <> '';
 """.strip()
 
 
 def wrangler(*args: str) -> None:
-    cmd = ["npx", "wrangler", *args]
     try:
-        subprocess.run(cmd, cwd=REPO_ROOT, check=True)
+        subprocess.run(["npx", "wrangler", *args], cwd=REPO_ROOT, check=True)
     except FileNotFoundError:
-        sys.exit("FEL: npx hittades inte. Kör jobben på servern där Wrangler redan används.")
+        sys.exit("FEL: npx hittades inte. Kör jobbet på servern där Wrangler används.")
     except subprocess.CalledProcessError as exc:
         sys.exit(exc.returncode)
 
@@ -132,29 +104,15 @@ def query(sql: str) -> None:
 def dry_run() -> None:
     print("=== D1 SANITERING: DRY-RUN ===")
     print("\nUtländska EU-rader som skulle tas bort:")
-    query(
-        f"SELECT area_name, COUNT(*) AS rows FROM politicians "
-        f"WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}' "
-        "GROUP BY area_name ORDER BY area_name;"
-    )
+    query(f"SELECT area_name, COUNT(*) AS rows FROM politicians WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}' GROUP BY area_name ORDER BY area_name;")
     print("\nIrrelevanta kommun-/regionuppdrag som skulle tas bort:")
-    query(
-        "SELECT area_type, role, COUNT(*) AS rows FROM politicians "
-        "WHERE area_type IN ('kommun','region') AND role IS NOT NULL "
-        f"AND {IRRELEVANT_ROLE_SQL} "
-        "GROUP BY area_type, role ORDER BY rows DESC, role;"
-    )
-    print("\nPartivärden före normalisering (vanligaste först):")
-    query(
-        "SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL "
-        "GROUP BY party ORDER BY rows DESC, party LIMIT 200;"
-    )
-    print("\nPolitiska rollvärden före normalisering:")
-    query(
-        "SELECT area_type, role, COUNT(*) AS rows FROM politicians "
-        "WHERE area_type IN ('kommun','region','riksdag','eu') AND role IS NOT NULL "
-        "GROUP BY area_type, role ORDER BY rows DESC, role LIMIT 150;"
-    )
+    query("SELECT area_type, role, COUNT(*) AS rows FROM politicians WHERE area_type IN ('kommun','region') AND role IS NOT NULL AND " + IRRELEVANT_ROLE_SQL + " GROUP BY area_type, role ORDER BY rows DESC, role;")
+    print("\nDetaljerade huvudroller som skulle rensas:")
+    query("SELECT COUNT(*) AS rows FROM politicians WHERE role IS NOT NULL AND TRIM(role) <> ''; ")
+    print("\nDetaljerade nämndroller som skulle rensas:")
+    query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE role <> ''; ")
+    print("\nPartivärden före normalisering:")
+    query("SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL GROUP BY party ORDER BY rows DESC, party LIMIT 200;")
     print("\nDRY-RUN: inga ändringar skrevs. Kör med --apply efter granskning.")
 
 
@@ -169,37 +127,20 @@ def apply() -> None:
         sql_path.unlink(missing_ok=True)
 
     print("\nEfterkontroll: utländska EU-rader (ska vara 0):")
-    query(
-        f"SELECT COUNT(*) AS rows FROM politicians "
-        f"WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}';"
-    )
-    print("\nEfterkontroll: irrelevanta kommun-/regionuppdrag (ska vara 0):")
-    query(
-        "SELECT COUNT(*) AS rows FROM politicians "
-        "WHERE area_type IN ('kommun','region') AND role IS NOT NULL "
-        f"AND {IRRELEVANT_ROLE_SQL};"
-    )
+    query(f"SELECT COUNT(*) AS rows FROM politicians WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}';")
+    print("\nEfterkontroll: detaljerade huvudroller (ska vara 0):")
+    query("SELECT COUNT(*) AS rows FROM politicians WHERE role IS NOT NULL AND TRIM(role) <> ''; ")
+    print("\nEfterkontroll: detaljerade nämndroller (ska vara 0):")
+    query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE role <> ''; ")
     print("\nEfterkontroll: kvarvarande EU-områden:")
     query("SELECT area_name, COUNT(*) AS rows FROM politicians WHERE area_type='eu' GROUP BY area_name;")
-    print("\nEfterkontroll: partier:")
-    query(
-        "SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL "
-        "GROUP BY party ORDER BY party;"
-    )
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply", action="store_true", help="Verkställ saniteringen i politiker-eu.")
-    return parser.parse_args()
 
 
 def main() -> None:
-    args = parse_args()
-    if args.apply:
-        apply()
-    else:
-        dry_run()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--apply", action="store_true", help="Verkställ saniteringen i politiker-eu.")
+    args = parser.parse_args()
+    apply() if args.apply else dry_run()
 
 
 if __name__ == "__main__":
