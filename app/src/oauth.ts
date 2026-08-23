@@ -154,17 +154,45 @@ export async function handleOAuthCallback(
   return { accountId };
 }
 
-// Tillfälliga kompatibilitetsexporter för gamla routes i index.ts. Ingen av dem
-// erbjuder längre manuell kontolänkning. Automatisk koppling sker vid vanlig
-// Google/Microsoft-inloggning när e-postadressen matchar ett befintligt konto.
+export interface OAuthIdentitySummary {
+  provider: string;
+  provider_email: string | null;
+  created_at: number;
+}
+
+export async function getOAuthIdentities(env: Env, accountId: string): Promise<OAuthIdentitySummary[]> {
+  const { results } = await env.DB.prepare(
+    "SELECT provider, provider_email, created_at FROM oauth_identities WHERE account_id = ? AND provider IN ('google','microsoft') ORDER BY created_at ASC",
+  ).bind(accountId).all<OAuthIdentitySummary>();
+  return results;
+}
+
+export async function unlinkOAuthIdentity(env: Env, accountId: string, provider: string): Promise<void> {
+  if (!(provider in PROVIDERS)) throw new Error("Okänd eller avvecklad inloggningsleverantör");
+
+  const account = await env.DB.prepare("SELECT password_set_by_user FROM accounts WHERE id = ?")
+    .bind(accountId)
+    .first<{ password_set_by_user: number }>();
+  const identities = await getOAuthIdentities(env, accountId);
+  const hasUsablePassword = !!account?.password_set_by_user;
+  const targetExists = identities.some(identity => identity.provider === provider);
+  if (!targetExists) return;
+
+  if (!hasUsablePassword && identities.length <= 1) {
+    throw new Error("Det här är ditt enda inloggningssätt — sätt ett lösenord eller lägg till ett annat inloggningssätt innan du kopplar bort det");
+  }
+
+  await env.DB.prepare("DELETE FROM oauth_identities WHERE account_id = ? AND provider = ?")
+    .bind(accountId, provider)
+    .run();
+}
+
+// Kompatibilitetsexporter för gamla manuella länk-routes i index.ts. De ska inte
+// användas av UI:t; Google/Microsoft kopplas automatiskt vid vanlig inloggning.
 export function providerSharesLoginCallback(_provider: string): boolean { return false; }
 export function getLinkAuthorizeUrl(_provider: string, _env: Env, _state: string): string {
   throw new Error("Manuell kontolänkning är borttagen");
 }
 export async function handleOAuthLinkCallback(_provider: string, _env: Env, _code: string, _currentAccountId: string): Promise<void> {
-  throw new Error("Manuell kontolänkning är borttagen");
-}
-export async function getOAuthIdentities(_env: Env, _accountId: string): Promise<never[]> { return []; }
-export async function unlinkOAuthIdentity(_env: Env, _accountId: string, _provider: string): Promise<void> {
   throw new Error("Manuell kontolänkning är borttagen");
 }
