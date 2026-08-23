@@ -3,36 +3,47 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#161826">
+  <meta name="theme-color" content="#11131c">
+  <meta name="color-scheme" content="dark">
   <title>Politikerkontakt</title>
+  <meta name="description" content="Kontakta folkvalda från ditt eget e-postkonto.">
   <link rel="stylesheet" href="/nocturne.css">
   <link rel="stylesheet" href="/politiker.css">
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
-  <header id="app-header" hidden>
-    <nav class="nav app-nav" aria-label="Huvudnavigering">
-      <a class="nav-brand" href="#home">Politikerkontakt</a>
-      <div id="primary-nav" class="app-nav-links"></div>
-      <button id="menu-button" class="btn btn-secondary btn-icon" type="button" aria-label="Öppna meny">☰</button>
-    </nav>
+  <header id="app-header" class="site-header" hidden>
+    <div class="site-header__inner">
+      <a class="brand" href="#home" aria-label="Politikerkontakt – startsida">
+        <span class="brand__mark" aria-hidden="true">P</span>
+        <span>Politikerkontakt</span>
+      </a>
+      <nav id="primary-nav" class="primary-nav" aria-label="Huvudnavigering"></nav>
+      <button id="menu-button" class="button button--quiet menu-button" type="button" aria-label="Öppna meny" aria-expanded="false">Meny</button>
+    </div>
   </header>
-  <div id="global-notices" class="app-notices" aria-live="polite"></div>
+
+  <div id="global-notices" class="notice-host" aria-live="polite"></div>
   <main id="root"></main>
-  <div id="mobile-menu" class="dialog-backdrop app-mobile-menu" hidden>
-    <nav class="dialog app-mobile-dialog" aria-label="Mobilmeny">
-      <div class="dialog-title">Meny</div>
-      <div id="mobile-nav" class="app-menu-list"></div>
-      <div class="dialog-actions"><button id="mobile-close" class="btn btn-secondary" type="button">Stäng</button></div>
-    </nav>
+
+  <div id="mobile-menu" class="overlay" hidden>
+    <button class="overlay__scrim" type="button" data-close-menu aria-label="Stäng meny"></button>
+    <aside class="sheet" aria-label="Meny">
+      <div class="sheet__head"><strong>Meny</strong><button class="button button--quiet" type="button" data-close-menu>Stäng</button></div>
+      <nav id="mobile-nav" class="mobile-nav"></nav>
+    </aside>
   </div>
-  <div id="modal" class="dialog-backdrop" hidden>
-    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div id="modal-title" class="dialog-title"></div>
-      <div id="modal-body" class="dialog-body"></div>
-      <div class="dialog-actions"><button id="modal-close" class="btn btn-secondary" type="button">Stäng</button></div>
+
+  <div id="modal" class="overlay overlay--center" hidden>
+    <button class="overlay__scrim" type="button" data-close-modal aria-label="Stäng dialog"></button>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal__head"><h2 id="modal-title"></h2><button class="button button--quiet" type="button" data-close-modal>Stäng</button></div>
+      <div id="modal-body"></div>
     </section>
   </div>
-  <script type="module" src="/app.js"></script>
+
+  <script src="/app.js" defer></script>
+  <script src="/app-send.js" defer></script>
+  <script src="/app-settings.js" defer></script>
+  <script src="/app-admin.js" defer></script>
 </body>
 </html>
