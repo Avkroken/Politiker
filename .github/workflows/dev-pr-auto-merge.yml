@@ -18,4 +18,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge "$PR_URL" --auto --merge
+        # Repot tillåter squash men inte merge commits. --merge gjorde att
+        # auto-merge-jobbet föll direkt med UNPROCESSABLE och lämnade PR:er
+        # öppna trots gröna required checks.
+        run: gh pr merge "$PR_URL" --auto --squash
