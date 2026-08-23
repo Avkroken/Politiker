@@ -27,6 +27,8 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Cross-Origin-Resource-Policy": "same-origin",
 };
 
 function json(data: unknown, status = 200): Response {
@@ -73,9 +75,33 @@ async function upgradeOAuthSession(req: Request, env: Env, response: Response): 
   try { await writeSession(env, token, raw, Date.now()); }
   catch (error) { await env.SESSIONS.delete(`session:${token}`).catch(() => {}); throw error; }
 }
-function withSecurityHeaders(response: Response): Response {
+function applyCachePolicy(headers: Headers, pathname: string): void {
+  if (pathname.startsWith("/api/")) {
+    headers.set("Cache-Control", "no-store");
+    return;
+  }
+  if (pathname === "/recipient-meta.json") {
+    headers.set("Cache-Control", "public, max-age=300, stale-while-revalidate=86400");
+    return;
+  }
+  if (/\.(?:js|css)$/.test(pathname)) {
+    // Filnamnen är ännu inte innehållshashade, därför kort browser-TTL med
+    // lång stale-while-revalidate i stället för immutable.
+    headers.set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+    return;
+  }
+  if (/\.(?:svg|png|webp|ico)$/.test(pathname)) {
+    headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
+    return;
+  }
+  // HTML ska alltid kunna revalideras så deployer syns direkt utan att
+  // användaren behöver rensa cache eller ladda om hårt.
+  headers.set("Cache-Control", "no-cache");
+}
+function withSecurityHeaders(response: Response, pathname: string): Response {
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
+  applyCachePolicy(headers, pathname);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
@@ -84,29 +110,29 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
   const bearer = req.headers.get("Authorization")?.startsWith("Bearer ") === true;
   if (bearer && url.pathname.startsWith("/api/") && !apiKeyRouteAllowed(req.method, url.pathname)) {
     const session = await getSessionContext(env, getCookie(req, "session"));
-    if (!session) return withSecurityHeaders(json({ error: "API-nyckeln saknar behörighet för den här operationen" }, 403));
+    if (!session) return withSecurityHeaders(json({ error: "API-nyckeln saknar behörighet för den här operationen" }, 403), url.pathname);
   }
   if (needsFreshSession(req.method, url.pathname)) {
     const session = await getSessionContext(env, getCookie(req, "session"));
-    if (!session) return withSecurityHeaders(json({ error: "Den här säkerhetsändringen kräver en vanlig webbsession" }, 403));
-    if (Date.now() - session.authenticatedAt > FRESH_AUTH_MS) return withSecurityHeaders(json({ error: "Logga ut och in igen innan du ändrar kontots säkerhetsinställningar" }, 403));
+    if (!session) return withSecurityHeaders(json({ error: "Den här säkerhetsändringen kräver en vanlig webbsession" }, 403), url.pathname);
+    if (Date.now() - session.authenticatedAt > FRESH_AUTH_MS) return withSecurityHeaders(json({ error: "Logga ut och in igen innan du ändrar kontots säkerhetsinställningar" }, 403), url.pathname);
   }
   if (req.method === "POST" && (url.pathname === "/api/feedback" || url.pathname === "/api/client-error")) {
     const maxBytes = url.pathname === "/api/feedback" ? 64 * 1024 : 32 * 1024;
     const contentLength = Number(req.headers.get("Content-Length") ?? 0);
-    if (Number.isFinite(contentLength) && contentLength > maxBytes) return withSecurityHeaders(json({ error: "För stor begäran" }, 413));
-    if (!(await allowPublicWrite(req, env, url.pathname))) return withSecurityHeaders(json({ error: "För många anrop — försök igen senare" }, 429));
+    if (Number.isFinite(contentLength) && contentLength > maxBytes) return withSecurityHeaders(json({ error: "För stor begäran" }, 413), url.pathname);
+    if (!(await allowPublicWrite(req, env, url.pathname))) return withSecurityHeaders(json({ error: "För många anrop — försök igen senare" }, 429), url.pathname);
   }
   if (req.method === "POST" && url.pathname === "/api/send") {
     const contentLength = Number(req.headers.get("Content-Length") ?? 0);
     if (Number.isFinite(contentLength) && contentLength > MAX_SEND_REQUEST_BYTES) {
-      return withSecurityHeaders(json({ error: "Utskicket innehåller för mycket data" }, 413));
+      return withSecurityHeaders(json({ error: "Utskicket innehåller för mycket data" }, 413), url.pathname);
     }
   }
   const response = await baseApp.fetch(req, env, ctx);
   try { await upgradeOAuthSession(req, env, response); }
-  catch { return withSecurityHeaders(json({ error: "Kontot kunde inte skapa en giltig session" }, 403)); }
-  return withSecurityHeaders(response);
+  catch { return withSecurityHeaders(json({ error: "Kontot kunde inte skapa en giltig session" }, 403), url.pathname); }
+  return withSecurityHeaders(response, url.pathname);
 }
 
 export default {
