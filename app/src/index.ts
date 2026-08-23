@@ -169,26 +169,7 @@ async function handleRequest(req: Request, env: Env, url: URL): Promise<Response
     if(url.pathname==="/api/logout"&&req.method==="POST"){if(sessionToken)await env.SESSIONS.delete(`session:${sessionToken}`);const resp=json({ok:true});resp.headers.set("Set-Cookie","session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");return resp;}
     if(url.pathname==="/api/request-password-reset"&&req.method==="POST"){const{email,turnstileToken}=await req.json<{email:string;turnstileToken?:string}>();if(!(await verifyTurnstile(env.TURNSTILE_SECRET,turnstileToken,req.headers.get("CF-Connecting-IP"))))return json({error:"Bekräfta att du inte är en robot och försök igen."},400);await requestPasswordReset(env,email);return json({ok:true});}
     if(url.pathname==="/api/reset-password"&&req.method==="POST"){const{token,newPassword}=await req.json<{token:string;newPassword:string}>();await resetPassword(env,token,newPassword);return json({ok:true});}
-    if(url.pathname==="/api/me"&&req.method==="GET"){
-      if(!account){
-        console.log({event:"api_me",loggedIn:false});
-        return json({loggedIn:false});
-      }
-      console.log({
-        event:"api_me",
-        accountId:account.id,
-        dbIsAdmin:account.is_admin,
-        isAdmin:!!account.is_admin,
-        totpEnabled:!!account.totp_enabled
-      });
-      return json({
-        loggedIn:true,
-        email:account.email,
-        dailySendCap:account.daily_send_cap,
-        isAdmin:!!account.is_admin,
-        totpEnabled:!!account.totp_enabled
-      });
-    }
+    if(url.pathname==="/api/me"&&req.method==="GET"){if(!account)return json({loggedIn:false});return json({loggedIn:true,email:account.email,dailySendCap:account.daily_send_cap,isAdmin:!!account.is_admin,totpEnabled:!!account.totp_enabled});}
     if(url.pathname==="/api/feedback"&&req.method==="POST"){const{message,context,type,replyTo}=await req.json<{message:string;context?:Record<string,unknown>;type?:"bug"|"contact";replyTo?:string}>();return json(await submitFeedback(env,{accountId:account?(account.id as string):null,message,context,type,replyTo}));}
     if(url.pathname==="/api/client-error"&&req.method==="POST"){const{message,stack,url:pageUrl}=await req.json<{message?:string;stack?:string;url?:string}>();if(message)await reportClientError(env,{message,stack,url:pageUrl});return json({ok:true});}
     if(!account)return json({error:"Inte inloggad"},401);
