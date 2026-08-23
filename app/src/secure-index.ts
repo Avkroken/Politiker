@@ -21,6 +21,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "frame-src https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
+    "form-action 'self'",
     "frame-ancestors 'none'",
     "upgrade-insecure-requests",
   ].join("; "),
@@ -51,6 +52,13 @@ function needsFreshSession(method: string, pathname: string): boolean {
   if (method === "DELETE" && (/^\/api\/api-keys\/[^/]+$/.test(pathname) || /^\/api\/oauth-identities\/[a-z]+$/.test(pathname) || /^\/api\/mail-credentials\/[^/]+$/.test(pathname))) return true;
   if (method === "GET" && /^\/api\/(?:oauth-link\/[a-z]+|oauth-mail\/microsoft)\/start$/.test(pathname)) return true;
   return false;
+}
+function isCrossSiteMutation(req: Request, url: URL, bearer: boolean): boolean {
+  if (bearer || !url.pathname.startsWith("/api/") || ["GET", "HEAD", "OPTIONS"].includes(req.method)) return false;
+  const fetchSite = req.headers.get("Sec-Fetch-Site");
+  if (fetchSite === "cross-site") return true;
+  const origin = req.headers.get("Origin");
+  return origin !== null && origin !== url.origin;
 }
 async function takeRateLimit(env: Env, key: string, capacity: number, refillPerMinute: number): Promise<boolean> {
   const id = env.RATE_LIMITER.idFromName(`web-abuse:${key}`);
@@ -108,6 +116,9 @@ function withSecurityHeaders(response: Response, pathname: string): Response {
 async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(req.url);
   const bearer = req.headers.get("Authorization")?.startsWith("Bearer ") === true;
+  if (isCrossSiteMutation(req, url, bearer)) {
+    return withSecurityHeaders(json({ error: "Cross-site-begäran blockerad" }, 403), url.pathname);
+  }
   if (bearer && url.pathname.startsWith("/api/") && !apiKeyRouteAllowed(req.method, url.pathname)) {
     const session = await getSessionContext(env, getCookie(req, "session"));
     if (!session) return withSecurityHeaders(json({ error: "API-nyckeln saknar behörighet för den här operationen" }, 403), url.pathname);
