@@ -3,4 +3,7 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
+  Cross-Origin-Opener-Policy: same-origin
+  Origin-Agent-Cluster: ?1
+  X-Permitted-Cross-Domain-Policies: none
   Strict-Transport-Security: max-age=31536000; includeSubDomains
