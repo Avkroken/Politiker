@@ -1,9 +1,0 @@
-.feedback-ticket{width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:var(--surface-2,transparent);border:1px solid var(--border,#34384b);}
-.feedback-ticket:hover,.feedback-ticket:focus-visible{border-color:var(--accent,#9b87f5);outline:none;}
-.feedback-chevron{font-size:2rem;line-height:1;color:var(--muted,#9b9baa);padding-left:.75rem;}
-.feedback-badge{display:inline-flex;margin-top:.75rem;padding:.3rem .65rem;border:1px solid var(--accent,#9b87f5);border-radius:999px;color:var(--accent,#9b87f5);font-size:.85rem;}
-.feedback-reply-link{display:block;text-align:center;text-decoration:none;}
-.feedback-detail p{overflow-wrap:anywhere;}
-.feedback-controls{margin-bottom:14px;justify-content:flex-end;}
-.feedback-detail-actions{justify-content:space-between;align-items:center;}
-@media(max-width:560px){.feedback-controls,.feedback-detail-actions{display:grid;grid-template-columns:1fr}.feedback-controls button,.feedback-detail-actions button{width:100%}}

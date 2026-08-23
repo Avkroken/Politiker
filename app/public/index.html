@@ -1,52 +1,49 @@
 <!doctype html>
-<html lang="sv" data-theme="dark">
+<html lang="sv">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0f1115">
+  <meta name="theme-color" content="#11131c">
+  <meta name="color-scheme" content="dark">
   <title>Politikerkontakt</title>
-  <link rel="stylesheet" href="/v2.css">
-  <link rel="stylesheet" href="/v2-polish.css">
-  <link rel="stylesheet" href="/mobile-fixes.css">
-  <link rel="stylesheet" href="/ux-safety.css">
-  <link rel="stylesheet" href="/feedback.css">
-  <script src="/route-bootstrap.js"></script>
-  <script src="/ui-inputs.js" defer></script>
-  <script src="/auth-ui.js" defer></script>
-  <script src="/totp-ios.js" defer></script>
-  <script src="/auth-cleanup.js" defer></script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <script src="/ux-safety.js" defer></script>
-  <script src="/feedback-ui.js" defer></script>
+  <meta name="description" content="Kontakta folkvalda från ditt eget e-postkonto.">
+  <link rel="stylesheet" href="/nocturne.css">
+  <link rel="stylesheet" href="/politiker.css">
 </head>
 <body>
-  <header class="app-header" id="app-header" hidden>
-    <div class="header-inner">
-      <a class="brand" href="#home" aria-label="Till startsidan"><span class="brand-mark" aria-hidden="true">🇸🇪</span><span>Politikerkontakt</span></a>
-      <nav class="desktop-nav" id="desktop-nav" aria-label="Huvudnavigering"></nav>
-      <button class="menu-button" id="menu-button" type="button" aria-label="Öppna meny">☰</button>
+  <header id="app-header" class="site-header" hidden>
+    <div class="site-header__inner">
+      <a class="brand" href="#home" aria-label="Politikerkontakt – startsida">
+        <span class="brand__mark" aria-hidden="true">P</span>
+        <span>Politikerkontakt</span>
+      </a>
+      <nav id="primary-nav" class="primary-nav" aria-label="Huvudnavigering"></nav>
+      <button id="menu-button" class="button button--quiet menu-button" type="button" aria-label="Öppna meny" aria-expanded="false">Meny</button>
     </div>
   </header>
-  <div class="global-notices" id="global-notices" aria-live="polite"></div>
+
+  <div id="global-notices" class="notice-host" aria-live="polite"></div>
   <main id="root"></main>
-  <aside class="drawer" id="drawer" aria-label="Meny">
-    <div class="drawer-backdrop" id="drawer-backdrop"></div>
-    <div class="drawer-panel">
-      <div class="drawer-head"><strong>Meny</strong><button class="drawer-close" id="drawer-close" type="button" aria-label="Stäng meny">×</button></div>
-      <nav class="drawer-nav" id="drawer-nav"></nav>
-      <div class="drawer-section"><p class="drawer-label">Utseende</p><div class="theme-row"><button class="secondary" data-theme-choice="dark">Mörkt</button><button class="secondary" data-theme-choice="light">Ljust</button></div></div>
-      <div class="drawer-section"><p class="drawer-label">Information & stöd</p><a class="drawer-btn" href="/faq.html">FAQ</a><button class="drawer-btn" type="button" data-feedback-open>Kontakt & feedback</button><a class="drawer-btn" href="https://klarsprak.denied.se" target="_blank" rel="noopener">Klarspråk</a></div>
-      <div class="drawer-section"><button class="drawer-btn" id="logout-btn" type="button">Logga ut</button></div>
-    </div>
-  </aside>
-  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-backdrop" id="modal-backdrop"></div>
-    <div class="modal-card">
-      <div class="credential-head"><h2 id="modal-title"></h2><button class="ghost" id="modal-close" type="button" aria-label="Stäng">Stäng</button></div>
-      <div id="modal-body"></div>
-    </div>
+
+  <div id="mobile-menu" class="overlay" hidden>
+    <button class="overlay__scrim" type="button" data-close-menu aria-label="Stäng meny"></button>
+    <aside class="sheet" aria-label="Meny">
+      <div class="sheet__head"><strong>Meny</strong><button class="button button--quiet" type="button" data-close-menu>Stäng</button></div>
+      <nav id="mobile-nav" class="mobile-nav"></nav>
+    </aside>
   </div>
-  <script src="/body-filters.js"></script>
-  <script type="module" src="/v2.js"></script>
+
+  <div id="modal" class="overlay overlay--center" hidden>
+    <button class="overlay__scrim" type="button" data-close-modal aria-label="Stäng dialog"></button>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal__head"><h2 id="modal-title"></h2><button class="button button--quiet" type="button" data-close-modal>Stäng</button></div>
+      <div id="modal-body"></div>
+    </section>
+  </div>
+
+  <script src="/app.js" defer></script>
+  <script src="/app-send.js" defer></script>
+  <script src="/app-settings.js" defer></script>
+  <script src="/app-admin.js" defer></script>
 </body>
 </html>
