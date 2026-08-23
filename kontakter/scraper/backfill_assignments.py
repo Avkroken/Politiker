@@ -44,7 +44,6 @@ EXCLUDED_BODY_TERMS = (
     "fullmäktige",
     "utskott",
     "beredning",
-    "råd",
     "nämndemän",
     "nämndeman",
     "vigselförrätt",
