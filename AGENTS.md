@@ -86,51 +86,67 @@ finns, innan pinnen släpps.
 
 Repositoryt har exakt två arbetsgrenar: `dev` och `main`. Skapa aldrig en tredje gren, inte ens tillfälligt. Allt utvecklingsarbete görs på `dev` och går via ett ändringsförslag från `dev` till `main`.
 
-En agent får ha exakt en aktiv koduppgift åt gången. Flera uppgifter är en kö, inte parallellt arbete. Nästa uppgift får inte påbörjas förrän den aktuella uppgiften är mergad eller uttryckligen blockerad av något agenten inte kan lösa själv.
+En agent får ha exakt en aktiv koduppgift åt gången. Flera uppgifter är en kö, inte parallellt arbete. Nästa uppgift får inte påbörjas förrän den aktuella uppgiften är mergad eller stängd.
 
-Arbeta lokalt så långt det är praktiskt innan du pushar. Samla sammanhängande ändringar, testfixar och följdjusteringar i meningsfulla batcher i stället för att pusha varje liten edit och därmed starta om CI i onödan. När en PR redan kör CI får du fortsätta analysera, testa och förbättra samma uppgift lokalt. Push endast när du har en ny sammanhängande batch som faktiskt behöver valideras. CI-väntan är aldrig ett skäl att börja på nästa uppgift.
+### PR-lås: `dev` är fryst medan PR är öppen
+
+En öppen `dev` → `main`-PR innebär ett absolut stopp för alla nya ändringar på `dev`. Från det ögonblick PR:n skapas tills den är mergad eller stängd ska agenten behandla `dev` som skrivskyddad.
+
+Under en öppen PR är följande förbjudet utan undantag:
+
+- nya commits eller pushar till `dev`, även för samma uppgift
+- CI-fixar, review-fixar, dokumentationsändringar, cleanup eller "små sista ändringar"
+- att börja nästa uppgift eller förbereda ändringar på `dev`
+- att ändra PR-headen, force-pusha, rebase:a eller på annat sätt modifiera den öppna PR:n
+- att smyga in orelaterade eller sena ändringar i en redan påbörjad PR
+
+Om CI eller review visar att kod måste ändras ska den öppna PR:n **inte** fyllas på. Stäng PR:n, gör nödvändiga ändringar först när ingen `dev` → `main`-PR längre är öppen, testa om hela batchen och öppna därefter en ny PR.
 
 För varje uppgift:
 
-1. Synka `dev` med `main`. Om `dev` redan innehåller ofärdigt arbete, slutför det först.
-2. Implementera och testa den aktuella uppgiften lokalt på `dev`; samla ändringar i så stora sammanhängande batcher som är rimliga.
-3. Commit och push till `dev`, skapa eller uppdatera exakt ett PR `dev` → `main`, och aktivera auto-merge.
-4. Medan CI/review pågår: fortsätt endast lokalt med samma uppgift. Lös relevanta fel och kommentarer och pusha dem samlat, inte en i taget. Efter varje push som ändrar PR-headen, och särskilt efter den sista pushen, verifiera uttryckligen att auto-merge fortfarande är aktiverad; återaktivera den om head-ändringen slog av den.
-5. När PR:n är mergad, synka `dev` till `main`. Först därefter får nästa uppgift börja.
+1. Kontrollera att ingen `dev` → `main`-PR är öppen och synka `dev` med `main`.
+2. Implementera hela uppgiften, inklusive tester, dokumentation och rimliga följdjusteringar, innan något pushas.
+3. Commit och push till `dev` en gång när uppgiften är redo för CI/granskning.
+4. Skapa PR `dev` → `main` och aktivera auto-merge omedelbart. Med GitHub CLI: `gh pr create --base main --head dev --fill` följt direkt av `gh pr merge --auto`.
+5. När PR:n är mergad eller stängd, synka `dev` med `main`. Först därefter får nästa ändring göras.
 
-Om uppgiften blockeras av en extern åtgärd som agenten faktiskt inte kan utföra, dokumentera den exakta blockeraren och stanna. Börja inte en annan koduppgift utan uttrycklig instruktion från användaren.
+CI-väntan är aldrig ett skäl att börja eller pusha något annat. Om en ny idé, dokumentationsfix eller annan uppgift uppstår medan PR:n är öppen ska den bara noteras och vänta.
+
+## Minsta behörighet och minsta komplexitet
+
+Behörigheter är en begränsad resurs, inte en bekvämlighetsfunktion. En agent ska arbeta med minsta nödvändiga rättighet och får inte föreslå bredare access, admin eller root som standardlösning på ett problem.
+
+Om en uppgift verkligen blockeras av behörighet ska agenten ange exakt vilken operation som nekades, vilken minsta specifika permission som krävs och varför. Begär inte generell admin/root när en smalare rättighet eller korrekt metod löser uppgiften.
+
+Föredra den enklaste befintliga mekanismen som löser problemet. Skapa inte nya repos, tjänster, wrappers, daemons, specialflöden eller hjälpprogram för att kringgå en normal mekanism utan ett konkret, dokumenterat behov. Ny infrastruktur måste motiveras av ett verkligt problem, inte av abstrakt "best practice".
+
+Om en lösning kräver flera nya komponenter för att undvika en direkt standardmetod ska agenten först ompröva angreppssättet.
 
 ## Tillåtet
-- Ändra kod på `dev`
-- Köra lokala tester och analyser
+- Ändra kod på `dev` endast när ingen `dev` → `main`-PR är öppen
+- Köra lokala tester och analyser utan att ändra den öppna PR:n
 - Öppna ändringsförslag endast från `dev` till `main`
-- Rätta CI- och reviewproblem för den aktiva uppgiften tills PR:n kan mergas
+- Rapportera blockerare och vänta tills aktuell PR är avslutad
 
 ## Förbjudet
 - Skapa andra grenar än `dev` och `main`
-- Arbeta parallellt på flera koduppgifter
-- Börja nästa uppgift medan den aktuella PR:n fortfarande är öppen eller blockerad
+- Commit eller push till `dev` medan en `dev` → `main`-PR är öppen
+- Arbeta parallellt på flera koduppgifter eller smyga in sena ändringar
 - Skicka ändringar direkt till `main` eller `master`
-- Radera grenar
-- Stänga av arbetsflöden
-- Ändra hemligheter
-- Ändra inställningar för GitHub-organisationen
-- Tvinga igenom en push eller kringgå branch protection/rulesets
+- Radera grenar, stänga av arbetsflöden eller kringgå branch protection/rulesets
+- Ändra hemligheter eller organisationsinställningar utan uttrycklig instruktion
+- Begära eller använda bredare admin/root-behörighet som bekvämlighetslösning
 
 ## Krav
 - Överlämna kodändringar endast på `dev`
-- Alla relevanta tester måste godkännas
-- Håll varje ändringsförslag avgränsat till en uppgift
-- Arbeta lokalt så mycket som möjligt och undvik onödigt täta pushar som startar om CI
-- Ta aldrig med orelaterade ändringar
-- Överlämna aldrig inloggningsuppgifter eller andra hemligheter till versionshistoriken
-- Skapa ändringsförslag som klara för granskning, aldrig som utkast
-- Aktivera automatisk sammanfogning med en metod som tillåts av förrådets regler direkt efter att ändringsförslaget skapats
-- Efter varje push som ändrar PR-headen: verifiera att automatisk sammanfogning fortfarande är aktiv och återaktivera den vid behov
-- Automatisk sammanfogning får slutföras först när alla regelkrav och kontrollkörningar har godkänts
-- Om CI, review eller auto-merge blockerar leveransen: lös blockeraren för den aktiva uppgiften innan annat kodarbete påbörjas
-- Om automatisk sammanfogning inte kan aktiveras: rapportera det exakta felet
-- Efter merge: synka `dev` till `main` innan nästa uppgift
+- Alla relevanta tester och tillhörande dokumentationsändringar ska vara klara före push/PR
+- Håll varje ändringsförslag avgränsat till exakt en uppgift
+- Ta aldrig med orelaterade ändringar eller överlämna hemligheter till versionshistoriken
+- Skapa PR som klar för granskning, aldrig som utkast, och aktivera auto-merge omedelbart
+- Ändra aldrig PR-headen efter att PR:n öppnats; stäng och ersätt PR:n om kod måste ändras
+- Auto-merge får slutföras först när alla regelkrav och kontrollkörningar har godkänts
+- Om auto-merge inte kan aktiveras: rapportera det exakta felet, men ändra inte `dev` medan PR:n är öppen
+- Efter merge eller stängning: synka `dev` till `main` innan nästa uppgift
 
 ## Svarsformat
 
