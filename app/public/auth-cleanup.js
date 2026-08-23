@@ -2,7 +2,6 @@
   function removeObsoleteAuthUi() {
     document.querySelectorAll('a[href^="/api/oauth/github/"]').forEach(el => el.remove());
     document.querySelectorAll('a[href^="/api/oauth-link/"]').forEach(el => el.remove());
-    document.querySelectorAll('#oauth-list').forEach(el => el.remove());
 
     document.querySelectorAll('.oauth-grid').forEach(grid => {
       if (!grid.querySelector('a')) grid.remove();
