@@ -1,5 +1,5 @@
 import { randomId, hashPassword } from "../../shared/crypto";
-import { getAccountByEmail, type Env } from "./db";
+import type { Env } from "./db";
 
 interface ProviderConfig {
   authorizeUrl: string;
