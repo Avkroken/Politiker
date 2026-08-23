@@ -1,6 +1,5 @@
 const RECIPIENT_META_CACHE_KEY='politiker:recipient-meta:v1';
 const RECIPIENT_META_TTL_MS=6*60*60*1000;
-const recipientMetaApi=api;
 
 function readRecipientMetaCache(){
   try{
@@ -19,7 +18,7 @@ ensureRecipientData=async function(){
   const cached=readRecipientMetaCache();
   if(cached){state.areas=cached.areas;state.parties=cached.parties;state.roles=cached.roles;return}
   const [areas,parties,roles]=await Promise.all([
-    recipientMetaApi('/api/areas'),recipientMetaApi('/api/parties'),recipientMetaApi('/api/roles')
+    api('/api/areas'),api('/api/parties'),api('/api/roles')
   ]);
   state.areas=areas;state.parties=parties;state.roles=roles;
   writeRecipientMetaCache(areas,parties,roles);
@@ -44,9 +43,3 @@ function paintLocalRecipientCount(){
   const r=$('#review-count');if(r){r.textContent=`${estimate.approximate?'≈ ':''}${num(estimate.count)}`;r.title='Exakt antal fastställs när utskicket startas.'}
   return estimate.count;
 }
-
-recipientCount=async function(){return paintLocalRecipientCount()};
-api=async function(path,opts={}){
-  if(path==='/api/recipients/count')return{count:paintLocalRecipientCount(),approximate:true};
-  return recipientMetaApi(path,opts);
-};
