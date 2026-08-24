@@ -1,0 +1,12 @@
+{
+  "name": "politiker-log-archive",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260816.1",
+    "wrangler": "^4.125.0"
+  }
+}

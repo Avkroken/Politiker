@@ -5,6 +5,7 @@ Webbtjänst där användare kopplar sitt eget mailkonto och skickar personaliser
 ## Struktur och teknik
 
 - `app/` — Cloudflare Worker med `fetch`, `queue` och `scheduled`.
+- `log-archive/` — tail-konsument som arkiverar `app/`:s loggevent till R2. Kopplas in via `tail_consumers` i `app/wrangler.jsonc`.
 - `shared/` — delad validering, kryptering, SMTP och typer.
 - `infra/` — Cloudflare-provisionering och schema.
 - `kontakter/` — Python-skrapning, export och verifiering av kontaktdata.
