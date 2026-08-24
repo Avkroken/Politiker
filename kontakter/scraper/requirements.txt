@@ -5,7 +5,7 @@ requests>=2.34.2
 # hindrar en sårbar version. Golvet här stänger PYSEC-2026-215 /
 # GHSA-65pc-fj4g-8rjx (CVSS 6.9). Kan tas bort när requests själv kräver
 # minst 3.15.
-idna>=3.18
+idna>=3.19
 # Basimagen levererar Python-byggverktyg som Trivy också inventerar. Dessa
 # explicita golv uppgraderar de sårbara versionerna under imagebygget:
 # - setuptools <83.0.0: CVE-2026-59890; >=83 täcker även CVE-2025-47273
