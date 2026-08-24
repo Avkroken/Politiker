@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "politiker-log-archive",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-21",
+  "workers_dev": false,
+  // Ingen route och ingen cron: Workern anropas bara som tail-konsument.
+  // Kopplingen deklareras av producenten, i app/wrangler.jsonc:
+  //   "tail_consumers": [{ "service": "politiker-log-archive" }]
+  "r2_buckets": [
+    {
+      "binding": "LOGS",
+      "bucket_name": "politiker-worker-logs"
+    }
+  ]
+}

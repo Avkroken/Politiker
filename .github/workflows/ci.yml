@@ -1,6 +1,9 @@
 name: Node typecheck & Python tests
 
 on:
+  # Merge-kön skickar merge_group.checks_requested. Utan den här
+  # triggern svarar inget jobb och kön fastnar tills timeout.
+  merge_group:
   push:
     branches: [main]
   pull_request:
@@ -32,13 +35,12 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        worker: [app]
+    # Ingen matris: en matris med ett enda värde gör check-kontexten
+    # "typecheck (app)" i stället för "typecheck", och rulesetet tappar
+    # kravet så fort matrisen ändras.
     defaults:
       run:
-        working-directory: ${{ matrix.worker }}
+        working-directory: app
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

@@ -6,6 +6,9 @@ name: Docker build & Trivy
 # att vi behöver göra ett dyrt, irrelevant Dockerbygge.
 
 on:
+  # Merge-kön skickar merge_group.checks_requested. Utan den här
+  # triggern svarar inget jobb och kön fastnar tills timeout.
+  merge_group:
   push:
     branches: [main]
     paths:
