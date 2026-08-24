@@ -1,5 +1,6 @@
 import { randomId } from "../../shared/crypto";
 import { canonicalRole } from "./roles";
+import { isIrrelevantRecipientRole } from "./recipient-roles";
 import type { EmailSendBinding } from "../../shared/types";
 
 export interface Env {
@@ -52,12 +53,6 @@ export async function listRoles(db:D1Database){
   return [...merged.values()].sort((a,b)=>b.count-a.count);
 }
 async function rawRolesForCanonicalKeys(db:D1Database,keys:string[]):Promise<string[]>{if(!keys.length)return[];const wanted=new Set(keys);const{results}=await db.prepare("SELECT DISTINCT role FROM politicians WHERE role IS NOT NULL AND TRIM(role) != ''").all<{role:string}>();return results.filter(r=>wanted.has(canonicalRole(r.role).key)).map(r=>r.role);}
-
-export function isIrrelevantRecipientRole(areaType:string,role:string|null):boolean{
-  if((areaType!=="kommun"&&areaType!=="region")||!role?.trim())return false;
-  const r=role.trim().toLocaleLowerCase("sv-SE");
-  return r.includes("revisor")||r.includes("nämndeman")||r.includes("nämndemän")||r.includes("vigselförrätt")||r.includes("partnerskapsförrätt")||r==="god man"||r.startsWith("gode män");
-}
 
 export interface PoliticianSearchHit{name:string;email:string;affiliations:{role:string|null;area_name:string;party:string|null}[]}
 const AFF_SEP="\x1e",FIELD_SEP="\x1f";
