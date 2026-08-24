@@ -1,18 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { isIrrelevantRecipientRole } from '../src/recipient-roles.ts';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, '..', 'src', 'db.ts'), 'utf8');
+test('irrelevant municipal and regional roles are rejected', () => {
+  const blockedRoles = [
+    'Revisor',
+    'Kommunrevisor',
+    'Nämndeman',
+    'Nämndemän',
+    'Vigselförrättare',
+    'Partnerskapsförrättare',
+    'God man',
+    'Gode män i förmynderskapsärenden',
+  ];
 
-test('irrelevant municipal and regional roles are rejected at send selection', () => {
-  assert.match(source, /isIrrelevantRecipientRole/);
-  assert.match(source, /r\.includes\("revisor"\)/);
-  assert.match(source, /r\.includes\("nämndeman"\)/);
-  assert.match(source, /r\.includes\("vigselförrätt"\)/);
-  assert.match(source, /r===\"god man\"/);
-  assert.match(source, /SELECT name,email,area_name,area_type,role FROM politicians/);
-  assert.match(source, /if\(!isIrrelevantRecipientRole\(r\.area_type,r\.role\)\)byEmail\.set/);
+  for (const areaType of ['kommun', 'region']) {
+    for (const role of blockedRoles) {
+      assert.equal(isIrrelevantRecipientRole(areaType, role), true, `${areaType}: ${role}`);
+    }
+  }
+});
+
+test('legitimate municipal and regional roles are kept', () => {
+  for (const role of ['Ledamot', 'Ordförande', 'Kommunalråd', 'Regionråd']) {
+    assert.equal(isIrrelevantRecipientRole('kommun', role), false, role);
+    assert.equal(isIrrelevantRecipientRole('region', role), false, role);
+  }
+});
+
+test('role filtering does not affect EU, media, or missing roles', () => {
+  assert.equal(isIrrelevantRecipientRole('eu', 'Revisor'), false);
+  assert.equal(isIrrelevantRecipientRole('media', 'Nämndeman'), false);
+  assert.equal(isIrrelevantRecipientRole('kommun', null), false);
+  assert.equal(isIrrelevantRecipientRole('region', '   '), false);
 });
