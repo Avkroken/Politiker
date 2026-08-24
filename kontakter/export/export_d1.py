@@ -10,6 +10,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 import sys
 from collections import Counter
 
@@ -18,6 +19,43 @@ from d1 import D1Client  # noqa: E402
 
 FIELDS = ["name", "email", "area_name", "area_type", "party", "role"]
 PAGE = 5000
+SWEDISH_EU_AREA = "Europaparlamentet (Sverige)"
+VICE_ONLY = re.compile(r"^\d+\s*[:.]?\s*[ae]?\s*vice$")
+
+
+def canonical_role(raw: str) -> tuple[str, str]:
+    """Matcha app/src/roles.ts så statisk metadata och D1-API använder samma nycklar."""
+    s = raw.strip().lower()
+    if "ordf" in s or VICE_ONLY.match(s):
+        return "ordförande", "Ordförande"
+    if "gruppledare" in s:
+        return "gruppledare", "Gruppledare"
+    if "ledamot" in s or "ledamöter" in s or s == "led":
+        return "ledamot", "Ledamot"
+    if "ersätt" in s or "supple" in s or s == "ers":
+        return "ersättare", "Ersättare"
+    return "övrigt", "Övrigt"
+
+
+def is_publishable_row(row: dict) -> bool:
+    """Förhindra att kända stale/irrelevanta D1-rader publiceras mellan saniteringar."""
+    area_type = (row.get("area_type") or "").strip().lower()
+    area_name = (row.get("area_name") or "").strip()
+    role = (row.get("role") or "").strip().lower()
+    if area_type == "eu" and area_name != SWEDISH_EU_AREA:
+        return False
+    if area_type in {"kommun", "region"} and role:
+        if (
+            "revisor" in role
+            or "nämndeman" in role
+            or "nämndemän" in role
+            or "vigselförrätt" in role
+            or "partnerskapsförrätt" in role
+            or role == "god man"
+            or role.startswith("gode män")
+        ):
+            return False
+    return True
 
 
 def fetch_all(client: D1Client) -> list[dict]:
@@ -38,7 +76,7 @@ def fetch_all(client: D1Client) -> list[dict]:
             )
             params = list(last)
         page = client.query(sql, params, timeout=60)
-        rows.extend(page)
+        rows.extend(r for r in page if is_publishable_row(r))
         if len(page) < PAGE:
             break
         tail = page[-1]
@@ -56,8 +94,10 @@ def sqlesc(val) -> str:
 def recipient_meta(rows: list[dict]) -> dict:
     areas = Counter()
     parties = Counter()
-    roles = Counter()
+    roles: dict[str, dict[str, str | int]] = {}
     for r in rows:
+        if not is_publishable_row(r):
+            continue
         area_name = (r.get("area_name") or "").strip()
         area_type = (r.get("area_type") or "").strip()
         party = (r.get("party") or "").strip()
@@ -67,7 +107,9 @@ def recipient_meta(rows: list[dict]) -> dict:
             if party:
                 parties[(area_type, area_name, party)] += 1
         if role:
-            roles[role] += 1
+            key, label = canonical_role(role)
+            entry = roles.setdefault(key, {"role": label, "role_key": key, "count": 0, "kind": "role"})
+            entry["count"] = int(entry["count"]) + 1
     return {
         "version": 1,
         "areas": [
@@ -78,14 +120,12 @@ def recipient_meta(rows: list[dict]) -> dict:
             {"area_type": t, "area_name": n, "party": p, "count": c}
             for (t, n, p), c in sorted(parties.items())
         ],
-        "roles": [
-            {"role": role, "role_key": role.strip().lower(), "count": count, "kind": "role"}
-            for role, count in sorted(roles.items(), key=lambda x: (-x[1], x[0].lower()))
-        ],
+        "roles": sorted(roles.values(), key=lambda x: (-int(x["count"]), str(x["role"]))),
     }
 
 
 def write_outputs(rows: list[dict], outdir: str) -> None:
+    rows = [r for r in rows if is_publishable_row(r)]
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, "politiker.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS); w.writeheader()
