@@ -1,12 +1,5 @@
 name,email,area_name,area_type,party,role
-Assita Kanko,assita.kanko@europarl.europa.eu,Europaparlamentet (Belgien),eu,ECR,Ledamot
-Barbara Bonte,barbara.bonte@europarl.europa.eu,Europaparlamentet (Belgien),eu,PfE,Ledamot
-Benoit Cassart,benoit.cassart@europarl.europa.eu,Europaparlamentet (Belgien),eu,Renew,Ledamot
-Bruno Tobback,bruno.tobback@europarl.europa.eu,Europaparlamentet (Belgien),eu,S&D,Ledamot
-Elio Di Rupo,elio.dirupo@europarl.europa.eu,Europaparlamentet (Belgien),eu,S&D,Ledamot
 Estelle Ceulemans,estelle.ceulemans@europarl.europa.eu,Europaparlamentet (Belgien),eu,S&D,Ledamot
-Gerolf Annemans,gerolf.annemans@europarl.europa.eu,Europaparlamentet (Belgien),eu,PfE,Ledamot
-Hilde Vautmans,hilde.vautmans@europarl.europa.eu,Europaparlamentet (Belgien),eu,Renew,Ordförande
 Johan Van Overtveldt,johan.vanovertveldt@europarl.europa.eu,Europaparlamentet (Belgien),eu,ECR,Ordförande
 Kathleen Van Brempt,kathleen.vanbrempt@europarl.europa.eu,Europaparlamentet (Belgien),eu,S&D,Vice ordförande
 Kris Van Dijck,kris.vandijck@europarl.europa.eu,Europaparlamentet (Belgien),eu,ECR,Vice ordförande
@@ -21,12 +14,8 @@ Sophie Wilmès,sophie.wilmes@europarl.europa.eu,Europaparlamentet (Belgien),eu,R
 Tom Vandendriessche,tom.vandendriessche@europarl.europa.eu,Europaparlamentet (Belgien),eu,PfE,Ledamot
 Wouter Beke,wouter.beke@europarl.europa.eu,Europaparlamentet (Belgien),eu,PPE,Ordförande
 Yvan Verougstraete,yvan.verougstraete@europarl.europa.eu,Europaparlamentet (Belgien),eu,Renew,Vice ordförande
-Andrey Kovatchev,andrey.kovatchev@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,PPE,Ledamot
-Andrey Novakov,andrey.novakov@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,PPE,Ledamot
 Elena Yoncheva,elena.yoncheva@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,NI,Ledamot
-Emil Radev,emil.radev@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,PPE,Vice ordförande
 Eva Maydell,eva.maydell@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,PPE,Vice ordförande
-Hristo Petrov,hristo.petrov@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,Renew,Vice ordförande
 Ilhan Kyuchyuk,ilhan.kyuchyuk@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,Renew,Ordförande
 Ilia Lazarov,ilia.lazarov@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,PPE,Ledamot
 Ivaylo Valchev,ivaylo.valchev@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,ECR,Vice ordförande
@@ -38,15 +27,9 @@ Radan Kanev,radan.kanev@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,PPE,
 Stanislav Stoyanov,stanislav.stoyanov@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,ESN,Ledamot
 Taner Kabilov,taner.kabilov@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,NI,Ledamot
 Tsvetelina Penkova,tsvetelina.penkova@europarl.europa.eu,Europaparlamentet (Bulgarien),eu,S&D,Vice ordförande
-Costas Mavrides,costas.mavrides@europarl.europa.eu,Europaparlamentet (Cypern),eu,S&D,Ledamot
-Fidias Panayiotou,fidias.panayiotou@europarl.europa.eu,Europaparlamentet (Cypern),eu,NI,Ledamot
-Geadis Geadi,geadis.geadi@europarl.europa.eu,Europaparlamentet (Cypern),eu,ECR,Ledamot
 Giorgos Georgiou,giorgos.georgiou@europarl.europa.eu,Europaparlamentet (Cypern),eu,The Left,Ledamot
 Loucas Fourlas,loucas.fourlas@europarl.europa.eu,Europaparlamentet (Cypern),eu,PPE,Ordförande
 Michalis Hadjipantela,michael.hadjipantela@europarl.europa.eu,Europaparlamentet (Cypern),eu,PPE,Ledamot
-Asger Christensen,asger.christensen@europarl.europa.eu,Europaparlamentet (Danmark),eu,Renew,Ledamot
-Christel Schaldemose,christel.schaldemose@europarl.europa.eu,Europaparlamentet (Danmark),eu,S&D,Ledamot
-Henrik Dahl,henrik.dahl@europarl.europa.eu,Europaparlamentet (Danmark),eu,PPE,Ledamot
 Kira Marie Peter-Hansen,kira.peter-hansen@europarl.europa.eu,Europaparlamentet (Danmark),eu,Verts/ALE,Vice ordförande
 Kristoffer Storm,kristoffer.storm@europarl.europa.eu,Europaparlamentet (Danmark),eu,ECR,Vice ordförande
 Majbritt Birkholm,majbritt.birkholm@europarl.europa.eu,Europaparlamentet (Danmark),eu,PfE,Ledamot
@@ -66,10 +49,6 @@ Marina Kaljurand,marina.kaljurand@europarl.europa.eu,Europaparlamentet (Estland)
 Riho Terras,riho.terras@europarl.europa.eu,Europaparlamentet (Estland),eu,PPE,Vice ordförande
 Sven Mikser,sven.mikser@europarl.europa.eu,Europaparlamentet (Estland),eu,S&D,Ledamot
 Urmas Paet,urmas.paet@europarl.europa.eu,Europaparlamentet (Estland),eu,Renew,Vice ordförande
-Anna-Maja Henriksson,anna-maja.henriksson@europarl.europa.eu,Europaparlamentet (Finland),eu,Renew,Vice ordförande
-Aura Salla,aura.salla@europarl.europa.eu,Europaparlamentet (Finland),eu,PPE,Ledamot
-Eero Heinäluoma,eero.heinaluoma@europarl.europa.eu,Europaparlamentet (Finland),eu,S&D,Ledamot
-Elsi Katainen,elsi.katainen@europarl.europa.eu,Europaparlamentet (Finland),eu,Renew,Ledamot
 Jussi Saramo,jussi.saramo@europarl.europa.eu,Europaparlamentet (Finland),eu,The Left,Ledamot
 Katri Kulmuni,katri.kulmuni@europarl.europa.eu,Europaparlamentet (Finland),eu,Renew,Ledamot
 Li Andersson,li.andersson@europarl.europa.eu,Europaparlamentet (Finland),eu,The Left,Ordförande
@@ -81,33 +60,6 @@ Pekka Toveri,pekka.toveri@europarl.europa.eu,Europaparlamentet (Finland),eu,PPE,
 Sebastian Tynkkynen,sebastian.tynkkynen@europarl.europa.eu,Europaparlamentet (Finland),eu,ECR,Ledamot
 Sirpa Pietikäinen,sirpa.pietikainen@europarl.europa.eu,Europaparlamentet (Finland),eu,PPE,Ledamot
 Ville Niinistö,ville.niinisto@europarl.europa.eu,Europaparlamentet (Finland),eu,Verts/ALE,Ordförande
-Aleksandar Nikolic,aleksandar.nikolic@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-Alexandre Varaut,alexandre.varaut@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-André Rougé,andre.rouge@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-Angéline Furet,angeline.furet@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-Anne-Sophie Frigout,anne-sophie.frigout@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-Anthony Smith,anthony.smith@europarl.europa.eu,Europaparlamentet (Frankrike),eu,The Left,Ledamot
-Arash Saeidi,arash.saeidi@europarl.europa.eu,Europaparlamentet (Frankrike),eu,The Left,Vice ordförande
-Aurore Lalucq,aurore.lalucq@europarl.europa.eu,Europaparlamentet (Frankrike),eu,S&D,Ordförande
-Bernard Guetta,bernard.guetta@europarl.europa.eu,Europaparlamentet (Frankrike),eu,Renew,Ledamot
-Catherine Griset,catherine.griset@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-Chloé Ridel,chloe.ridel@europarl.europa.eu,Europaparlamentet (Frankrike),eu,S&D,Ledamot
-Christophe Bay,christophe.bay@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-Christophe Clergeau,christophe.clergeau@europarl.europa.eu,Europaparlamentet (Frankrike),eu,S&D,Vice ordförande
-Christophe Gomart,christophe.gomart@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PPE,Vice ordförande
-Christophe Grudler,christophe.grudler@europarl.europa.eu,Europaparlamentet (Frankrike),eu,Renew,Vice ordförande
-Claire Fita,claire.fita@europarl.europa.eu,Europaparlamentet (Frankrike),eu,S&D,Vice ordförande
-Céline Imart,celine.imart@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PPE,Ledamot
-Damien Carême,damien.careme@europarl.europa.eu,Europaparlamentet (Frankrike),eu,The Left,Ledamot
-David Cormand,david.cormand@europarl.europa.eu,Europaparlamentet (Frankrike),eu,Verts/ALE,Vice ordförande
-Emma Fourreau,emma.fourreau@europarl.europa.eu,Europaparlamentet (Frankrike),eu,The Left,Ledamot
-Emma Rafowicz,emma.rafowicz@europarl.europa.eu,Europaparlamentet (Frankrike),eu,S&D,Vice ordförande
-Eric Sargiacomo,eric.sargiacomo@europarl.europa.eu,Europaparlamentet (Frankrike),eu,S&D,Vice ordförande
-Fabienne Keller,fabienne.keller@europarl.europa.eu,Europaparlamentet (Frankrike),eu,Renew,Ledamot
-Fabrice Leggeri,fabrice.leggeri@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-France Jamet,france.jamet@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
-François Kalfon,francois.kalfon@europarl.europa.eu,Europaparlamentet (Frankrike),eu,S&D,Ledamot
-François-Xavier Bellamy,fxbellamy@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PPE,Ordförande
 Gilles Boyer,gilles.boyer@europarl.europa.eu,Europaparlamentet (Frankrike),eu,Renew,Ledamot
 Gilles Pennelle,gilles.pennelle@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
 Grégory Allione,gregory.allione@europarl.europa.eu,Europaparlamentet (Frankrike),eu,Renew,Ledamot
@@ -162,16 +114,8 @@ Valérie Devaux,valerie.devaux@europarl.europa.eu,Europaparlamentet (Frankrike),
 Valérie Hayer,valerie.hayer@europarl.europa.eu,Europaparlamentet (Frankrike),eu,Renew,Ledamot
 Virginie Joron,virginie.joron@europarl.europa.eu,Europaparlamentet (Frankrike),eu,PfE,Ledamot
 Younous Omarjee,younous.omarjee@europarl.europa.eu,Europaparlamentet (Frankrike),eu,The Left,Ledamot
-Afroditi Latinopoulou,afroditi.latinopoulou@europarl.europa.eu,Europaparlamentet (Grekland),eu,PfE,Ledamot
 Dimitris Tsiodras,dimitrios.tsiodras@europarl.europa.eu,Europaparlamentet (Grekland),eu,PPE,Ledamot
-Elena Kountoura,elena.kountoura@europarl.europa.eu,Europaparlamentet (Grekland),eu,The Left,Vice ordförande
 Eleonora Meleti,eleonora.meleti@europarl.europa.eu,Europaparlamentet (Grekland),eu,PPE,Ledamot
-Elissavet Vozemberg-Vrionidi,elissavet.vozemberg@europarl.europa.eu,Europaparlamentet (Grekland),eu,PPE,Ordförande
-Emmanouil Fragkos,emmanouil.fragkos@europarl.europa.eu,Europaparlamentet (Grekland),eu,ECR,Vice ordförande
-Emmanouil Kefalogiannis,emmanouil.kefalogiannis@europarl.europa.eu,Europaparlamentet (Grekland),eu,PPE,Ordförande
-Fredis Beleris,fredis.beleris@europarl.europa.eu,Europaparlamentet (Grekland),eu,PPE,Vice ordförande
-Galato Alexandraki,galato.alexandraki@europarl.europa.eu,Europaparlamentet (Grekland),eu,ECR,Ledamot
-Georgios Aftias,georgios.aftias@europarl.europa.eu,Europaparlamentet (Grekland),eu,PPE,Vice ordförande
 Konstantinos Arvanitis,konstantinos.arvanitis@europarl.europa.eu,Europaparlamentet (Grekland),eu,The Left,Ledamot
 Kostas Papadakis,kostas.papadakis@europarl.europa.eu,Europaparlamentet (Grekland),eu,NI,Ledamot
 Lefteris Nikolaou-Alavanos,lefteris.nikolaou@europarl.europa.eu,Europaparlamentet (Grekland),eu,NI,Ledamot
@@ -183,12 +127,6 @@ Nikos Pappas,nikolaos.pappas@europarl.europa.eu,Europaparlamentet (Grekland),eu,
 Sakis Arnaoutoglou,sakis.arnaoutoglou@europarl.europa.eu,Europaparlamentet (Grekland),eu,S&D,Ledamot
 Vangelis Meimarakis,evangelos.meimarakis@europarl.europa.eu,Europaparlamentet (Grekland),eu,PPE,Ledamot
 Yannis Maniatis,ioannis.maniatis@europarl.europa.eu,Europaparlamentet (Grekland),eu,S&D,Ledamot
-Aodhán Ó Ríordáin,aodhan.oriordain@europarl.europa.eu,Europaparlamentet (Irland),eu,S&D,Ledamot
-Barry Andrews,barry.andrews@europarl.europa.eu,Europaparlamentet (Irland),eu,Renew,Ordförande
-Barry Cowen,barry.cowen@europarl.europa.eu,Europaparlamentet (Irland),eu,Renew,Ledamot
-Billy Kelleher,billy.kelleher@europarl.europa.eu,Europaparlamentet (Irland),eu,Renew,Ledamot
-Ciaran Mullooly,ciaran.mullooly@europarl.europa.eu,Europaparlamentet (Irland),eu,Renew,Vice ordförande
-Cynthia Ní Mhurchú,cynthia.nimhurchu@europarl.europa.eu,Europaparlamentet (Irland),eu,Renew,Ledamot
 Kathleen Funchion,kathleen.funchion@europarl.europa.eu,Europaparlamentet (Irland),eu,The Left,Ledamot
 Luke Ming Flanagan,lukeming.flanagan@europarl.europa.eu,Europaparlamentet (Irland),eu,The Left,Vice ordförande
 Lynn Boylan,lynn.boylan@europarl.europa.eu,Europaparlamentet (Irland),eu,The Left,Ordförande
@@ -197,46 +135,12 @@ Michael McNamara,michael.mcnamara@europarl.europa.eu,Europaparlamentet (Irland),
 Nina Carberry,nina.carberry@europarl.europa.eu,Europaparlamentet (Irland),eu,PPE,Ledamot
 Regina Doherty,regina.doherty@europarl.europa.eu,Europaparlamentet (Irland),eu,PPE,Vice ordförande
 Seán Kelly,sean.kelly@europarl.europa.eu,Europaparlamentet (Irland),eu,PPE,Ordförande
-Alberico Gambino,alberico.gambino@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Vice ordförande
-Aldo Patriciello,aldo.patriciello@europarl.europa.eu,Europaparlamentet (Italien),eu,PfE,Ledamot
-Alessandra Moretti,alessandra.moretti@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Vice ordförande
-Alessandro Ciriani,alessandro.ciriani@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ledamot
-Alessandro Zan,alessandro.zan@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Vice ordförande
-Anna Maria Cisint,anna.cisint@europarl.europa.eu,Europaparlamentet (Italien),eu,PfE,Ledamot
-Annalisa Corrado,annalisa.corrado@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Ledamot
-Antonella Sberna,antonella.sberna@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ledamot
-Benedetta Scuderi,benedetta.scuderi@europarl.europa.eu,Europaparlamentet (Italien),eu,Verts/ALE,Ledamot
-Brando Benifei,brando.benifei@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Ordförande
-Camilla Laureti,camilla.laureti@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Vice ordförande
-Carlo Ciccioli,carlo.ciccioli@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Vice ordförande
-Carlo Fidanza,carlo.fidanza@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Vice ordförande
-Carolina Morace,carolina.morace@europarl.europa.eu,Europaparlamentet (Italien),eu,The Left,Vice ordförande
-Caterina Chinnici,caterina.chinnici@europarl.europa.eu,Europaparlamentet (Italien),eu,PPE,Vice ordförande
-Cecilia Strada,cecilia.strada@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Vice ordförande
-Chiara Gemma,chiara.gemma@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Vice ordförande
-Cristina Guarda,cristina.guarda@europarl.europa.eu,Europaparlamentet (Italien),eu,Verts/ALE,Vice ordförande
-Daniele Polato,daniele.polato@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ledamot
-Danilo Della Valle,danilo.dellavalle@europarl.europa.eu,Europaparlamentet (Italien),eu,The Left,Ledamot
-Dario Nardella,dario.nardella@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Ledamot
-Dario Tamburrano,dario.tamburrano@europarl.europa.eu,Europaparlamentet (Italien),eu,The Left,Ledamot
 Denis Nesci,denis.nesci@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ledamot
-Elena Donazzan,elena.donazzan@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Vice ordförande
-Elisabetta Gualmini,elisabetta.gualmini@europarl.europa.eu,Europaparlamentet (Italien),eu,Renew,Ledamot
-Flavio Tosi,flavio.tosi@europarl.europa.eu,Europaparlamentet (Italien),eu,PPE,Ledamot
-Francesco Torselli,francesco.torselli@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ledamot
-Francesco Ventola,francesco.ventola@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Vice ordförande
-Fulvio Martusciello,fulvio.martusciello@europarl.europa.eu,Europaparlamentet (Italien),eu,PPE,Ledamot
-Gaetano Pedulla',gaetano.pedulla@europarl.europa.eu,Europaparlamentet (Italien),eu,The Left,Ledamot
-Georgia Tramacere,georgia.tramacere@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Ledamot
 Giorgio Gori,giorgio.gori@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Vice ordförande
-Giovanni Crosetto,giovanni.crosetto@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ledamot
 Giuseppe Antoci,giuseppe.antoci@europarl.europa.eu,Europaparlamentet (Italien),eu,The Left,Ledamot
 Giuseppe Lupo,giuseppe.lupo@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Vice ordförande
 Giuseppe Milazzo,giuseppe.milazzo@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Vice ordförande
 Giusi Princi,giusi.princi@europarl.europa.eu,Europaparlamentet (Italien),eu,PPE,Ordförande
-Herbert Dorfmann,herbert.dorfmann@europarl.europa.eu,Europaparlamentet (Italien),eu,PPE,Vice ordförande
-Ignazio Roberto Marino,ignazio.marino@europarl.europa.eu,Europaparlamentet (Italien),eu,Verts/ALE,Ledamot
-Ilaria Salis,ilaria.salis@europarl.europa.eu,Europaparlamentet (Italien),eu,The Left,Ledamot
 Irene Tinagli,irene.tinagli@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Ordförande
 Isabella Tovaglieri,isabella.tovaglieri@europarl.europa.eu,Europaparlamentet (Italien),eu,PfE,Ledamot
 Lara Magoni,lara.magoni@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ledamot
@@ -252,7 +156,6 @@ Mario Mantovani,mario.mantovani@europarl.europa.eu,Europaparlamentet (Italien),e
 Massimiliano Salini,massimiliano.salini@europarl.europa.eu,Europaparlamentet (Italien),eu,PPE,Ledamot
 Matteo Ricci,matteo.ricci@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Vice ordförande
 Michele Picaro,michele.picaro@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Vice ordförande
-Mimmo Lucano,domenico.lucano@europarl.europa.eu,Europaparlamentet (Italien),eu,The Left,Ledamot
 Nicola Procaccini,nicola.procaccini@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ledamot
 Nicola Zingaretti,nicola.zingaretti@europarl.europa.eu,Europaparlamentet (Italien),eu,S&D,Vice ordförande
 Paolo Borchia,paolo.borchia@europarl.europa.eu,Europaparlamentet (Italien),eu,PfE,Ledamot
@@ -273,7 +176,6 @@ Stefano Bonaccini,stefano.bonaccini@europarl.europa.eu,Europaparlamentet (Italie
 Stefano Cavedagna,stefano.cavedagna@europarl.europa.eu,Europaparlamentet (Italien),eu,ECR,Ordförande
 Susanna Ceccardi,susanna.ceccardi@europarl.europa.eu,Europaparlamentet (Italien),eu,PfE,Ledamot
 Valentina Palmisano,valentina.palmisano@europarl.europa.eu,Europaparlamentet (Italien),eu,The Left,Ledamot
-Biljana Borzan,biljana.borzan@europarl.europa.eu,Europaparlamentet (Kroatien),eu,S&D,Vice ordförande
 Davor Ivo Stier,davorivo.stier@europarl.europa.eu,Europaparlamentet (Kroatien),eu,PPE,Ordförande
 Gordan Bosanac,gordan.bosanac@europarl.europa.eu,Europaparlamentet (Kroatien),eu,Verts/ALE,Ledamot
 Karlo Ressler,karlo.ressler@europarl.europa.eu,Europaparlamentet (Kroatien),eu,PPE,Ordförande
@@ -294,8 +196,6 @@ Rihards Kols,rihards.kols@europarl.europa.eu,Europaparlamentet (Lettland),eu,ECR
 Roberts Zīle,roberts.zile@europarl.europa.eu,Europaparlamentet (Lettland),eu,ECR,Ledamot
 Sandra Kalniete,sandra.kalniete@europarl.europa.eu,Europaparlamentet (Lettland),eu,PPE,Vice ordförande
 Vilis Krištopans,vilis.kristopans@europarl.europa.eu,Europaparlamentet (Lettland),eu,PfE,Ledamot
-Aurelijus Veryga,aurelijus.veryga@europarl.europa.eu,Europaparlamentet (Litauen),eu,ECR,Ledamot
-Dainius Žalimas,dainius.zalimas@europarl.europa.eu,Europaparlamentet (Litauen),eu,Renew,Vice ordförande
 Liudas Mažylis,liudas.mazylis@europarl.europa.eu,Europaparlamentet (Litauen),eu,PPE,Ledamot
 Paulius Saudargas,paulius.saudargas@europarl.europa.eu,Europaparlamentet (Litauen),eu,PPE,Ledamot
 Petras Auštrevičius,petras.austrevicius@europarl.europa.eu,Europaparlamentet (Litauen),eu,Renew,Ledamot
@@ -305,28 +205,13 @@ Vilija Blinkevičiūtė,vilija.blinkeviciute@europarl.europa.eu,Europaparlamente
 Virginijus Sinkevičius,virginijus.sinkevicius@europarl.europa.eu,Europaparlamentet (Litauen),eu,Verts/ALE,Vice ordförande
 Vytenis Povilas Andriukaitis,vytenis.andriukaitis@europarl.europa.eu,Europaparlamentet (Litauen),eu,S&D,Ledamot
 Waldemar Tomaszewski,waldemar.tomaszewski@europarl.europa.eu,Europaparlamentet (Litauen),eu,ECR,Ledamot
-Charles Goerens,charles.goerens@europarl.europa.eu,Europaparlamentet (Luxemburg),eu,Renew,Vice ordförande
-Fernand Kartheiser,fernand.kartheiser@europarl.europa.eu,Europaparlamentet (Luxemburg),eu,NI,Ledamot
-Isabel Wiseler-Lima,isabel.wiseler@europarl.europa.eu,Europaparlamentet (Luxemburg),eu,PPE,Ledamot
 Marc Angel,marc.angel@europarl.europa.eu,Europaparlamentet (Luxemburg),eu,S&D,Ledamot
 Martine Kemp,martine.kemp@europarl.europa.eu,Europaparlamentet (Luxemburg),eu,PPE,Ledamot
 Tilly Metz,tilly.metz@europarl.europa.eu,Europaparlamentet (Luxemburg),eu,Verts/ALE,Vice ordförande
-Alex Agius Saliba,alex.agiussaliba@europarl.europa.eu,Europaparlamentet (Malta),eu,S&D,Ledamot
-Daniel Attard,daniel.attard@europarl.europa.eu,Europaparlamentet (Malta),eu,S&D,Vice ordförande
-David Casa,david.casa@europarl.europa.eu,Europaparlamentet (Malta),eu,PPE,Ledamot
 Peter Agius,peter.agius@europarl.europa.eu,Europaparlamentet (Malta),eu,PPE,Ledamot
 Roberta Metsola,roberta.metsola@europarl.europa.eu,Europaparlamentet (Malta),eu,PPE,Ordförande
 Thomas Bajada,thomas.bajada@europarl.europa.eu,Europaparlamentet (Malta),eu,S&D,Ledamot
-Anja Hazekamp,anja.hazekamp@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,The Left,Vice ordförande
-Anna Strolenberg,anna.strolenberg@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,Verts/ALE,Ledamot
-Anouk Van Brug,anouk.vanbrug@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,Renew,Ledamot
-Auke Zijlstra,auke.zijlstra@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,PfE,Ledamot
-Bart Groothuis,bart.groothuis@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,Renew,Vice ordförande
-Bert-Jan Ruissen,bert-jan.ruissen@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,ECR,Vice ordförande
-Brigitte van den Berg,brigitte.vandenberg@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,Renew,Ledamot
-Catarina Vieira,Catarina.VIEIRA@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,Verts/ALE,Ledamot
 Dirk Gotink,dirk.gotink@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,PPE,Vice ordförande
-Gerben-Jan Gerbrandy,gerbrandy@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,Renew,Ledamot
 Ingeborg Ter Laak,ingeborg.terlaak@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,PPE,Vice ordförande
 Jeannette Baljeu,jeannettenicole.baljeu@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,Renew,Ledamot
 Jeroen Lenaers,jeroen.lenaers@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,PPE,Ledamot
@@ -347,27 +232,7 @@ Thijs Reuten,thijs.reuten@europarl.europa.eu,Europaparlamentet (Nederländerna),
 Tineke Strik,tineke.strik@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,Verts/ALE,Vice ordförande
 Ton Diepeveen,ton.diepeveen@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,PfE,Ledamot
 Willemien Koning,willemien.koning@europarl.europa.eu,Europaparlamentet (Nederländerna),eu,PPE,Ledamot
-Adam Bielan,adam.bielan@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ordförande
-Adam Jarubas,adam.jarubas@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Ordförande
-Andrzej Buła,andrzej.bula@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Ledamot
-Andrzej Halicki,andrzej.halicki@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Ledamot
-Anna Bryłka,anna.brylka@europarl.europa.eu,Europaparlamentet (Polen),eu,PfE,Ledamot
-Anna Zalewska,anna.zalewska@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ledamot
-Arkadiusz Mularczyk,arkadiusz.mularczyk@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Vice ordförande
-Bartosz Arłukowicz,bartosz.arlukowicz@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Ledamot
-Bartłomiej Sienkiewicz,bartlomiej.sienkiewicz@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Ledamot
-Beata Szydło,beata.szydlo@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ledamot
-Bogdan Andrzej Zdrojewski,bogdan.zdrojewski@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Vice ordförande
-Bogdan Rzońca,bogdan.rzonca@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ordförande
-Borys Budka,borys.budka@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Ordförande
-Daniel Obajtek,daniel.obajtek@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ledamot
-Dariusz Joński,dariusz.jonski@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Vice ordförande
-Dominik Tarczyński,dominik.tarczynski@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ledamot
-Elżbieta Katarzyna Łukacijewska,elzbieta.lukacijewska@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Vice ordförande
-Ewa Kopacz,ewabozena.kopacz@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Ledamot
-Ewa Zajączkowska-Hernik,ewa.zajaczkowska-hernik@europarl.europa.eu,Europaparlamentet (Polen),eu,PfE,Ledamot
 Grzegorz Braun,grzegorz.braun@europarl.europa.eu,Europaparlamentet (Polen),eu,NI,Ledamot
-Hanna Gronkiewicz-Waltz,hanna.gronkiewicz-waltz@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Ledamot
 Jacek Ozdoba,jacek.ozdoba@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ledamot
 Jacek Protas,jacek.protas@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Vice ordförande
 Jadwiga Wiśniewska,jadwiga.wisniewska@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ledamot
@@ -400,15 +265,6 @@ Tobiasz Bocheński,tobiasz.bochenski@europarl.europa.eu,Europaparlamentet (Polen
 Tomasz Buczek,tomasz.buczek@europarl.europa.eu,Europaparlamentet (Polen),eu,PfE,Ledamot
 Waldemar Buda,waldemar.buda@europarl.europa.eu,Europaparlamentet (Polen),eu,ECR,Ledamot
 Łukasz Kohut,lukasz.kohut@europarl.europa.eu,Europaparlamentet (Polen),eu,PPE,Vice ordförande
-Ana Catarina Mendes,anacatarina.mendes@europarl.europa.eu,Europaparlamentet (Portugal),eu,S&D,Ledamot
-Ana Miguel Pedro,anamiguel.pedro@europarl.europa.eu,Europaparlamentet (Portugal),eu,PPE,Ledamot
-Ana Vasconcelos,ana.vasconcelos@europarl.europa.eu,Europaparlamentet (Portugal),eu,Renew,Ledamot
-André Franqueira Rodrigues,andre.franqueirarodrigues@europarl.europa.eu,Europaparlamentet (Portugal),eu,S&D,Ledamot
-António Tânger Corrêa,antonio.tangercorrea@europarl.europa.eu,Europaparlamentet (Portugal),eu,PfE,Ledamot
-Bruno Gonçalves,bruno.goncalves@europarl.europa.eu,Europaparlamentet (Portugal),eu,S&D,Ledamot
-Carla Tavares,carla.tavares@europarl.europa.eu,Europaparlamentet (Portugal),eu,S&D,Vice ordförande
-Catarina Martins,catarina.martins@europarl.europa.eu,Europaparlamentet (Portugal),eu,The Left,Vice ordförande
-Francisco Assis,francisco.assis@europarl.europa.eu,Europaparlamentet (Portugal),eu,S&D,Ordförande
 Hélder Sousa Silva,helder.sousasilva@europarl.europa.eu,Europaparlamentet (Portugal),eu,PPE,Ordförande
 Isilda Gomes,isilda.gomes@europarl.europa.eu,Europaparlamentet (Portugal),eu,S&D,Vice ordförande
 João Cotrim De Figueiredo,joao.cotrim@europarl.europa.eu,Europaparlamentet (Portugal),eu,Renew,Ledamot
@@ -421,21 +277,9 @@ Sebastião Bugalho,sebastiao.bugalho@europarl.europa.eu,Europaparlamentet (Portu
 Sérgio Gonçalves,sergio.sousagoncalves@europarl.europa.eu,Europaparlamentet (Portugal),eu,S&D,Ledamot
 Sérgio Humberto,sergio.humberto@europarl.europa.eu,Europaparlamentet (Portugal),eu,PPE,Ledamot
 Tiago Moreira de Sá,tiago.damotaveigamoreiradesa@europarl.europa.eu,Europaparlamentet (Portugal),eu,PfE,Ledamot
-Adina Vălean,adina.valean@europarl.europa.eu,Europaparlamentet (Rumänien),eu,PPE,Ledamot
-Adrian-George Axinia,adrian-george.axinia@europarl.europa.eu,Europaparlamentet (Rumänien),eu,ECR,Ledamot
-Andi Cristea,andi.cristea@europarl.europa.eu,Europaparlamentet (Rumänien),eu,S&D,Ledamot
 Claudiu Manda,iulian-claudiu.manda@europarl.europa.eu,Europaparlamentet (Rumänien),eu,S&D,Vice ordförande
-Claudiu-Richard Târziu,claudiu-richard.tarziu@europarl.europa.eu,Europaparlamentet (Rumänien),eu,ECR,Ledamot
-Cristian Terheş,cristian.terhes@europarl.europa.eu,Europaparlamentet (Rumänien),eu,ECR,Vice ordförande
-Dan Barna,dan.barna@europarl.europa.eu,Europaparlamentet (Rumänien),eu,Renew,Vice ordförande
-Dan Nica,dan.nica@europarl.europa.eu,Europaparlamentet (Rumänien),eu,S&D,Vice ordförande
-Dan-Ştefan Motreanu,dan-stefan.motreanu@europarl.europa.eu,Europaparlamentet (Rumänien),eu,PPE,Ledamot
-Daniel Buda,daniel.buda@europarl.europa.eu,Europaparlamentet (Rumänien),eu,PPE,Vice ordförande
 Diana Iovanovici Şoşoacă,diana.iovanovicisosoaca@europarl.europa.eu,Europaparlamentet (Rumänien),eu,NI,Ledamot
-Dragoş Benea,adrian-dragos.benea@europarl.europa.eu,Europaparlamentet (Rumänien),eu,S&D,Ordförande
 Eugen Tomac,eugen.tomac@europarl.europa.eu,Europaparlamentet (Rumänien),eu,Renew,Ledamot
-Gabriela Firea,gabriela.firea@europarl.europa.eu,Europaparlamentet (Rumänien),eu,S&D,Ledamot
-Georgiana Teodorescu,georgiana.teodorescu@europarl.europa.eu,Europaparlamentet (Rumänien),eu,ECR,Vice ordförande
 Gheorghe Cârciu,gheorghe-florin.carciu@europarl.europa.eu,Europaparlamentet (Rumänien),eu,S&D,Vice ordförande
 Gheorghe Falcă,gheorghe.falca@europarl.europa.eu,Europaparlamentet (Rumänien),eu,PPE,Ledamot
 Gheorghe Piperea,gheorghe.piperea@europarl.europa.eu,Europaparlamentet (Rumänien),eu,ECR,Ordförande
@@ -454,8 +298,6 @@ Virgil-Daniel Popescu,virgil.popescu@europarl.europa.eu,Europaparlamentet (Rumä
 Vlad Vasile-Voiculescu,vlad.voiculescu@europarl.europa.eu,Europaparlamentet (Rumänien),eu,Renew,Vice ordförande
 Şerban Dimitrie Sturdza,serban.dimitrie.sturdza@europarl.europa.eu,Europaparlamentet (Rumänien),eu,ECR,Ordförande
 Ştefan Muşoiu,stefan.musoiu@europarl.europa.eu,Europaparlamentet (Rumänien),eu,S&D,Ledamot
-Branislav Ondruš,branislav.ondrus@europarl.europa.eu,Europaparlamentet (Slovakien),eu,NI,Ledamot
-Erik Kaliňák,erik.kalinak@europarl.europa.eu,Europaparlamentet (Slovakien),eu,NI,Ledamot
 Judita Laššáková,judita.lassakova@europarl.europa.eu,Europaparlamentet (Slovakien),eu,NI,Ledamot
 Katarína Roth Neveďalová,katarina.roth@europarl.europa.eu,Europaparlamentet (Slovakien),eu,NI,Ledamot
 Lucia Yar,lucia.yar@europarl.europa.eu,Europaparlamentet (Slovakien),eu,Renew,Vice ordförande
@@ -469,7 +311,6 @@ Veronika Cifrová Ostrihoňová,veronika.ostrihonova@europarl.europa.eu,Europapa
 Ľubica Karvašová,lubica.karvasova@europarl.europa.eu,Europaparlamentet (Slovakien),eu,Renew,Vice ordförande
 Ľuboš Blaha,lubos.blaha@europarl.europa.eu,Europaparlamentet (Slovakien),eu,NI,Ledamot
 Ľudovít Ódor,ludovit.odor@europarl.europa.eu,Europaparlamentet (Slovakien),eu,Renew,Vice ordförande
-Branko Grims,branko.grims@europarl.europa.eu,Europaparlamentet (Slovenien),eu,PPE,Ledamot
 Irena Joveva,irena.joveva@europarl.europa.eu,Europaparlamentet (Slovenien),eu,Renew,Ledamot
 Marjan Šarec,marjan.sarec@europarl.europa.eu,Europaparlamentet (Slovenien),eu,Renew,Ledamot
 Matej Tonin,matej.tonin@europarl.europa.eu,Europaparlamentet (Slovenien),eu,PPE,Ledamot
@@ -478,34 +319,15 @@ Milan Zver,milan.zver@europarl.europa.eu,Europaparlamentet (Slovenien),eu,PPE,Le
 Romana Tomc,romana.tomc@europarl.europa.eu,Europaparlamentet (Slovenien),eu,PPE,Vice ordförande
 Vladimir Prebilič,vladimir.prebilic@europarl.europa.eu,Europaparlamentet (Slovenien),eu,Verts/ALE,Ledamot
 Zala Tomašič,zala.tomasic@europarl.europa.eu,Europaparlamentet (Slovenien),eu,PPE,Ledamot
-Adrián Vázquez Lázara,adrian.vazquezlazara@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Vice ordförande
-Alicia Homs Ginel,alicia.homs@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Vice ordförande
-Alma Ezcurra Almansa,alma.ezcurra@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Suppleant
 Alvise Pérez,luisalvise.perezfernandez@europarl.europa.eu,Europaparlamentet (Spanien),eu,NI,Ledamot
-Ana Miranda Paz,ana.miranda@europarl.europa.eu,Europaparlamentet (Spanien),eu,Verts/ALE,Vice ordförande
-Antonio López-Istúriz White,antonio.lopezisturiz@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ordförande
-Borja Giménez Larraz,borja.gimenezlarraz@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ledamot
 Carmen Crespo Díaz,mariacarmen.crespodiaz@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ordförande
-Cristina Maestre,cristina.maestre@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Ledamot
-César Luena,cesar.luena@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Ordförande
 Diana Riba i Giner,diana.ribaiginer@europarl.europa.eu,Europaparlamentet (Spanien),eu,Verts/ALE,Ordförande
 Diego Solier,diego.solierfernandez@europarl.europa.eu,Europaparlamentet (Spanien),eu,ECR,Ledamot
-Dolors Montserrat,d.montserrat@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Vice ordförande
-Elena Nevado del Campo,elena.nevadodelcampo@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Vice ordförande
-Elena Sancho Murillo,elena.sanchomurillo@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Ledamot
-Esteban González Pons,esteban.gonzalezpons@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ledamot
 Esther Herranz García,esther.herranzgarcia@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Vice ordförande
 Estrella Galán,estrella.galan@europarl.europa.eu,Europaparlamentet (Spanien),eu,The Left,Vice ordförande
-Fernando Navarrete Rojas,fernando.navarrete@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ledamot
-Francisco José Millán Mon,francisco.millanmon@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ledamot
-Gabriel Mato,gabriel.mato@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ordförande
-Hana Jalloul Muro,hana.jalloulmuro@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Vice ordförande
-Hermann Tertsch,hermann.tertsch@europarl.europa.eu,Europaparlamentet (Spanien),eu,PfE,Ledamot
-Idoia Mendia,idoia.mendia@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Vice ordförande
 Iratxe García Pérez,iratxe.garcia-perez@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Ledamot
 Irene Montero,irene.montero@europarl.europa.eu,Europaparlamentet (Spanien),eu,The Left,Vice ordförande
 Isabel Benjumea Benjumea,isabel.benjumea@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ledamot
-Isabel Serra Sánchez,isabel.serrasanchez@europarl.europa.eu,Europaparlamentet (Spanien),eu,The Left,Vice ordförande
 Jaume Asens Llodrà,jaume.asens@europarl.europa.eu,Europaparlamentet (Spanien),eu,Verts/ALE,Ledamot
 Javi López,javi.lopez@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Ledamot
 Javier Moreno Sánchez,javier.morenosanchez@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Ordförande
@@ -538,19 +360,8 @@ Rosa Serrano Sierra,rosa.serranosierra@europarl.europa.eu,Europaparlamentet (Spa
 Sandra Gómez López,sandra.gomezlopez@europarl.europa.eu,Europaparlamentet (Spanien),eu,S&D,Ledamot
 Susana Solís Pérez,susana.solisperez@europarl.europa.eu,Europaparlamentet (Spanien),eu,PPE,Ledamot
 Vicent Marzà Ibáñez,vicent.marzaibanez@europarl.europa.eu,Europaparlamentet (Spanien),eu,Verts/ALE,Vice ordförande
-Abir Al-Sahlani,abir.alsahlani@europarl.europa.eu,Europaparlamentet (Sverige),eu,Renew,Vice ordförande
-Adnan Dibrani,adnan.dibrani@europarl.europa.eu,Europaparlamentet (Sverige),eu,S&D,Ledamot
-Alice Kuhnke,alice.kuhnke@europarl.europa.eu,Europaparlamentet (Sverige),eu,Verts/ALE,Ledamot
-Alice Teodorescu Måwe,alice.teodorescumawe@europarl.europa.eu,Europaparlamentet (Sverige),eu,PPE,Ledamot
-Arba Kokalari,arba.kokalari@europarl.europa.eu,Europaparlamentet (Sverige),eu,PPE,Ledamot
-Beatrice Timgren,beatrice.timgren@europarl.europa.eu,Europaparlamentet (Sverige),eu,ECR,Ledamot
-Charlie Weimers,charlie.weimers@europarl.europa.eu,Europaparlamentet (Sverige),eu,ECR,Vice ordförande
 Dick Erixon,dick.erixon@europarl.europa.eu,Europaparlamentet (Sverige),eu,ECR,Ledamot
-Emma Wiesner,emma.wiesner@europarl.europa.eu,Europaparlamentet (Sverige),eu,Renew,Vice ordförande
-Evin Incir,evin.incir@europarl.europa.eu,Europaparlamentet (Sverige),eu,S&D,Vice ordförande
-Hanna Gedin,hanna.gedin@europarl.europa.eu,Europaparlamentet (Sverige),eu,The Left,Vice ordförande
 Heléne Fritzon,helene.fritzon@europarl.europa.eu,Europaparlamentet (Sverige),eu,S&D,Ledamot
-Isabella Lövin,isabella.lovin@europarl.europa.eu,Europaparlamentet (Sverige),eu,Verts/ALE,Vice ordförande
 Jessica Polfjärd,jessica.polfjard@europarl.europa.eu,Europaparlamentet (Sverige),eu,PPE,Vice ordförande
 Johan Danielsson,johan.danielsson@europarl.europa.eu,Europaparlamentet (Sverige),eu,S&D,Vice ordförande
 Jonas Sjöstedt,jonas.sjostedt@europarl.europa.eu,Europaparlamentet (Sverige),eu,The Left,Ledamot
@@ -559,9 +370,6 @@ Karin Karlsbro,karin.karlsbro@europarl.europa.eu,Europaparlamentet (Sverige),eu,
 Pär Holmgren,par.holmgren@europarl.europa.eu,Europaparlamentet (Sverige),eu,Verts/ALE,Ledamot
 Sofie Eriksson,sofie.eriksson@europarl.europa.eu,Europaparlamentet (Sverige),eu,S&D,Ledamot
 Tomas Tobé,tomas.tobe@europarl.europa.eu,Europaparlamentet (Sverige),eu,PPE,Vice ordförande
-Alexandr Vondra,alexandr.vondra@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,ECR,Vice ordförande
-Antonín Staněk,antonin.stanek@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,PfE,Ledamot
-Danuše Nerudová,danuse.nerudova@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,PPE,Vice ordförande
 Ivan David,ivan.david@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,ESN,Ledamot
 Jan Farský,jan.farsky@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,PPE,Ledamot
 Jana Nagyová,jana.nagyova@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,PfE,Ledamot
@@ -580,37 +388,8 @@ Ondřej Krutílek,ondrej.krutilek@europarl.europa.eu,Europaparlamentet (Tjeckien
 Tomáš Kubín,tomas.kubin@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,PfE,Ledamot
 Tomáš Zdechovský,tomas.zdechovsky@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,PPE,Vice ordförande
 Veronika Vrecionová,veronika.vrecionova@europarl.europa.eu,Europaparlamentet (Tjeckien),eu,ECR,Ordförande
-Alexander Jungbluth,alexander.jungbluth@europarl.europa.eu,Europaparlamentet (Tyskland),eu,ESN,Ledamot
-Alexander Sell,alexander.sell@europarl.europa.eu,Europaparlamentet (Tyskland),eu,ESN,Ledamot
-Alexandra Geese,alexandra.geese@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Verts/ALE,Ledamot
-Alexandra Mehnert,alexandra.mehnert@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ledamot
-Andrea Wechsler,andrea.wechsler@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ledamot
-Andreas Glück,andreas.glueck@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Renew,Ledamot
-Andreas Schwab,andreas.schwab@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ordförande
-Angelika Niebler,angelika.niebler@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ordförande
-Anja Arndt,anja.arndt@europarl.europa.eu,Europaparlamentet (Tyskland),eu,ESN,Ledamot
-Anna Cavazzini,anna.cavazzini@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Verts/ALE,Ordförande
-Arno Bausemer,arno.bausemer@europarl.europa.eu,Europaparlamentet (Tyskland),eu,ESN,Ledamot
-Axel Voss,axel.voss@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ledamot
-Bernd Lange,bernd.lange@europarl.europa.eu,Europaparlamentet (Tyskland),eu,S&D,Ordförande
-Birgit Sippel,birgit.sippel@europarl.europa.eu,Europaparlamentet (Tyskland),eu,S&D,Ledamot
-Christian Doleschal,christian.doleschal@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Vice ordförande
-Christian Ehler,christian.ehler@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ledamot
-Christine Anderson,christine.anderson@europarl.europa.eu,Europaparlamentet (Tyskland),eu,ESN,Ledamot
-Christine Singer,christine.singer@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Renew,Ledamot
-Damian Boeselager,damian.boeselager@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Verts/ALE,Vice ordförande
-Daniel Freund,daniel.freund@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Verts/ALE,Vice ordförande
-David McAllister,david.mcallister@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ordförande
 Delara Burkhardt,delara.burkhardt@europarl.europa.eu,Europaparlamentet (Tyskland),eu,S&D,Ledamot
 Dennis Radtke,dennis.radtke@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ledamot
-Engin Eroglu,engin.eroglu@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Renew,Ordförande
-Erik Marquardt,erik.marquardt@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Verts/ALE,Ledamot
-Fabio De Masi,fabio.demasi@europarl.europa.eu,Europaparlamentet (Tyskland),eu,NI,Ledamot
-Friedrich Pürner,friedrich.puerner@europarl.europa.eu,Europaparlamentet (Tyskland),eu,NI,Ledamot
-Gabriele Bischoff,gabriele.bischoff@europarl.europa.eu,Europaparlamentet (Tyskland),eu,S&D,Vice ordförande
-Hannah Neumann,hannah.neumann@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Verts/ALE,Ordförande
-Hans Neuhoff,hans.neuhoff@europarl.europa.eu,Europaparlamentet (Tyskland),eu,ESN,Ledamot
-Hildegard Bentele,hildegard.bentele@europarl.europa.eu,Europaparlamentet (Tyskland),eu,PPE,Ordförande
 Irmhild Boßdorf,irmhild.bossdorf@europarl.europa.eu,Europaparlamentet (Tyskland),eu,ESN,Ledamot
 Jan-Christoph Oetjen,jan-christoph.oetjen@europarl.europa.eu,Europaparlamentet (Tyskland),eu,Renew,Ledamot
 Jan-Peter Warnke,jan-peter.warnke@europarl.europa.eu,Europaparlamentet (Tyskland),eu,NI,Ledamot
@@ -676,19 +455,7 @@ Verena Mertens,verena.mertens@europarl.europa.eu,Europaparlamentet (Tyskland),eu
 Vivien Costanzo,vivien.costanzo@europarl.europa.eu,Europaparlamentet (Tyskland),eu,S&D,Ledamot
 Volker Schnurrbusch,volker.schnurrbusch@europarl.europa.eu,Europaparlamentet (Tyskland),eu,ESN,Ledamot
 Özlem Demirel,oezlem.demirel@europarl.europa.eu,Europaparlamentet (Tyskland),eu,The Left,Ledamot
-András Gyürk,andras.gyurk@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
-András László,andras.laszlo@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
-András Tivadar Kulja,andras.kulja@europarl.europa.eu,Europaparlamentet (Ungern),eu,PPE,Vice ordförande
-Annamária Vicsek,annamaria.vicsek@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
-Csaba Bogdán,csaba.bogdan@europarl.europa.eu,Europaparlamentet (Ungern),eu,PPE,Ledamot
-Csaba Dömötör,csaba.domotor@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
-Csaba Molnár,csaba.molnar@europarl.europa.eu,Europaparlamentet (Ungern),eu,S&D,Vice ordförande
-Dóra Dávid,dora.david@europarl.europa.eu,Europaparlamentet (Ungern),eu,PPE,Ledamot
-Enikő Győri,eniko.gyori@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
-Ernő Schaller-Baross,erno.schaller-baross@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
 Eszter Lakos,eszter.lakos@europarl.europa.eu,Europaparlamentet (Ungern),eu,PPE,Ledamot
-Gabriella Gerzsenyi,gabriella.gerzsenyi@europarl.europa.eu,Europaparlamentet (Ungern),eu,PPE,Vice ordförande
-György Hölvényi,gyorgy.holvenyi@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
 Kinga Gál,kinga.gal@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
 Kinga Kollár,kinga.kollar@europarl.europa.eu,Europaparlamentet (Ungern),eu,PPE,Ledamot
 Klára Dobrev,klara.dobrev@europarl.europa.eu,Europaparlamentet (Ungern),eu,S&D,Vice ordförande
@@ -697,19 +464,8 @@ Tamás Deutsch,tamas.deutsch@europarl.europa.eu,Europaparlamentet (Ungern),eu,Pf
 Viktor Weisz,viktor.weisz@europarl.europa.eu,Europaparlamentet (Ungern),eu,PPE,Ledamot
 Viktória Ferenc,viktoria.ferenc@europarl.europa.eu,Europaparlamentet (Ungern),eu,PfE,Ledamot
 Zsuzsanna Borvendég,zsuzsanna.borvendeg@europarl.europa.eu,Europaparlamentet (Ungern),eu,ESN,Ledamot
-Alexander Bernhuber,alexander.bernhuber@europarl.europa.eu,Europaparlamentet (Österrike),eu,PPE,Ledamot
-Andreas Schieder,andreas.schieder@europarl.europa.eu,Europaparlamentet (Österrike),eu,S&D,Ledamot
-Angelika Winzig,angelika.winzig@europarl.europa.eu,Europaparlamentet (Österrike),eu,PPE,Ledamot
-Anna Stürgkh,anna.sturgkh@europarl.europa.eu,Europaparlamentet (Österrike),eu,Renew,Ledamot
-Elisabeth Dieringer,elisabeth.dieringer@europarl.europa.eu,Europaparlamentet (Österrike),eu,PfE,Ledamot
-Elisabeth Grossmann,elisabeth.grossmann@europarl.europa.eu,Europaparlamentet (Österrike),eu,S&D,Ledamot
-Evelyn Regner,evelyn.regner@europarl.europa.eu,Europaparlamentet (Österrike),eu,S&D,Ordförande
-Georg Mayer,georg.mayer@europarl.europa.eu,Europaparlamentet (Österrike),eu,PfE,Ledamot
-Gerald Hauser,gerald.hauser@europarl.europa.eu,Europaparlamentet (Österrike),eu,PfE,Ledamot
 Günther Sidl,guenther.sidl@europarl.europa.eu,Europaparlamentet (Österrike),eu,S&D,Ledamot
-Hannes Heide,hannes.heide@europarl.europa.eu,Europaparlamentet (Österrike),eu,S&D,Ledamot
 Harald Vilimsky,harald.vilimsky@europarl.europa.eu,Europaparlamentet (Österrike),eu,PfE,Ledamot
-Helmut Brandstätter,helmut.brandstaetter@europarl.europa.eu,Europaparlamentet (Österrike),eu,Renew,Vice ordförande
 Lena Schilling,lena.schilling@europarl.europa.eu,Europaparlamentet (Österrike),eu,Verts/ALE,Ledamot
 Lukas Mandl,lukas.mandl@europarl.europa.eu,Europaparlamentet (Österrike),eu,PPE,Ledamot
 Petra Steger,petra.steger@europarl.europa.eu,Europaparlamentet (Österrike),eu,PfE,Ledamot
@@ -784,12 +540,6 @@ Alexander Wikhall,alexander.wikhall@alingsas.se,Alingsås kommun,kommun,,
 Ali Said,ali.said@alingsas.se,Alingsås kommun,kommun,C,
 Anders Julin,anders.juhlin@alingsas.se,Alingsås kommun,kommun,S,
 Anders Wengholm,anders.wengholm@alingsas.se,Alingsås kommun,kommun,,
-Anita Brodén,anita.broden@alingsas.se,Alingsås kommun,kommun,,
-Anita Hedén Unosson,anita.heden-unosson@alingsas.se,Alingsås kommun,kommun,S,
-Ann Denty,ann.denty@alingsas.se,Alingsås kommun,kommun,,
-Ann-Lie Tulokas Olsson,ann-lie.tulokas-olsson@alingsas.se,Alingsås kommun,kommun,KD,
-Anne Gunnevik,anne.gunnevik@alingsas.se,Alingsås kommun,kommun,L,
-Annette Heineman,annette.heineman@alingsas.se,Alingsås kommun,kommun,S,
 Annika Qarlsson,annika.qarlsson@alingsas.se,Alingsås kommun,kommun,C,
 Anton César,anton.cesar@alingsas.se,Alingsås kommun,kommun,S,
 Bertil Ynghammar,bertil.ynghammar@alingsas.se,Alingsås kommun,kommun,,
@@ -1146,7 +896,6 @@ Ulrika Eriksson-Segerström,ulrika.eriksson-segerstrom@avesta.se,Avesta kommun,k
 Anders Forsberg,anders.forsberg@bengtsfors.se,Bengtsfors kommun,kommun,M,Ledamot
 Anna-Greta Strömberg,anna-greta.stromberg@bengtsfors.se,Bengtsfors kommun,kommun,KD,Ersättare
 Annette Ternstedt,anette.ternstedt@bengtsfors.se,Bengtsfors kommun,kommun,V,Ledamot
-Bengt Jonsson,bengt.jonsson@bengtsfors.se,Bengtsfors kommun,kommun,L,Ersättare
 Britt-Inger Sandström,britt-inger.sandstrom@bengtsfors.se,Bengtsfors kommun,kommun,SD,Ledamot
 Carina Aasen,carina.aasen@bengtsfors.se,Bengtsfors kommun,kommun,M,Ledamot
 Carl Kullgren,carl.kullgren@bengtsfors.se,Bengtsfors kommun,kommun,L,Ersättare
@@ -1723,7 +1472,6 @@ Jennie Åfeldt,jennie.afeldt@politik.bromolla.se,Bromölla kommun,kommun,SD,Leda
 Jenny Önnevik,jenny.onnevik@bromolla.se,Bromölla kommun,kommun,S,Ledamot
 Jesper Jönsson,jesper.jonsson@politik.bromolla.se,Bromölla kommun,kommun,M,Ersättare
 Johan Johansson,johan.johansson@politik.bromolla.se,Bromölla kommun,kommun,M,Ledamot
-Johan Wernlund,johan.wernlund@politik.bromolla.se,Bromölla kommun,kommun,,
 Jon Brun,jon.brun@politik.bromolla.se,Bromölla kommun,kommun,M,Ersättare
 Kerstin Ilk,kerstin.ilk@politik.bromolla.se,Bromölla kommun,kommun,S,Ledamot
 Kerstin Nylander,kerstin.nylander@politik.bromolla.se,Bromölla kommun,kommun,V,Ersättare
@@ -2957,7 +2705,6 @@ Agneta Stjernström,agneta.stjernstrom@politiker.gavle.se,Gävle kommun,kommun,S
 Ahmed Amin,ahmed.amin@politiker.gavle.se,Gävle kommun,kommun,S,Ledamot
 Alexander Lindqvist,alexander.lindqvist@politiker.gavle.se,Gävle kommun,kommun,M,Ersättare
 Anders Ekman,anders.ekman@politiker.gavle.se,Gävle kommun,kommun,C,Ledamot
-Anders Fogeus,anders.fogeus@politiker.gavle.se,Gävle kommun,kommun,M,Ersättare
 Anna Cullfors,anna.cullfors@politiker.gavle.se,Gävle kommun,kommun,V,Ledamot
 Anna Sundberg,anna.sundberg@politiker.gavle.se,Gävle kommun,kommun,SD,Ledamot
 Anna-Karin Åström,anna-karin.astrom@politiker.gavle.se,Gävle kommun,kommun,SD,Ersättare
@@ -3598,7 +3345,6 @@ Therese Nilsson,therese.a.nilsson@haninge.se,Haninge kommun,kommun,SD,Ersättare
 Veronica Kohlerich,veronica.kohlerich@haninge.se,Haninge kommun,kommun,M,Ledamot
 William Friström,william.fristrom@haninge.se,Haninge kommun,kommun,V,Ersättare
 Yvonne Forsberg,yvonne.forsberg@haninge.se,Haninge kommun,kommun,SD,Ledamot
-Åsa Westlund,asa.westlund@haninge.se,Haninge kommun,kommun,S,Ledamot
 Ann-Charlotte Bucht,ann-charlotte.bucht@haparanda.se,Haparanda kommun,kommun,M,Ledamot
 Ann-Cristin Ollinen,ann-cristin.ollinen@haparanda.se,Haparanda kommun,kommun,S,Ledamot
 Anna Wikström,anna.wikstrom@haparanda.se,Haparanda kommun,kommun,M,Ersättare
@@ -3652,9 +3398,7 @@ Anders Kihl,anders.kihl@heby.se,Heby kommun,kommun,KD,
 Anders Ljungberg,anders.ljungberg@heby.se,Heby kommun,kommun,,
 Anders Pettersson,anders.pettersson@heby.se,Heby kommun,kommun,S,
 Andreas Johansson,andreas.johansson@heby.se,Heby kommun,kommun,,
-Andreas Johansson,andreas.johnsson@heby.se,Heby kommun,kommun,,
 Ann-Christin Persson,ann-christin.persson@heby.se,Heby kommun,kommun,,
-Ann-Christine Persson,ann-christine.persson@heby.se,Heby kommun,kommun,,
 Anne-Charlotte Mattsson,anne-charlotte.mattsson@heby.se,Heby kommun,kommun,,
 Anneli Ellnebrandt,anneli.ellnebrant@heby.se,Heby kommun,kommun,,
 Annika Isaksson,annika.isaksson@heby.se,Heby kommun,kommun,S,
@@ -3739,7 +3483,6 @@ Tomas Persson,tomas.persson@heby.se,Heby kommun,kommun,,
 Toni Hietakuja,jan.andersson@heby.se,Heby kommun,kommun,SD,
 Ulf Fahlstad,ulf.fahlstad@heby.se,Heby kommun,kommun,,
 Uno Philipsson,uno.phillipsson@heby.se,Heby kommun,kommun,,
-Åsa Eklind,asa.eklind@heby.se,Heby kommun,kommun,SD,
 Agneta Andreasson-Bäck,agneta.andreasson-back@hedemora.se,Hedemora kommun,kommun,S,Ledamot
 Allan Mattsson,allan.matsson@hedemora.se,Hedemora kommun,kommun,KL,Representant
 Amin Kou Kou,amin.kou-kou@hedemora.se,Hedemora kommun,kommun,C,Ersättare
@@ -5033,7 +4776,6 @@ Anders Tallgren,anders.tallgren@karlstad.se,Karlstads kommun,kommun,S,Ledamot
 Andreas Johansson,andreas.johansson@karlstad.se,Karlstads kommun,kommun,S,Ersättare
 Andreas Pettersson,andreas.pettersson@karlstad.se,Karlstads kommun,kommun,C,2:e vice ordförande
 Anette Nordlund,anette.nordlund@karlstad.se,Karlstads kommun,kommun,M,Ledamot
-Anita Hall,anita.hall@karlstad.se,Karlstads kommun,kommun,C,Ersättare
 Ann-Katrin Gyllsten,ann-katrin.gyllsten@karlstad.se,Karlstads kommun,kommun,L,Ledamot
 Ann-Marie Johansson,ann.marie.johansson@karlstad.se,Karlstads kommun,kommun,C,Ledamot
 Anna Dahlén Gauffin,anna.dahlen.gauffin@karlstad.se,Karlstads kommun,kommun,S,Ledamot
@@ -5631,7 +5373,6 @@ Ulrika Wassberg,ulrika.wassberg@krokom.se,Krokoms kommun,kommun,JVK,Ersättare
 Aimo Pekkala,aimo.pekkala@kumla.se,Kumla kommun,kommun,SD,Ledamot
 Andreas Brorsson,andreas.brorson@kumla.se,Kumla kommun,kommun,S,Ledamot
 Annica Sjöqvist,annica.sjoqvist@kumla.se,Kumla kommun,kommun,S,Ledamot
-Berry Keller,berry.keller2@kumla.se,Kumla kommun,kommun,M,Ledamot
 Björn Grönqvist,bjorn.gronqvist@gmail.com,Kumla kommun,kommun,S,Ersättare
 Börje Magnusson,boerje.magnusson@kumla.se,Kumla kommun,kommun,SD,Ledamot
 Christian Liljenhed,christian.liljenhed@kumla.se,Kumla kommun,kommun,L,Ledamot
@@ -5690,7 +5431,6 @@ Barbro Hjelström,barbro.hjelstrom@kungsbacka.se,Kungsbacka kommun,kommun,M,Ers�
 Bengt Alderin,bengt.alderin@kungsbacka.se,Kungsbacka kommun,kommun,C,Ledamot
 Bengt Björkman,bengt.bjorkman@kungsbacka.se,Kungsbacka kommun,kommun,C,Ombud
 Berit Bergström,berit.bergstrom@kungsbacka.se,Kungsbacka kommun,kommun,M,Ledamot
-Birgitta Gustafsson,birgitta.gustafsson@kungsbacka.se,Kungsbacka kommun,kommun,L,Ersättare
 Birgitta Tingdal,birgitta.tingdal@kungsbacka.se,Kungsbacka kommun,kommun,S,Ledamot
 Bo Regnér,bo.regner@kungsbacka.se,Kungsbacka kommun,kommun,SD,Suppleant för revisor
 Britt Tönnberg,britt.tonnberg@kungsbacka.se,Kungsbacka kommun,kommun,S,Ersättare
@@ -5705,7 +5445,6 @@ Clas Rosander,clas.rosander@kungsbacka.se,Kungsbacka kommun,kommun,MP,Ersättare
 Daniel Hognert,daniel.hognert@kungsbacka.se,Kungsbacka kommun,kommun,M,Ledamot
 Dick Andersson,dick.andersson@kungsbacka.se,Kungsbacka kommun,kommun,M,Ersättare
 Eirik Langjord,eirik.langjord@kungsbacka.se,Kungsbacka kommun,kommun,L,Ersättare
-Elin Hysén,elin.hysen@kungsbacka.se,Kungsbacka kommun,kommun,L,Ledamot
 Elisabeth Andersson Sahlsten,elisabet.sahlsten@kungsbacka.se,Kungsbacka kommun,kommun,MP,Ersättare
 Elisabeth Lyckevall,elisabeth.lyckevall@kungsbacka.se,Kungsbacka kommun,kommun,S,Ersättare
 Elisabeth Svensson,elisabeth.svensson@kungsbacka.se,Kungsbacka kommun,kommun,SD,Ledamot
@@ -5913,13 +5652,11 @@ William Hult,william.hult@kungalv.se,Kungälvs kommun,kommun,S,led
 ,andreas.sjoberg@koping.se,Köpings kommun,kommun,,
 ,andreas.trygg@koping.se,Köpings kommun,kommun,,
 ,anna-carin.ragnarsson@koping.se,Köpings kommun,kommun,,
-,anna.eriksson2@koping.se,Köpings kommun,kommun,,
 ,annalena.jansson@koping.se,Köpings kommun,kommun,,
 ,anne-marie.lundin@koping.se,Köpings kommun,kommun,,
 ,anne.tjernberg2@koping.se,Köpings kommun,kommun,,
 ,annika.duan@koping.se,Köpings kommun,kommun,,
 ,annika.holmstrom@koping.se,Köpings kommun,kommun,,
-,antigone.pirraku2@koping.se,Köpings kommun,kommun,,
 ,arzu.hajiyeva2@koping.se,Köpings kommun,kommun,,
 ,asa.sandberg@koping.se,Köpings kommun,kommun,,
 ,ase.ellingsenvesper@koping.se,Köpings kommun,kommun,,
@@ -5986,7 +5723,6 @@ Anita Folden,anita.folden.sd@laholm.se,Laholms kommun,kommun,,
 Ann-Heléne Djivjak,ann-helene.djivjak.m@laholm.se,Laholms kommun,kommun,,
 Annita Asplid,annita.asplid.s@laholm.se,Laholms kommun,kommun,,
 Bertil Johansson,bertil.johansson.lap@laholm.se,Laholms kommun,kommun,,
-Birger Bäkmark,birger.bakmark.med@laholm.se,Laholms kommun,kommun,,
 Birgitta Fritzon,birgitta.fritzon.s@laholm.se,Laholms kommun,kommun,,
 Björn Abelli,bjorn.abelli.v@laholm.se,Laholms kommun,kommun,,
 Bo Tengqvist,bo.tengqvist.s@laholm.se,Laholms kommun,kommun,,
@@ -6991,7 +6727,6 @@ Yvonne Persson,yvonne.persson@vbu.ludvika.se,Ludvika kommun,kommun,S,Ord ledamot
 Åsa Wikberg,asa.wikberg@ludvika.se,Ludvika kommun,kommun,MP,Ord ledamot
 Anna Ackemo,anna.ackemo@lycksele.se,Lycksele kommun,kommun,M,Ledamot
 Anna Dahlén,anna.dahlen@lycksele.se,Lycksele kommun,kommun,V,Ledamot
-Anna-Lena Danielsson,anna-lena.danielsson@lycksele.se,Lycksele kommun,kommun,S,Ledamot
 Betty-Ann Nilsson,betty-ann.nilsson@lycksele.se,Lycksele kommun,kommun,KD,Ledamot
 Carola Olofsson,carola.olofsson@lycksele.se,Lycksele kommun,kommun,L,Ersättare
 Eva Marita Fransson,marita.fransson@lycksele.se,Lycksele kommun,kommun,S,Ersättare
@@ -6999,7 +6734,6 @@ Hanna Blomqvist,hanna.blomqvist@edu.lycksele.se,Lycksele kommun,kommun,KD,Ledamo
 Ingrid Ölmebäck,ingrid.olmeback@lycksele.se,Lycksele kommun,kommun,S,Ledamot
 Joel Bäcklund,joel.backlund@lycksele.se,Lycksele kommun,kommun,S,Ersättare
 Jon Essebro,jon.essebro@lycksele.se,Lycksele kommun,kommun,C,Ledamot
-Josef Nygren,josef.nygren@lycksele.se,Lycksele kommun,kommun,KD,Ledamot
 Laila Axelsson Jonsson,laila.axelsson-jonsson@lycksele.se,Lycksele kommun,kommun,S,Ledamot
 Lars Ohlsson,lars.ohlsson@lycksele.se,Lycksele kommun,kommun,S,Ledamot
 Maria Karlsson,maria.karlsson@lycksele.se,Lycksele kommun,kommun,S,Ledamot
@@ -7068,7 +6802,6 @@ Yngve Berlin,yngve.berlin@politik.lysekil.se,Lysekils kommun,kommun,K,Ledamot
 ,anders.westerlund@malung-salen.se,Malung-Sälens kommun,kommun,,
 ,andreas.mollenberg@malung-salen.se,Malung-Sälens kommun,kommun,,
 ,arne.soderback@malung-salen.se,Malung-Sälens kommun,kommun,,
-,artem.adylev@malung-salen.se,Malung-Sälens kommun,kommun,,
 ,bengt.nilsson@malung-salen.se,Malung-Sälens kommun,kommun,,
 ,birgitta.orjas@malung-salen.se,Malung-Sälens kommun,kommun,,
 ,brita.sohlin@malung-salen.se,Malung-Sälens kommun,kommun,,
@@ -8571,7 +8304,6 @@ Ulla Johansson,ulla.ua.johansson@gmail.com,Nynäshamns kommun,kommun,S,Ledamot
 Åse Hermansson,ase.hermansson@sorundanet.se,Nynäshamns kommun,kommun,SN,Ersättare
 Agneta Svensson,agneta.svensson@nassjo.se,Nässjö kommun,kommun,L,Ledamot
 Anders Hansen,anders.hansen@nassjo.se,Nässjö kommun,kommun,Solidaritet Arbete Fred Ekologi,Ledamot
-Andreas Hjälmqvist,andreas.hjalmqvist@nassjo.se,Nässjö kommun,kommun,KD,Ledamot
 Angelica Weber,angelica.weber@nassjo.se,Nässjö kommun,kommun,S,Ledamot
 Anita Sjöberg,anita.sjoberg@nassjo.se,Nässjö kommun,kommun,S,1:e vice ordförande
 Ann-Cathrin Gunnar,ann-cathrin.gunnar@nassjo.se,Nässjö kommun,kommun,C,Ledamot
@@ -8931,7 +8663,6 @@ Maria Dahlberg Aldebert,mariadahlberg61@hotmail.com,Oskarshamns kommun,kommun,,
 Marianne Erlandsson,marianne.erlandsson.politik@oskarshamn.se,Oskarshamns kommun,kommun,,
 Marie Holmgren,marie.holmgren.politik@oskarshamn.se,Oskarshamns kommun,kommun,,
 Marie-Louise Svensson,marie-louise.svensson.politik@oskarshamn.se,Oskarshamns kommun,kommun,,
-Marie-Louise Svensson,marielouise.svensson.politik@oskarshamn.se,Oskarshamns kommun,kommun,,
 Marie-Louise Örn-Lagerqvist,marie-louise.ornlagerqvist.politik@oskarshamn.se,Oskarshamns kommun,kommun,,
 Marita Reinholdsson,marita.reinholdsson.politik@oskarshamn.se,Oskarshamns kommun,kommun,,
 Marko Raiskio,marko.raiskio.politik@oskarshamn.se,Oskarshamns kommun,kommun,,
@@ -9404,7 +9135,6 @@ Anders Karlsson,armbrytning@hotmail.com,Salems kommun,kommun,C,Ersättare
 Anders Klerkefors,anders.klerkefors@salem.se,Salems kommun,kommun,R,Ledamot
 Andreas Dahl,andreas.dahl@salem.se,Salems kommun,kommun,S,Ledamot
 Andreas Lundvall,andreas.lundvall@salem.se,Salems kommun,kommun,M,2:e vice ordförande
-Ann-Christin Skantz,ann.christin.skantz@sd.se,Salems kommun,kommun,SD,Ledamot
 Anna Brandt,anna.brandt@salem.se,Salems kommun,kommun,C,Ersättare
 Anna-Carin En,anna-carin.ehn@telia.com,Salems kommun,kommun,R,Ledamot
 Anne Henningsson,anne.henningsson@salem.se,Salems kommun,kommun,R,Gruppledare
@@ -9412,7 +9142,6 @@ Anne-Christine Bosander,ankie.bosander@salem.se,Salems kommun,kommun,C,Ledamot
 Annika Jennersjö,annika.jennersjo@salem.se,Salems kommun,kommun,KD,Ersättare
 Arne Närström,arne.narstrom@salem.se,Salems kommun,kommun,S,Gruppledare
 Berit Heidenfors,berit.heidenfors@salem.se,Salems kommun,kommun,S,Ledamot
-Berit Karlsson,berit.karlsson@salem.se,Salems kommun,kommun,MP,Gruppledare
 Bernd Priemer,bernd.priemer@salem.se,Salems kommun,kommun,R,Ersättare
 Birgitta Rönnblad,birgitta.ronnblad@salem.se,Salems kommun,kommun,S,Ersättare
 Birgitta Wahlund Hafström,birgitta.wahlund.hafstrom@salem.se,Salems kommun,kommun,C,Ledamot
@@ -10502,7 +10231,6 @@ Ylva Binder,ylva.binder@strangnas.se,Strängnäs kommun,kommun,M,Ersättare
 Yvonne Knuutinen,yvonne.knuutinen@strangnas.se,Strängnäs kommun,kommun,V,Ledamot
 Aina Sundbaum,aina.sundbaum@stromsund.se,Strömsunds kommun,kommun,,
 Alf Eriksson,alf.eriksson@stromsund.se,Strömsunds kommun,kommun,,
-Bengt Åke Persson,bengt.persson@stromsund.se,Strömsunds kommun,kommun,,
 Birk Murray,birk.murray@stromsund.se,Strömsunds kommun,kommun,,
 Catarina Espmark,catarina.espmark@stromsund.se,Strömsunds kommun,kommun,,
 Christer Norden,christer.norden@stromsund.se,Strömsunds kommun,kommun,,
@@ -11341,7 +11069,6 @@ Anne-Marie Wahlström,anne-marie.wahlstrom@politiker.tibro.se,Tibro kommun,kommu
 Annika Singleton,annika.singleton@politiker.tibro.se,Tibro kommun,kommun,,
 Anto Dodik,anto.dodik@politiker.tibro.se,Tibro kommun,kommun,S,
 Anton Tranberg,anton.tranberg@politiker.tibro.se,Tibro kommun,kommun,,
-Barbro Lund,barbro.lund@politiker.tibro.se,Tibro kommun,kommun,,
 Bengt Ferm,bengt.ferm@politiker.tibro.se,Tibro kommun,kommun,S,
 Björn Lagerin,bjorn.lagerin@politiker.tibro.se,Tibro kommun,kommun,KD,
 Björn Stomberg,bjorn.stomberg@politiker.tibro.se,Tibro kommun,kommun,,
@@ -11558,8 +11285,6 @@ Viktoria Söderling,viktoria.soderling@tierp.se,Tierps kommun,kommun,S,Ledamot
 Yaqub Ahmed,yaqub.ahmed@pol.tierp.se,Tierps kommun,kommun,C,Ledamot
 Ylva Skiöld,ylva.skiold@pol.tierp.se,Tierps kommun,kommun,V,Ersättare
 ,timra.kommun@timra.se,Timrå kommun,kommun,,
-Angela Bodin,angela.bodin@sd.se,Timrå kommun,kommun,TimP,
-Anita Hellstrand,anita.hellstrand@centerpartiet.se,Timrå kommun,kommun,,
 Ann-Margret Bäckström,ann_margret2@hotmail.com,Timrå kommun,kommun,S,
 Anna-Lena Fjellström,allefjellstrom@gmail.com,Timrå kommun,kommun,,
 Annika Söderberg,64-annika@telia.com,Timrå kommun,kommun,S,
@@ -11661,7 +11386,6 @@ Yvonne Storm,yvonne.storm@tingsryd.se,Tingsryds kommun,kommun,,
 ,anette.johannessen@tjorn.se,Tjörns kommun,kommun,,
 ,bengt.arne.andersson@tjorn.se,Tjörns kommun,kommun,,
 ,benita.nilsson@tjorn.se,Tjörns kommun,kommun,,
-,benny.andersson@tjorn.se,Tjörns kommun,kommun,,
 ,benny.halldin@tjorn.se,Tjörns kommun,kommun,,
 ,bertil.ahlstrand@tjorn.se,Tjörns kommun,kommun,,
 ,bjorn.moller@tjorn.se,Tjörns kommun,kommun,,
@@ -12666,7 +12390,6 @@ Anders Åkerlind,anders.akerlind@upplands-bro.se,Upplands-Bro kommun,kommun,M,
 Andreas Persson,andreas.persson@upplands-bro.se,Upplands-Bro kommun,kommun,,
 Andreas Åström,andreas.astrom@upplands-bro.se,Upplands-Bro kommun,kommun,M,
 Anette Nyberg,anette.nyberg@upplands-bro.se,Upplands-Bro kommun,kommun,SD,
-Ann Wissing,ann.wissing@upplands-bro.se,Upplands-Bro kommun,kommun,,
 Anni Ullberg,anni.ullberg@upplands-bro.se,Upplands-Bro kommun,kommun,,
 Annika Falk,annika.falk@upplands-bro.se,Upplands-Bro kommun,kommun,S,
 Birgitta Nylund,birgitta.nylund@upplands-bro.se,Upplands-Bro kommun,kommun,S,
@@ -13186,7 +12909,6 @@ Sara Strandberg,sara.strandberg@gmail.com,Vaxholms kommun,kommun,V,Ledamot
 ,anders.cnattingius@politiker.vellinge.se,Vellinge kommun,kommun,,
 ,andreas.johansson@politiker.vellinge.se,Vellinge kommun,kommun,,
 ,angela.everback@politiker.vellinge.se,Vellinge kommun,kommun,,
-,ann-sofie.horlin@politiker.vellinge.se,Vellinge kommun,kommun,,
 ,anna.karlsson@politiker.vellinge.se,Vellinge kommun,kommun,,
 ,anna.mannfalk@vellinge.se,Vellinge kommun,kommun,,
 ,anna.tinglof@politiker.vellinge.se,Vellinge kommun,kommun,,
@@ -13194,7 +12916,6 @@ Sara Strandberg,sara.strandberg@gmail.com,Vaxholms kommun,kommun,V,Ledamot
 ,annkatrin.cedergren@politiker.vellinge.se,Vellinge kommun,kommun,,
 ,bertil.wilen@politiker.vellinge.se,Vellinge kommun,kommun,,
 ,birgitta.juhlin@politiker.vellinge.se,Vellinge kommun,kommun,,
-,birgitta.tengqvist@politiker.vellinge.se,Vellinge kommun,kommun,,
 ,bob.ericsson@politiker.vellinge.se,Vellinge kommun,kommun,,
 ,carina.wutzler@vellinge.se,Vellinge kommun,kommun,,
 ,charlotte.tham@politiker.vellinge.se,Vellinge kommun,kommun,,
@@ -13579,8 +13300,6 @@ Ulla Pihlvang,ulla.pihlvang@varmdo.se,Värmdö kommun,kommun,M,ersättare
 ,anette.myrvold@politiker.varnamo.se,Värnamo kommun,kommun,,
 ,anja.johansson@politiker.varnamo.se,Värnamo kommun,kommun,,
 ,ardita.berisha.cani@politiker.varnamo.se,Värnamo kommun,kommun,,
-,arne.adolfsson@poliker.varnamo.se,Värnamo kommun,kommun,,
-,azra.muranovic.mujagic@politiker.varnamo.se,Värnamo kommun,kommun,,
 ,bengt.einarsson@politiker.varnamo.se,Värnamo kommun,kommun,,
 ,bengt.lundstrom@politiker.varnamo.se,Värnamo kommun,kommun,,
 ,bo.karlsson@politiker.varnamo.se,Värnamo kommun,kommun,,
@@ -13671,503 +13390,6 @@ Jonas Törngård,jonas.torngard.pol@vastervik.se,Västerviks kommun,kommun,M,Led
 Jonny Gustafsson,jonny.gustafsson.pol@vastervik.se,Västerviks kommun,kommun,SD,Ersättare
 Karin Olsson,karin.olsson.pol@vastervik.se,Västerviks kommun,kommun,S,Ersättare
 ,kontaktcenter@vasteras.se,Västerås stad,kommun,,
-,anders.g.hogmark@telia.com,Västra Götalandsregionen,kommun,M,ersättare
-,anderscnilsson@hotmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Abubakr Moradi,abo183@hotmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Adrian Suvén,adrian.suven@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Agneta Jansson,agneta.u.jansson@vgregion.se,Västra Götalandsregionen,kommun,KD,ersättare
-Agneta Jansson,agnetajan@hotmail.com,Västra Götalandsregionen,kommun,KD,ersättare
-Aida Karimli,aida.karimli@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Aida Karimli,aida.karimli@vgregion.se,Västra Götalandsregionen,kommun,C,ledamot
-Albin Gilbertsson,albin.gilbertsson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Albin Gilbertsson,albin.gilbertsson@vgregion.se,Västra Götalandsregionen,kommun,SD,ersättare
-Alejandro Del Castillo Alvarez,aledelcastilloalvarez@gmail.com,Västra Götalandsregionen,kommun,V,ledamot
-Alex Bergström,alex.bergstrom@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Alexander Abenius,alexander.abenius@lerum.se,Västra Götalandsregionen,kommun,M,ledamot
-Alexander Christiansson,alexander.christiansson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Alma Sibrian Alfaro,janeth.tjorn@live.com,Västra Götalandsregionen,kommun,V,ersättare
-Anders Dahlén,aeg.dahlen@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Anders Fasth,anders.fasth@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ersättare
-Anders Karlsson,anders.karlsson01@molndal.se,Västra Götalandsregionen,kommun,KD,ersättare
-Anders Strand,anders.strand@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Andreas Exner,andreas.exner@boras.se,Västra Götalandsregionen,kommun,SD,ledamot
-Andreas Hektor,andreas.hector@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Anette Holgersson,anette.holgersson@lerum.se,Västra Götalandsregionen,kommun,V,ledamot
-Anette Holgersson,anetteholgersson68@gmail.com,Västra Götalandsregionen,kommun,V,ledamot
-Anette Nord,annette.nord@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ersättare
-Angela Fast Torstensson,angela.fast.torstensson@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Angelica Lundgren Bielinski,angelica.bielinski@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Anita Birgitta Afzelius-Alm,afzelius.larsson@skara.net,Västra Götalandsregionen,kommun,L,ledamot
-Ann Sörqvist,annesorqvist@gmail.com,Västra Götalandsregionen,kommun,C,ledamot
-Ann-Charlott Karlsson,ann-charlott.karlsson@vgregion.se,Västra Götalandsregionen,kommun,S,ersättare
-Ann-Christine Andersson,ann-christine.c.andersson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Ann-Mari Jonasson,ann-marie.jonasson@vanersborg.se,Västra Götalandsregionen,kommun,S,ersättare
-Ann-Sofie Fors,ann-sofie.fors@mellerud.se,Västra Götalandsregionen,kommun,M,ersättare
-Ann-Sofie Helen Hellvard,annsofie.hellvard@gmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Anna Hansson,anna.hansson@mp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Anna Kahn,anna.kahn@vgregion.se,Västra Götalandsregionen,kommun,V,ersättare
-Anna Sara Perslow,annasara.perslow@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Anna Svensson Sibinska,anna.sibinska@mp.se,Västra Götalandsregionen,kommun,,
-Anna Vedin,anna.vedin@kungalv.se,Västra Götalandsregionen,kommun,M,ersättare
-Anna Wallgren,anna.wallgren@lidkoping.se,Västra Götalandsregionen,kommun,KD,ersättare
-Anna-Karin Skatt,anna-karin.skatt@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Anne-Marie Franzén Molin,dinomin@telia.com,Västra Götalandsregionen,kommun,S,ersättare
-Annelie Hastig Olsson,annelie.hastig@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Annette Carlson,annette.carlson@boras.se,Västra Götalandsregionen,kommun,M,ersättare
-Annette Ternstedt,anette.ternstedt@bengtsfors.se,Västra Götalandsregionen,kommun,V,ersättare
-Annette Ternstedt,annette.ternstedt@gmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Annica Erlandsson,annica.erlandsson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Annika Carp,annika.carp@gmail.com,Västra Götalandsregionen,kommun,L,ersättare
-Annika Enghamre,annika.enghamre.13@telia.com,Västra Götalandsregionen,kommun,V,ledamot
-Annika Holmén,annika.holmen@gmail.com,Västra Götalandsregionen,kommun,V,ledamot
-Annika Holmén,annika.holmen@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Annika Håkanson,annika@ekbergmalm.se,Västra Götalandsregionen,kommun,M,ledamot
-Annika Tännström,annika.tannstrom@vgregion.se,Västra Götalandsregionen,kommun,M,ordförande
-Annika Åberg Darell,annika.aberg-darell@stenungsund.se,Västra Götalandsregionen,kommun,V,ersättare
-Arto Niskala,niskalaarto@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Astrid Mona Elisabet Eriksson,mona.eriksson@lerum.se,Västra Götalandsregionen,kommun,MP,ersättare
-Axel Josefson,axel.josefson@politiker.goteborg.se,Västra Götalandsregionen,kommun,M,ledamot nominerad av kommunerna
-Azar Hedemalm,azar.hedemalm@politiker.goteborg.se,Västra Götalandsregionen,kommun,MP,ersättare
-Beatrice Sellström,beatrice.sellstrom@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Bengt Arne Reinholdsson,bengtarne.reinholdson@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Bengt Hansves,bengt.hansves@gmail.com,Västra Götalandsregionen,kommun,SD,ersättare
-Benny Halldin,benny@xn--rset-5qa.se,Västra Götalandsregionen,kommun,S,ledamot
-Bente Johansson,ekkert@live.se,Västra Götalandsregionen,kommun,M,ledamot
-Bertil Ahlstrand,bertil.ahlstrand@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Bertil Jonsson,bertil.jonsson@lidkoping.se,Västra Götalandsregionen,kommun,M,ledamot
-Bijan Zainali,bijan.zainali@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Birgit Andersson,finnekumla@telia.com,Västra Götalandsregionen,kommun,L,ersättare
-Birgitta Adolfsson,birgitta.adolfsson@vgregion.se,Västra Götalandsregionen,kommun,L,ledamot
-Birgitta Bergman,birgitta.bergman@politiker.boras.se,Västra Götalandsregionen,kommun,M,ersättare
-Birgitta Evans,birgitta.evans@telia.com,Västra Götalandsregionen,kommun,S,ledamot
-Björn Qvarnström,bjorn.qvarnstrom@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Björn Thodenius,bjorn.thodenius@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Björn Tidland,bjorn.tidland@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Britt-Marie Nordin,bm.nordin51@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Can Deniz Altintasli,vgrmail2018@gmail.com,Västra Götalandsregionen,kommun,V,ledamot
-Carin Ramneskär,carin@ramneskar.se,Västra Götalandsregionen,kommun,M,ersättare
-Carina Gullberg,carina.gullberg@gullspang.se,Västra Götalandsregionen,kommun,S,ledamot
-Carina Liljesand,carina.liljesand@vgregion.se,Västra Götalandsregionen,kommun,L,ledamot
-Carina Ridenius,carina.ridenius@gmail.com,Västra Götalandsregionen,kommun,M,ledamot
-Carina Åström,carina.astrom@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Carina Örgård,carina.orgard@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Caritha Jacobsson,caritha.jacobsson@munkedal.se,Västra Götalandsregionen,kommun,S,ersättare
-Carl Forsberg,carl.forsberg@vgregion.se,Västra Götalandsregionen,kommun,MP,ersättare
-Cecilia Andersson,cecilia.y.andersson@vgregion.se,Västra Götalandsregionen,kommun,C,ledamot
-Cecilia Dalman Eek,cecilia.dalmaneek@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Cecilia Gäfvert,cgafvert@hotmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Christin Stormvall,christin.stormvall@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Christina Abrahamsson,christina@emtungatransport.se,Västra Götalandsregionen,kommun,M,ledamot
-Christina Hein,christina.hein24@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Christina Yngvesson,tinaredcap@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Conny Brännberg,conny.brannberg@vgregion.se,Västra Götalandsregionen,kommun,KD,förste vice ordförande
-Conny Jervhäll,connyjerv10@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Dag Forsström,dagfors@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Dan Åberg,dan.aberg@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Daniel Andersson,daniel.andersson@liberal.se,Västra Götalandsregionen,kommun,L,ledamot
-Daniel Persson,p.e.daniel.persson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Daniel Svensson,daniel.svensson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-David Sahlsten,david.sahlsten@vgregion.se,Västra Götalandsregionen,kommun,KD,ledamot
-Dennis Alvdén,dennis.alvden@moderatvg.se,Västra Götalandsregionen,kommun,M,ersättare
-Dennis Jeryd,dennis.jeryd@vgregion.se,Västra Götalandsregionen,kommun,S,vice ordf
-Dragana Todorovic,dragana.todorovic@vgregion.se,Västra Götalandsregionen,kommun,S,ersättare
-Dwight Sjöstedt,dwight.public@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Ed Kahrs,edkahrs@gmail.com,Västra Götalandsregionen,kommun,M,ledamot
-Egon Frid,egon.frid@telia.com,Västra Götalandsregionen,kommun,V,ersättare
-Egon Frid,egon.frid@vara.se,Västra Götalandsregionen,kommun,V,ersättare
-Elisabet Stålarm,estalarm@gmail.com,Västra Götalandsregionen,kommun,M,ombud
-Elise Benjaminsson,elise.benjaminsson@vgregion.se,Västra Götalandsregionen,kommun,M,ersättare
-Elise Norberg Pilhem,elise.norberg3@icloud.com,Västra Götalandsregionen,kommun,V,ledamot
-Elizabeth Fierro Fredriksson,elizabeth.fierro.fredriksson@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Ellen Kristina Elisabet Holmgren,holmgrenkristina@hotmail.com,Västra Götalandsregionen,kommun,M,ledamot
-Elving Andersson,elving.andersson@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Emina Music,emina.music@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Emma Holm,emmaholm_@outlook.com,Västra Götalandsregionen,kommun,V,ledamot
-Erik Andreasson,erikandreasson1990@gmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Erik Kyrkander,erik@klurig.com,Västra Götalandsregionen,kommun,V,ersättare
-Esther O'Hara,esther.ohara@mp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Eva Abrahamsson,eva.smogen@telia.com,Västra Götalandsregionen,kommun,M,ledamot
-Eva Espling,eva.espling@vgregion.se,Västra Götalandsregionen,kommun,V,ersättare
-Eva Forsberg Torstensson,ewa.thorstensson@hjo.se,Västra Götalandsregionen,kommun,M,ersättare
-Eva Forsberg Torstensson,ewa.torstensson@outlook.com,Västra Götalandsregionen,kommun,M,ersättare
-Eva Kristensen,eva.kristensen@partille.se,Västra Götalandsregionen,kommun,S,ersättare
-Eva Maria Olofsson,eva.olofsson@vgregion.se,Västra Götalandsregionen,kommun,V,ordförande
-Eva Ternegren,eva.ternegren@politiker.goteborg.se,Västra Götalandsregionen,kommun,MP,ledamot
-Eva Österlund Hjort,eva.hjort@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Eva-Karin Haglund,eva-karin.haglund@fv.tranemo.se,Västra Götalandsregionen,kommun,S,ersättare
-Eva-Karin Torhem Arnell,karin.torhem.arnell@mark.se,Västra Götalandsregionen,kommun,C,ledamot
-Eva-Lena Fransson,evalena.fransson@telia.com,Västra Götalandsregionen,kommun,S,ledamot
-Eva-Lena Öman,eva-lena.oman@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Eva-Lotta Pamp,eva-lotta.pamp@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Evalotta Liljenzin,evalotta@liljenzin.se,Västra Götalandsregionen,kommun,M,ersättare
-Evert Svenningsson,evert.svenningsson@telia.com,Västra Götalandsregionen,kommun,S,ledamot
-Fahimeh Nordborg,fahimeh.nordborg@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Fredrik Gullbrantz,fredrik.gullbrantz@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Fredrik Nordström,skaranordstrom@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Fredrik Olsson,feje72@gmail.com,Västra Götalandsregionen,kommun,KD,ersättare
-Frej Dristig,frej.dristig@lillaedet.se,Västra Götalandsregionen,kommun,SD,ersättare
-Frida Nilsson,frida.nilsson@lidkoping.se,Västra Götalandsregionen,kommun,C,vice ordf
-Georg De Laval,georg.delaval@gmail.com,Västra Götalandsregionen,kommun,D,ersättare
-Gert-Inge Andersson,gert-inge.andersson@politiker.trollhattan.se,Västra Götalandsregionen,kommun,S,ledamot
-Gertrud Ingelman,gertrud.ingelman@politiker.goteborg.se,Västra Götalandsregionen,kommun,V,ersättare
-Gladys San Roman Yannelli,carglayan1@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Glenn Ottosson,glenn.ottosson@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Glenn Ottosson,glenn.ottosson@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Greger Plannthin,greger.plannthin@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Gun-Britt Johansson,gun-britt.johansson@politiker.boras.se,Västra Götalandsregionen,kommun,V,ledamot
-Gunilla Andersson Gustafsson,gunilla.consulting@gmail.com,Västra Götalandsregionen,kommun,-,ersättare
-Gunilla Cederbom,gunilla.cederbom@vgregion.se,Västra Götalandsregionen,kommun,V,förste vice ordförande
-Gunilla Druve Jansson,gunilla.druve.jansson@vgregion.se,Västra Götalandsregionen,kommun,C,ledamot
-Gunilla Gomér,gunilla.gomer@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Gunilla Josefsson,gjosefsson54@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Gunilla Lindell,gunilla.lindell@vgregion.se,Västra Götalandsregionen,kommun,-,ledamot
-Gunnar Lidell,gunnar.lidell@vanersborg.se,Västra Götalandsregionen,kommun,M,ersättare
-Gunnar Lidén,diwe.liden@swipnet.se,Västra Götalandsregionen,kommun,M,ersättare
-Gunne Steen,gunne.steen@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Gunnel Adler,adlergunnel5@gmail.com,Västra Götalandsregionen,kommun,MP,ledamot
-Gustaf Josefson,gustaf.josefson@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Gustav Evert Magnusson,evert.g.magnusson@telia.com,Västra Götalandsregionen,kommun,S,ersättare
-Göte Karlsson,gote.karlsson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Göte Karlsson,gotekarlsson10@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Hannyah Jörtoft,hannyah.jortoft@vgregion.se,Västra Götalandsregionen,kommun,-,ersättare
-Hans Johansson,hans.johansson@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Hans Schub,hans.schub@tanum.se,Västra Götalandsregionen,kommun,M,ledamot
-Hans Thornander,hans.thornander@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ersättare
-Hans Wessberg,hans.wessberg@molndal.se,Västra Götalandsregionen,kommun,-,ersättare
-Hans-Carl Carlson,hans-carl.carlson@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ersättare
-Hans-Inge Sältenberg,hans-inge.saltenberg@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Hans-Joachim Isenheim,ninalunch@hotmail.com,Västra Götalandsregionen,kommun,MP,ledamot
-Harri Ikonen,harri.ikonen@vgregion.se,Västra Götalandsregionen,kommun,S,ersättare
-Harriet Andreasson,harrietandreasson@gmail.com,Västra Götalandsregionen,kommun,L,ersättare
-Helen Eliasson,helen.m.eliasson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Helen Persgren,helen.persgren@gmail.com,Västra Götalandsregionen,kommun,MP,ersättare
-Helena Holmberg,helena.holmberg@liberalerna.se,Västra Götalandsregionen,kommun,L,ledamot
-Helena Thelin,helena.thelin@sjusam.se,Västra Götalandsregionen,kommun,S,ledamot
-Helene Strand,helene.strand@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Heléne Granbom Angerheim,helene.granbom.angerheim@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Henrik Josten,henrik.josten@vanersborg.se,Västra Götalandsregionen,kommun,M,andre vice ordförande
-Henrik Ryberg,henrik.ryberg@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Henrik Sundström,henrik@advokatsundstrom.se,Västra Götalandsregionen,kommun,M,ersättare
-Hewa Cardoi,hewa.cardoi@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Håkan Andersson,hakan.u.andersson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Håkan Linnarsson,hakan.linnarsson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Håkan Lösnitz,hakan.losnitz@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Ida Balog,ida.balog@yahoo.se,Västra Götalandsregionen,kommun,M,ersättare
-Ida Jakobsson,ida.jakobsson@tanum.se,Västra Götalandsregionen,kommun,S,ledamot
-Ing-Marie Larsson,ingmarie.l@telia.com,Västra Götalandsregionen,kommun,L,ersättare
-Inga-Maj Krüger,inga.maj.kruger@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Ingegerd Granat,ingegerd.granat@telia.com,Västra Götalandsregionen,kommun,C,ersättare
-Ingela Jedvert,jedvert@telia.com,Västra Götalandsregionen,kommun,L,ersättare
-Inger Billman-Stark,inger.billman-stark@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Ingrid Andreae,ingrid.andreae@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Ingvar Frid,ingvar.frid@lerum.se,Västra Götalandsregionen,kommun,L,ersättare
-Ingvar Svensson,ingvar.s.svensson@telia.com,Västra Götalandsregionen,kommun,S,ledamot
-Jacob Brendelius,jacob.brendelius@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Jacob Wihlborg,jacob.wihlborg@molndal.se,Västra Götalandsregionen,kommun,S,ersättare
-Jan Alexandersson,jan.alexandersson@vgregion.se,Västra Götalandsregionen,kommun,V,ordförande
-Jan Lindblom,jan@lindblom.com,Västra Götalandsregionen,kommun,M,ledamot
-Jan Palmqvist,jan.palmqvist@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Jan Ripa,socdem.ripa@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Jan Utbult,jan.utbult@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ersättare
-Jan Åke Jansson,janakejansson@hotmail.com,Västra Götalandsregionen,kommun,KD,ersättare
-Jan Åke Simonsson,jan-ake.simonsson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Jane Bredin,jane.bredin@comhem.se,Västra Götalandsregionen,kommun,M,ersättare
-Jane Åberg,jane.aberg@telia.com,Västra Götalandsregionen,kommun,S,ledamot
-Janette Olsson,janette.olsson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Jannicke Stranne,jannicke.stranne@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Jenny Stang Corneliusson,jenny.corneliusson@tanum.se,Västra Götalandsregionen,kommun,S,ersättare
-Jens Christian Berlin,jens.christian.berlin@liberalerna.se,Västra Götalandsregionen,kommun,L,ersättare
-Jens Persson,jens.persson@grastorp.se,Västra Götalandsregionen,kommun,S,ersättare
-Jesper Johansson,politikerjesper@gmail.com,Västra Götalandsregionen,kommun,V,ledamot
-Jessica Lindblom,jessica.bredenberg@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Jessika Loftbring,jessika.loftbring@pol.ale.se,Västra Götalandsregionen,kommun,C,ersättare
-Jim Aleberg,jim.aleberg@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Jimmie Mikael Stranne,jimmie.stranne@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Joakim Hagberg,joakim.hagberg@hotmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Joakim Sjöling,j.sjoling@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Joel Olsson,joel.olsson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Johan Ask,johan.ask@skovde.se,Västra Götalandsregionen,kommun,S,ledamot
-Johan Björkman,johan.bjorkman@svenljunga.se,Västra Götalandsregionen,kommun,M,ledamot
-Johan Fält,johan.falt@politiker.goteborg.se,Västra Götalandsregionen,kommun,M,ledamot
-Johan Nordin,johan.nordin@ale.se,Västra Götalandsregionen,kommun,S,ersättare
-Johan Stefan Evert Wiktorsson,johan.se.wiktorsson@outlook.com,Västra Götalandsregionen,kommun,M,ersättare
-Johan Sösaeter Johansson,johan.sosaeter.johansson@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Johanna Johansson,johanna.johansson@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Johnny Alexandersson,johnny_alexandersson@icloud.com,Västra Götalandsregionen,kommun,S,ersättare
-Johnny Bröndt,johnny.brondt@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Jon Haraldsson,jon.haraldsson@lerum.se,Västra Götalandsregionen,kommun,S,ersättare
-Jon Hjärne,jon.hjarne@politiker.boras.se,Västra Götalandsregionen,kommun,,
-Jonas Andersson,jonas.andersson@liberalerna.se,Västra Götalandsregionen,kommun,L,ledamot
-Jonas Blomster,jonas.blomster@mp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Jonas Eriksson,jonas.eriksson@sef.se,Västra Götalandsregionen,kommun,S,ersättare
-Jonas Eriksson,jonas.j.eriksson@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Jonas Sundström,jonas.sundstrom@lidkoping.se,Västra Götalandsregionen,kommun,S,ersättare
-Jonathan Andersson,jonathan.andersson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Jonathan Pasic,jonathanpasic@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Jöran Fagerlund,joran.fagerlund@politiker.goteborg.se,Västra Götalandsregionen,kommun,V,ledamot
-Jörgen Hellman,jorgen.hellman@riksdagen.se,Västra Götalandsregionen,kommun,S,ledamot
-Jörgen Molin,jorgen.molin@telia.com,Västra Götalandsregionen,kommun,M,ersättare
-Kajsa Hamnén,kajsa.hamnen@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Kalle Blomgren,kalle.blomgren@vgregion.se,Västra Götalandsregionen,kommun,S,ersättare
-Karin Greenberg Gelotte,greenberg.karin@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Karin Maria Elisabet Olofsson,karin@storahogan.se,Västra Götalandsregionen,kommun,MP,ersättare
-Karin Veres,karin.veres@liberalerna.se,Västra Götalandsregionen,kommun,L,ledamot
-Karin Östring Bergman,karin.ostring.bergman@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Karl Johan Nordensten,karljohan.nordensten@mp.se,Västra Götalandsregionen,kommun,MP,ledamot
-Karl Wiktorsson,karl.wiktorsson@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Karola Svensson,karola.vilan@gmail.com,Västra Götalandsregionen,kommun,C,ersättare
-Karolina Bergström,karolina.bergstrom@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Katarina Bredberg,bredbergkatarina@outlook.com,Västra Götalandsregionen,kommun,S,ersättare
-Katarina Kuzmanovic,katarina.kuzmanovic@mp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Katarina Lundin,katarina.lundin@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Kenneth Borgmalm,kenneth.borgmalm@telia.com,Västra Götalandsregionen,kommun,S,ledamot
-Kenneth Carlsson,kenneth.carlsson@liberal.se,Västra Götalandsregionen,kommun,L,ersättare
-Kenneth Gustavsson,kenneth.gustavsson@vgregion.se,Västra Götalandsregionen,kommun,C,ersättare
-Kent Lagrell,kent.lagrell@ockero.se,Västra Götalandsregionen,kommun,M,ledamot
-Kent Lagrell,kent.lagrell@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Kerstin Joelsson-Wallsby,kerstin.joelsson-wallsby@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Kjell Arne Evald Nordström,kjell.nordstrom@hokaregatan.se,Västra Götalandsregionen,kommun,S,ordförande
-Krista Femrell,krista.femrell@politiker.goteborg.se,Västra Götalandsregionen,kommun,SD,ledamot
-Krista Femrell,krista.gunilla.femrell@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Krister Johansson,christer.johansson@bollebygd.se,Västra Götalandsregionen,kommun,M,ledamot
-Krister Stensson,krister.stensson@telia.com,Västra Götalandsregionen,kommun,M,revisor
-Kristin Arplöw,kristinarplow2@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Kristina Carlsson,kristinacarlsson@telia.com,Västra Götalandsregionen,kommun,KD,ledamot
-Kristina Grapenholm,kristina.grapenholm@liberalerna.se,Västra Götalandsregionen,kommun,L,ledamot
-Kristina Jonäng,kristina.jonang@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Lars Carlström,lars.carlstrom09@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Lars Holmin,lars.holmin@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Lars Nordström,lars.nordstrom@geography.gu.se,Västra Götalandsregionen,kommun,L,ledamot
-Lars Tysklind,lars.tysklind@vgregion.se,Västra Götalandsregionen,kommun,L,ledamot
-Lars Åke Karlsson,larsake.carlsson77@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Lars-Arne Staxäng,l-a.staxang@telia.com,Västra Götalandsregionen,kommun,M,ledamot
-Lars-Erik Hansson,larserikhansson186@gmail.com,Västra Götalandsregionen,kommun,V,ordförande
-Lars-Inge Andersson,lars-inge.andersson@vgregion.se,Västra Götalandsregionen,kommun,KD,ersättare
-Larseric Bergqvist,larseric@bsins.se,Västra Götalandsregionen,kommun,V,ersättare
-Leif Andersson,leif.andersson@stromstad.se,Västra Götalandsregionen,kommun,S,ersättare
-Leif Blomqvist,leifblomqvist0@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Lena Bjurström,lbrbjurstrom@gmail.com,Västra Götalandsregionen,kommun,C,ersättare
-Lena Camp,lena.camp@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Lena Hult,lena.m.hult@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Lena Jagers Bladini,jagers.bladini@gmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Lena Olofsdotter Jenemark,lena.jenemark@lidkoping.se,Västra Götalandsregionen,kommun,S,ersättare
-Lena Palmén,lena.palmen@vgregion.se,Västra Götalandsregionen,kommun,S,ersättare
-Lena Schoultz,schoultzlena@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Lena Sällström,l.sallstrom@telia.com,Västra Götalandsregionen,kommun,S,ersättare
-Lennart Jonsson,lennart.jonsson@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Lennart Jonsson,lennart.jonsson@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Liisa Kirjavainen Hyväri,liisa.k.hyvari@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Linda Högbacka,linda.hogbacka@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Linda Jansson,linda.elisabeth.jansson@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Linda Åshamre,linda.ashamre@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Linda-Maria Hermansson,linda-maria.hermansson@stenungsund.se,Västra Götalandsregionen,kommun,C,ersättare
-Linn Brandström,linn.brandstrom@toreboda.se,Västra Götalandsregionen,kommun,M,ledamot
-Linn Brandström,linn.brandstrom@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Linnea Hultmark,linnea.hultmark.hjo@gmail.com,Västra Götalandsregionen,kommun,C,ledamot
-Linnea Wall,linnea.wall@mariestad.se,Västra Götalandsregionen,kommun,S,ersättare
-Lisa Berglund,lisa.j.berglund@gmail.com,Västra Götalandsregionen,kommun,KD,ledamot
-Lisbeth Ider,ider.lisbeth@gmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Lisbeth Svensson,lisbeth.k.i.svensson@telia.com,Västra Götalandsregionen,kommun,L,ersättare
-Lisbeth Svensson,lisbeth.svensson@liberalerna.se,Västra Götalandsregionen,kommun,L,ersättare
-Liselotte Fröjd,liselotte.frojd@tanum.se,Västra Götalandsregionen,kommun,M,ledamot nominerad av kommunerna
-Liza Kettil,liza.kettil@munkedal.se,Västra Götalandsregionen,kommun,S,ersättare
-Lo Göthberg Larsson,lo.gothberg.larsson@mp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Louise Jeppsson,louise.jeppsson@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Louise Åsenfors,louise.asenfors@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Lucas Henriksson,lucas.henriksson@mp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Madde Lind Jansdotter,madde.lind@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Madeleine Jonsson,madeleine.p.jonsson@vgregion.se,Västra Götalandsregionen,kommun,MP,ledamot
-Madeleine Librén,madeleine.libren@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Magnus Berntsson,magnus.berntsson@vgregion.se,Västra Götalandsregionen,kommun,KD,ledamot
-Magnus Gunnarsson,magnus.gunnarsson@mp.se,Västra Götalandsregionen,kommun,MP,ledamot
-Magnus Harjapää,magnus.harjapaa@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Magnus Jakobsson,magnus.jacobsson@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ledamot
-Magnus Linde,nilshilding@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Magnus Marelius,magnus.marelius@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Maj Ader,maj.ader@lidkoping.se,Västra Götalandsregionen,kommun,KD,ersättare
-Maj-Britt Eckerström,maj-britt.eckerstrom@politiker.boras.se,Västra Götalandsregionen,kommun,C,ersättare
-Malin Sjunneborn,malin.sjunneborn@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Marcus Ewerstrand,marcus.ewerstrand@outlook.com,Västra Götalandsregionen,kommun,M,ersättare
-Marcus Källander,marcuskallander@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Margareta Fredriksson,margareta.fredriksson@vgregion.se,Västra Götalandsregionen,kommun,L,ersättare
-Maria Adrell,maria.adrell@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Maria Andersson,maria.andersson@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Maria Brauer,maria.brauer@ockero.se,Västra Götalandsregionen,kommun,S,ledamot
-Maria Bruckshaw,maria.bruckshaw@cerama.nu,Västra Götalandsregionen,kommun,KD,ledamot
-Maria Hjärtqvist,maria.hjartqvist@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Maria Kornevik Jakobsson,maria.kornevik.jakobsson@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Maria Kornevik Jakobsson,maria.kornevik.jakobsson@harryda.se,Västra Götalandsregionen,kommun,C,ledamot
-Maria Maric,maria.maric@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ersättare
-Maria Martini,maria.martini@centerpartiet.se,Västra Götalandsregionen,kommun,C,ledamot
-Maria Nilsson,maria.anna.nilsson@vgregion.se,Västra Götalandsregionen,kommun,KD,ledamot
-Maria Radivoj,mariaradivoj@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Maria Renfors,maria.renfors@stenungsund.se,Västra Götalandsregionen,kommun,M,ersättare
-Marianne Berntsson,marianne.berndtson@vgregion.se,Västra Götalandsregionen,kommun,D,ledamot
-Marianne Bonnevier,marianne.bonnevier@lidkoping.se,Västra Götalandsregionen,kommun,MP,ersättare
-Marianne Nilsson,barbrobjarne@gmail.com,Västra Götalandsregionen,kommun,KD,ersättare
-Marie Lindqvist,marie.lindqvist@molndal.se,Västra Götalandsregionen,kommun,V,ledamot
-Marie Raask,marie.raask@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Mariette Höij,mariette.risberg@politiker.goteborg.se,Västra Götalandsregionen,kommun,D,ledamot
-Marika Isetorp,marika@isetorp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Marina Johansson,marina.johansson@politiker.goteborg.se,Västra Götalandsregionen,kommun,S,ledamot nominerad av kommunerna
-Marina Sandgren,marina.l.fransson@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Marita Bengtsson,marita.bengtsson47@icloud.com,Västra Götalandsregionen,kommun,S,ledamot
-Marita Karlsson,marita.manstigen@gmail.com,Västra Götalandsregionen,kommun,L,ersättare
-Marith Hesse,marith.hesse@partille.se,Västra Götalandsregionen,kommun,M,ledamot
-Marjan Garmroudi,marjan.garmroudi@vgregion.se,Västra Götalandsregionen,kommun,V,andre vice ordförande
-Martin Carling,martin.carling@dalsed.se,Västra Götalandsregionen,kommun,C,ersättare
-Martin Johansson,martin.johansson@tjorn.se,Västra Götalandsregionen,kommun,-,ledamot
-Martin Johansson,solhydda@hotmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Martin Sörbom,martin.sorbom@politiker.boras.se,Västra Götalandsregionen,kommun,SD,ersättare
-Martin Wannholt,martin.wannholt@vgregion.se,Västra Götalandsregionen,kommun,D,ledamot
-Martina Lundquist,ulla.martina.birgitta.lundquist@politiker.goteborg.se,Västra Götalandsregionen,kommun,SD,ersättare
-Matheus Enholm,matheus.enholm@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Mathias Olsson,mathias.olsson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Mats Andersson,mats.andersson@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Mats Berglund,mats.berglund@vgregion.se,Västra Götalandsregionen,kommun,V,representant
-Mats Bjelkemyr,mats.bjelkemyr@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Mats Brännström,mats.brannstrom@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Mats Palm,mats.palm@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Mats Pilhem,mats.pilhem@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Mattias Pettersson,mattias.pettersson@lidkoping.se,Västra Götalandsregionen,kommun,V,ledamot
-Maud Ekman,ekman.maud@gmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Micaela Kronberg,micaela.kronberg@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Michael Karlsson,michael.karlsson@skara.se,Västra Götalandsregionen,kommun,S,förste vice ordförande
-Michael Melby,michael.melby@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Mikael Berglund,mikael.berglund@ale.se,Västra Götalandsregionen,kommun,M,ersättare
-Mikael Clarke,mikael.clarke@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Mikael Faleke,mikael.faleke@politiker.tibro.se,Västra Götalandsregionen,kommun,M,ersättare
-Mikael Staxäng,mikael.staxang@gmail.com,Västra Götalandsregionen,kommun,M,ersättare
-Mikael Wendt,mikael.wendt@liberalerna.se,Västra Götalandsregionen,kommun,L,ledamot
-Moez Dharsani,moez.dharsani@vgregion.se,Västra Götalandsregionen,kommun,S,ersättare
-Monika Beiring,monika.beiring@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Mosa Roshanghias,mosa.roshanghias@boras.se,Västra Götalandsregionen,kommun,MP,ersättare
-My Alnebratt,my.alnebratt@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Nanna Siewertz Tulinius,nanna.siewertz.tulinius@vgregion.se,Västra Götalandsregionen,kommun,L,ersättare
-Niclas Sunding,niclas.sunding@gmail.com,Västra Götalandsregionen,kommun,-,ersättare
-Nina Andersson,nina.siversbo@hotmail.se,Västra Götalandsregionen,kommun,C,ersättare
-Nina Terenziani,nina.terenziani@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Ola Wesley,ola.wesley@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Olle Jonsson,ollejohnsson5@gmail.com,Västra Götalandsregionen,kommun,L,ersättare
-Olof Andersson,andersolle@gmail.com,Västra Götalandsregionen,kommun,L,ersättare
-Olof Svensson,osgbg@hotmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Oscar Dahl,carloscardahl@gmail.com,Västra Götalandsregionen,kommun,C,ersättare
-Oscar Pihlblad,oscar.pihlblad@vgregion.se,Västra Götalandsregionen,kommun,KD,ledamot
-Oskar Karlsson,oskar.k.karlsson@vgregion.se,Västra Götalandsregionen,kommun,V,ledamot
-Oskar Sköld,oskar.skold@outlook.com,Västra Götalandsregionen,kommun,S,ledamot
-Ove Kaye,ove.kaye@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Patric Cerny,patric.cerny@svenskakyrkan.se,Västra Götalandsregionen,kommun,L,ledamot
-Patrik Linde,patrik.linde@harryda.se,Västra Götalandsregionen,kommun,S,ledamot
-Peder Danesved,peder.danesved@gmail.com,Västra Götalandsregionen,kommun,L,ledamot
-Per Erik Norlin,pereriknorlin@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Per Eriksson,per.eriksson@bengtsfors.se,Västra Götalandsregionen,kommun,S,ersättare
-Per Landgren,per.landgren@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ersättare
-Per Tenggren,per.tenggren@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Per Vorberg,per.vorberg@moderaterna.se,Västra Götalandsregionen,kommun,M,ledamot
-Per-Eric Trulsson,per-eric.trulsson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Perallan Orrbeck,perallan.orrbeck@liberal.se,Västra Götalandsregionen,kommun,L,ledamot
-Pernilla Paijkull,pernillahagman@outlook.com,Västra Götalandsregionen,kommun,KD,ersättare
-Pernilla Stafsén,pernilla.stafsen@politiker.goteborg.se,Västra Götalandsregionen,kommun,S,ersättare
-Pernilla Taxén Börjesson,pernilla.taxen.borjesson@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Pernilla Wendesten,pernilla.wendesten@kristdemokraterna.se,Västra Götalandsregionen,kommun,KD,ledamot
-Peter Arvidsson,peter.arvidsson@politiker.harryda.se,Västra Götalandsregionen,kommun,-,ledamot
-Peter Friberg,peter.p.friberg@tidaholm.se,Västra Götalandsregionen,kommun,M,ersättare
-Peter Heie,peter.heie@vgregion.se,Västra Götalandsregionen,kommun,C,ledamot
-Peter Hermansson,peter.hermansson@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Peter Legendi,peter@legendi.se,Västra Götalandsregionen,kommun,S,ledamot
-Peter Rosholm,peter.rosholm@telia.com,Västra Götalandsregionen,kommun,S,ordförande
-Peter Spjuth,peter.spjuth@lillaedet.se,Västra Götalandsregionen,kommun,V,ersättare
-Peter Söderlund,peter.soderlund@politiker.tibro.se,Västra Götalandsregionen,kommun,L,ersättare
-Petra Elf,petra.elf@mp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Petra Sundblad,petra.sundblad@sotenas.se,Västra Götalandsregionen,kommun,S,ledamot
-Petter Åström,petterast@me.com,Västra Götalandsregionen,kommun,M,ersättare
-Pierre Rydén,pierre.ryden@hjo.se,Västra Götalandsregionen,kommun,S,ersättare
-Pär Johnson,par.johnson@liberalerna.se,Västra Götalandsregionen,kommun,L,ledamot
-Pär Lundqvist,par.lundqvist@vgregion.se,Västra Götalandsregionen,kommun,L,ledamot
-Ralf Dahlgren,ralf.dahlgren@lerum.se,Västra Götalandsregionen,kommun,SD,ledamot
-Renée Bengtsson,renee.bengtsson@vgregion.se,Västra Götalandsregionen,kommun,S,ordförande
-Richard Brodd,richard.brodd@liberalerna.se,Västra Götalandsregionen,kommun,L,ersättare
-Richard Brodd,richard.brodd@vgregion.se,Västra Götalandsregionen,kommun,L,ersättare
-Richard Malm,richard.malm@ifmetall.se,Västra Götalandsregionen,kommun,S,ersättare
-Rita Stålbert,rita@stalbert.se,Västra Götalandsregionen,kommun,KD,ersättare
-Robert Hörnquist,robert.hornquist@live.se,Västra Götalandsregionen,kommun,L,ersättare
-Robert Sandberg,robert.sandberg@hotmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Robert Yngve,robert.yngve66@gmail.com,Västra Götalandsregionen,kommun,KD,ledamot
-Roland Andersson,roland.boras@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Roland Karlsson,roland.karlsson@ulricehamn.se,Västra Götalandsregionen,kommun,C,ersättare
-Roland Wanner,roland.wanner2@gmail.com,Västra Götalandsregionen,kommun,MP,ersättare
-Rolf Gunnar Eriksson,rolf.eriksson@politiker.tibro.se,Västra Götalandsregionen,kommun,S,ersättare
-Ronnie Brolin,ronnie.brolin@ifocusstudios.se,Västra Götalandsregionen,kommun,M,ledamot
-Ronnie Brorsson,ronnie.brorsson@stromstad.se,Västra Götalandsregionen,kommun,S,ledamot
-Sanda Anton Henriksson,sanda.henriksson@politiker.goteborg.se,Västra Götalandsregionen,kommun,SD,ersättare
-Sandra Lindholm,sandra.lindholm@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Sara Andersson,sara.b.andersson@vgregion.se,Västra Götalandsregionen,kommun,S,ersättare
-Saskia Nordqvist,kia.nordqvist@gmail.com,Västra Götalandsregionen,kommun,MP,ledamot
-Sebastian Aronsson,sebastian.aronsson@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Sebastian Ekeroth Clausson,sebastian.ekeroth-clausson@mariestad.se,Västra Götalandsregionen,kommun,S,ledamot
-Sebastian Helin,sebastian.helin@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Sebastian Rinvall,sebbe.rinvall@gmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Sofi Bringsoniou,sofi.bringsoniou@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Sofia Vinberg Kämpe,sofia.v.kampe@gmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Sofia Wik,sofia.wik.politiker@gmail.com,Västra Götalandsregionen,kommun,C,ersättare
-Soraya Zarza Lundberg,soraya.zarza.lundberg@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Staffan Setterberg,setterberg@nativo.se,Västra Götalandsregionen,kommun,KD,ledamot
-Stefan Eliasson,stefan.eliasson@sd.se,Västra Götalandsregionen,kommun,SD,ersättare
-Stefan Svensson,stefan.k.svensson@vgregion.se,Västra Götalandsregionen,kommun,KD,ledamot
-Sten Höij,partillestenmontering@gmail.com,Västra Götalandsregionen,kommun,D,ersättare
-Stig Carlsson,stigce.carlsson@hotmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Stig Lennart Roland Karlsson,roland.karlsson@telia.com,Västra Götalandsregionen,kommun,L,ledamot
-Stig-Olov Tingbratt,tingbratt@telia.com,Västra Götalandsregionen,kommun,C,ersättare
-Susanna Cassberg,susanna.cassberg@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Susanne Berglund,susannecberglund@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Susanne Sillberg Ligander,sus_ligander@hotmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Suzanne Parenius,suzanne.parenius@lerum.se,Västra Götalandsregionen,kommun,C,ersättare
-Svante Classon,svante.classon@grastorp.se,Västra Götalandsregionen,kommun,C,ersättare
-Sören Runsteen,soren.runsteen@conara.se,Västra Götalandsregionen,kommun,KD,ersättare
-Theres Sahlström,theres.sahlstrom@skovde.se,Västra Götalandsregionen,kommun,M,ledamot nominerad av kommunerna
-Therese Eriksson Lehtimäki,therese.eriksson.lehtimaki@vgregion.se,Västra Götalandsregionen,kommun,V,ersättare
-Thomas Mellqvist,thomasmellqvist@gmail.com,Västra Götalandsregionen,kommun,C,ersättare
-Thony Andreasson Aderum,thony.andreasson.aderum@vgregion.se,Västra Götalandsregionen,kommun,MP,ersättare
-Tina Ehn,tina.ehn@vgregion.se,Västra Götalandsregionen,kommun,MP,ledamot
-Tina Ehn,tinatina.ehn@gmail.com,Västra Götalandsregionen,kommun,MP,ledamot
-Tina Wallenius,tina.wallenius@gmail.com,Västra Götalandsregionen,kommun,MP,ersättare
-Tobias Björk,tobias.bjork@vgregion.se,Västra Götalandsregionen,kommun,M,ledamot
-Tom Andersson,tom.andersson@mp.se,Västra Götalandsregionen,kommun,MP,ersättare
-Tomas Angervik,tomas.angervik@gmail.com,Västra Götalandsregionen,kommun,S,ledamot
-Tomas Angervik,tomas.angervik@molndal.se,Västra Götalandsregionen,kommun,S,ledamot
-Tomas Angervik,tomas.angervik@vgregion.se,Västra Götalandsregionen,kommun,S,ledamot
-Tomas Brandberg,tomas.brandberg@riksdagen.se,Västra Götalandsregionen,kommun,SD,ledamot
-Tomas Johansson,tomas.johansson@moderaterna.se,Västra Götalandsregionen,kommun,M,ledamot
-Tommy Larsson,tommy.larsson@lidkoping.se,Västra Götalandsregionen,kommun,KD,ersättare
-Tommy Mårtensson,t.martensson@telia.com,Västra Götalandsregionen,kommun,S,ersättare
-Tony Willner,tony.willner@vargarda.se,Västra Götalandsregionen,kommun,S,ledamot
-Tore Hult,sventore.hult@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Torgny Alstad,torgny.alstad@vgregion.se,Västra Götalandsregionen,kommun,V,ersättare
-Tuija Katrina Fabernäs,happytuija@icloud.com,Västra Götalandsregionen,kommun,V,ersättare
-Ulf Eriksson,ulf.a.eriksson@vgregion.se,Västra Götalandsregionen,kommun,C,ledamot
-Ulf Hanstål,ulf.hanstal@moderaterna.se,Västra Götalandsregionen,kommun,M,ersättare
-Ulf Olsson,ulf.olsson@boras.se,Västra Götalandsregionen,kommun,S,ledamot nominerad av kommunerna
-Ulf Rexefjord,ulf.rexefjord@mellerud.se,Västra Götalandsregionen,kommun,SD,ersättare
-Ulla Berne,ullaberne@outlook.com,Västra Götalandsregionen,kommun,M,ledamot
-Ulla Carlson,ulla.carlson@vansterpartiet.se,Västra Götalandsregionen,kommun,V,ledamot
-Ulla Marianne Börjesson,ulla.borjesson@fargelanda.se,Västra Götalandsregionen,kommun,S,ersättare
-Ulla Nathorst-Westfelt,ulla.nathorst-westfelt@vgregion.se,Västra Götalandsregionen,kommun,D,ersättare
-Ulla-Britt Hagström,ulla-britt.hagstrom@politiker.skovde.se,Västra Götalandsregionen,kommun,L,ledamot
-Ulla-Karin Johansson,ulla-karin.johansson@outlook.com,Västra Götalandsregionen,kommun,S,ledamot
-Ulrica Johansson,ulrika.johansson@centerpartiet.se,Västra Götalandsregionen,kommun,C,ersättare
-Ulrik Hammar,ulrik.hammar@liberalerna.se,Västra Götalandsregionen,kommun,L,ersättare
-Ulrik Nilsson,ulrik.nilsson@riksdagen.se,Västra Götalandsregionen,kommun,M,ersättare
-Valéria Kant,vkant.kd@gmail.com,Västra Götalandsregionen,kommun,KD,ersättare
-Vasvija Licina Medic,vasvija7@hotmail.com,Västra Götalandsregionen,kommun,V,ersättare
-Viktoria Haraldson,vickan@telia.com,Västra Götalandsregionen,kommun,C,ersättare
-Vivi-Ann Nilsson,vivi-ann.nilsson@vgregion.se,Västra Götalandsregionen,kommun,S,revisorsersättare
-Willy Kölborg,willy.kolborg@gmail.com,Västra Götalandsregionen,kommun,S,ersättare
-Yngve Johansson,yngve.klavan@gmail.com,Västra Götalandsregionen,kommun,MP,ersättare
-Yusuf Tohow,yusuf.tohow@politiker.goteborg.se,Västra Götalandsregionen,kommun,-,ledamot
-Yvonne Stafrén,yvonne.stafren@sd.se,Västra Götalandsregionen,kommun,SD,ledamot
-Zandra Pettersson,zandra.pettersson@vgregion.se,Västra Götalandsregionen,kommun,SD,ledamot
-Zimon Brohede,zimon@brohede.com,Västra Götalandsregionen,kommun,KD,ersättare
-Åke Fransson,ake.fransson@gotene.se,Västra Götalandsregionen,kommun,S,ersättare
 ,magnus.wahlin@vaxjo.se,Växjö kommun,kommun,MP,Ledamot
 Agna Beslija,agna.beslija@vaxjo.se,Växjö kommun,kommun,S,Ersättare
 Agneta Nordlund G-son,agneta.nordlund-gustavsson@vaxjo.se,Växjö kommun,kommun,M,Ledamot
@@ -14453,9 +13675,7 @@ Sven-Ingvar Borgquist,sveningvar.borgquist@engelholm.se,Ängelholms kommun,kommu
 Therese Ingvarsson,therese.ingvarsson@pol.engelholm.se,Ängelholms kommun,kommun,SD,Ledamot
 Yvonne Mollet-Bengtsson,yvonne.molletbengtsson@pol.engelholm.se,Ängelholms kommun,kommun,S,Ledamot
 Åsa Larsson,asa.larsson@pol.engelholm.se,Ängelholms kommun,kommun,S,2:e vice ordförande
-Anders Bäckström,anders.backstrom@amal.se,Åmåls kommun,kommun,C,Ledamot
 Ann-Charlotte Örtegren,ann-charlotte.ortegren_pol@amal.se,Åmåls kommun,kommun,S,Ledamot
-Annica Andersson,annica.andersson_pol@amal.se,Åmåls kommun,kommun,SD,Ersättare
 Barbro Axelsson,barbro.axelsson@amal.se,Åmåls kommun,kommun,S,Ersättare
 Cajsa Branchetti Hallberg,cajsa.branchetti-hallberg_pol@amal.se,Åmåls kommun,kommun,MP,Ersättare
 Christer Törnell,christer.tornell@amal.se,Åmåls kommun,kommun,KD,Ledamot
@@ -15268,12 +14488,10 @@ Veronica Andersson,veronica.andersson@politiker.overkalix.se,Överkalix kommun,k
 Ahti Vähäkangas,ahti.vahakangas@overtornea.se,Övertorneå kommun,kommun,KD,
 Amanda Andersson,amanda.andersson@overtornea.se,Övertorneå kommun,kommun,,
 Anders Wälivaara,anders.walivaara@overtornea.se,Övertorneå kommun,kommun,KD,
-Ann-Cristin Tötterman Hjort,ann-cristin.hjort@overtornea.se,Övertorneå kommun,kommun,ÖFA,
 Anne Rousu,anne.rousu@overtornea.se,Övertorneå kommun,kommun,,
 Annika Sturk,annika.sturk@overtornea.se,Övertorneå kommun,kommun,,
 Auli Andersson,auli.andersson@overtornea.se,Övertorneå kommun,kommun,C,
 Bengt Rytiniemi,bengt.rytiniemi@overtornea.se,Övertorneå kommun,kommun,V,
-Birgitta Emanuelsson,birgitta.emanuelsson@overtornea.se,Övertorneå kommun,kommun,S,
 Börje Rytiniemi,borje.rytiniemi@overtornea.se,Övertorneå kommun,kommun,C,
 Camilla Mattila,camilla.mattila@overtornea.se,Övertorneå kommun,kommun,C,
 Christina Snell Lumio,christina.lumio@overtornea.se,Övertorneå kommun,kommun,,
@@ -15352,6 +14570,62 @@ Peder Granath,peder.granath@svenskakyrkan.se,Uppsala stift,kyrka,S,Ledamot
 Per Swedberg,per.swedberg@svenskakyrkan.se,Uppsala stift,kyrka,FISK,Ersättare
 Roberth Krantz,roberth.krantz@svenskakyrkan.se,Uppsala stift,kyrka,S,Vice ordförande
 Susanne Engström,sus73e@live.com,Uppsala stift,kyrka,C,Ledamot
+Aftonbladet Debatt,debatt@aftonbladet.se,Aftonbladet,media,,Ledare/opinion
+Aftonbladet Tipsa,tipsa@aftonbladet.se,Aftonbladet,media,,Nyhetstips
+Anders Lindberg,anders.lindberg@aftonbladet.se,Aftonbladet,media,,Ledare/opinion – politisk chefredaktör
+Carl Lundborg,carl.lundborg@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Emelie Karlsson,emelie.karlsson@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Eric Rosen,eric.rosen@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Hanna Olsson,hanna.olsson@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Helena Utter,helena.utter@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Johan Kingfors,johan.kingfors@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Jonathan Jeppsson,jonathan.jeppsson@aftonbladet.se,Aftonbladet,media,,Granskning / Samhälle
+Jonna Sima,jonna.sima@aftonbladet.se,Aftonbladet,media,,Ledare/opinion – redaktionssekreterare
+Karin Pettersson,karin.pettersson@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Karin Schmidt,karin.schmidt@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Lina Tornqvist,lina.tornqvist@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Lotta Folcker,lotta.folcker@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Magnus Herbertsson,magnus.herbertsson@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Michael Poromaa,michael.poromaa@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Moa Gardh,moa.gardh@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Rnamn Efternamn,rnamn.efternamn@aftonbladet.se,Aftonbladet,media,,Ledare/opinion
+Sabina Lindstrom,sabina.lindstrom@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Ted Kudinoff,ted.kudinoff@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+Victor Lindbom,victor.lindbom@aftonbladet.se,Aftonbladet,media,,Redaktionsledning
+kvalitet@aftonbladet.se,kvalitet@aftonbladet.se,Aftonbladet,media,,Ledare/opinion
+Expressen Ledare,ledare@expressen.se,Expressen,media,,Ledare/opinion
+Expressen Tipsa,tipsa@expressen.se,Expressen,media,,Nyhetstips
+Expressen redaktionen,redaktionen@expressen.se,Expressen,media,,Nyhetsredaktion / Politik
+kundservice@expressen.se,kundservice@expressen.se,Expressen,media,,Politik
+Ali Fegan,ali.fegan@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Axel Björklund,axel.bjorklund@svt.se,SVT,media,,Granskning – Uppdrag granskning (Ansvarig utgivare)
+Axel Gordh Humlesjö,axel.humlesjo@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Björn Tunbäck,bjorn.tunback@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Diamant Salihu,diamant.salihu@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Ella Hopf Berger,ella.berger@svt.se,SVT,media,,Granskning – Uppdrag granskning (Publiceringsredaktör)
+Frida Jareteg,frida.jareteg@svt.se,SVT,media,,Granskning – Uppdrag granskning (Nyhetsredaktör)
+Frida Johanson,frida.johanson@svt.se,SVT,media,,Granskning – Uppdrag granskning (Redaktör)
+Gustav Sandström,gustav.sandstrom@svt.se,SVT,media,,Granskning – Uppdrag granskning (Planeringsredaktör)
+Joachim Dyfvermark,joachim.dyfvermark@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Johanna Karlsson,johanna.karlsson@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Kalle Thorslund,kalle.thorslund@svt.se,SVT,media,,Granskning – Uppdrag granskning (Programredigerare)
+Karin Mattisson,karin.mattisson@svt.se,SVT,media,,Granskning – Uppdrag granskning (Redaktör)
+Lars-Göran Svensson,lars-goran.svensson@svt.se,SVT,media,,Granskning – Uppdrag granskning (Redaktör)
+Linda Kakuli,linda.kakuli@svt.se,SVT,media,,Granskning – Uppdrag granskning (Redaktör och researcher)
+Magnus Svenungsson,magnus.svenungsson@svt.se,SVT,media,,Granskning – Uppdrag granskning (Redaktör)
+Morgonstudion,morgonstudion@svt.se,SVT,media,,Nyhetsredaktion
+Peter Bagge,peter.bagge@svt.se,SVT,media,,Granskning – Uppdrag granskning (Programredaktör)
+Rebecka Montelius,rebecka.montelius@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+SVT Nyheter,svtnyheter@svt.se,SVT,media,,Nyhetsredaktion
+SVT Nyheter grävdesk,tips@svt.se,SVT,media,,Granskning
+SVT Politik,tipsapolitik@svt.se,SVT,media,,Politik
+Samir Bezzazi,samir.bezzazi@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Staffan Florén Sandberg,staffan.floren@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Sven Bergman,sven.bergman@svt.se,SVT,media,,Granskning – Uppdrag granskning (Reporter)
+Uppdrag granskning,granskning@svt.se,SVT,media,,Granskning
+Ekot,ekot@sverigesradio.se,Sveriges Radio/Ekot,media,,Nyhetsredaktion / Politik
+Kalla fakta,kalla.fakta@tv4.se,TV4,media,,Granskning
+TV4 Nyheterna,nyheterna@tv4.se,TV4,media,,Nyhetsredaktion / Politik
 Arbetsmarknadsdepartementet,arbetsmarknadsdepartementet.registrator@regeringskansliet.se,Arbetsmarknadsdepartementet,regering,,
 Finansdepartementet,finansdepartementet.registrator@regeringskansliet.se,Finansdepartementet,regering,,
 Försvarsdepartementet,forsvarsdepartementet.registrator@regeringskansliet.se,Försvarsdepartementet,regering,,
@@ -15433,7 +14707,6 @@ Teopoula Zickbauer,theo.zickbauer@regionblekinge.se,Region Blekinge,region,S,Led
 Tittie Österström,tittie.osterstrom@regionblekinge.se,Region Blekinge,region,S,Ersättare
 Velia Ekström,velia.ekstrom@regionblekinge.se,Region Blekinge,region,M,Ledamot
 Viveka Olofsson,viveka.olofsson@politik.solvesborg.se,Region Blekinge,region,S,Ersättare
-Åsa Evaldsson,asa.evaldsson@ronneby.se,Region Blekinge,region,M,Ledamot
 Abbe Ronsten,abbe.ronsten@regiondalarna.se,Region Dalarna,region,S,Ledamot
 Anders Bengtsson,anders.bengtsson@regiondalarna.se,Region Dalarna,region,KD,Ledamot
 Anders Rosell,anders.rosell@regiondalarna.se,Region Dalarna,region,S,Ledamot
@@ -15484,7 +14757,6 @@ Ann-Christin Wallin,ann-christin.wallin@gotland.se,Region Gotland,region,C,Ersä
 Anna Andersson,anna.andersson03@edu.gotland.se,Region Gotland,region,C,Ledamot
 Anna Haack,anna.haack@gotland.se,Region Gotland,region,KD,Ersättare
 Anneli Klovsjö,anneli.klovsjo@gotland.se,Region Gotland,region,S,Ersättare
-Aydin Akyüz,aydin.akyuz@edu.gotland.se,Region Gotland,region,M,Ersättare
 Berit Cedergren-Onsjö,berit.cedergren-onsjo@gotland.se,Region Gotland,region,M,Ledamot
 Bertil Virgin,bertil.virgin01@gotland.se,Region Gotland,region,S,Ersättare
 Bibbi Olsson,bibbi.olsson01@edu.gotland.se,Region Gotland,region,C,Ledamot
@@ -16621,7 +15893,6 @@ Angela Bodin,angela.bodin@rvn.se,Region Västernorrland,region,-,Ledamot
 Anna Proos Strandh,anna.proos.strandh@rvn.se,Region Västernorrland,region,M,Ledamot
 Annika Engström,annica.engstrom@sjukvardspartiet.se,Region Västernorrland,region,SJVP,Ledamot
 Arianne Sundman Ohlsson,arianne.sundman@eniro.com,Region Västernorrland,region,S,Ersättare
-Barbro Ekevärn,barbro.ekevarn@sjukvardspartiet.se,Region Västernorrland,region,SJVP,Ersättare
 Birgit Johansson,birgit.johansson@rvn.se,Region Västernorrland,region,S,Ordförande
 Birgitta Sjögren,birgitta.sjogren@ange.se,Region Västernorrland,region,S,Ersättare
 Bruno Sjölund,bruno.sjolund@rvn.se,Region Västernorrland,region,S,1:e ersättare
@@ -16846,6 +16117,498 @@ Ulrika Jeansson,ulrika.jeansson@regionostergotland.se,Region Östergötland,regi
 Viola Ingvarsson,viola.ingvarsson@regionostergotland.se,Region Östergötland,region,M,Ledamot
 William Jonsson,williamjonsson93@gmail.com,Region Östergötland,region,M,Ersättare
 Wolldurf Temudjin Skallbom,wolldurf.skallbom@kinda.se,Region Östergötland,region,SD,Ersättare
+,anders.g.hogmark@telia.com,Västra Götalandsregionen,region,M,ersättare
+,anderscnilsson@hotmail.com,Västra Götalandsregionen,region,S,ersättare
+Abubakr Moradi,abo183@hotmail.com,Västra Götalandsregionen,region,S,ersättare
+Adrian Suvén,adrian.suven@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Agneta Jansson,agneta.u.jansson@vgregion.se,Västra Götalandsregionen,region,KD,ersättare
+Agneta Jansson,agnetajan@hotmail.com,Västra Götalandsregionen,region,KD,ersättare
+Aida Karimli,aida.karimli@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Aida Karimli,aida.karimli@vgregion.se,Västra Götalandsregionen,region,C,ledamot
+Albin Gilbertsson,albin.gilbertsson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Albin Gilbertsson,albin.gilbertsson@vgregion.se,Västra Götalandsregionen,region,SD,ersättare
+Alejandro Del Castillo Alvarez,aledelcastilloalvarez@gmail.com,Västra Götalandsregionen,region,V,ledamot
+Alex Bergström,alex.bergstrom@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Alexander Abenius,alexander.abenius@lerum.se,Västra Götalandsregionen,region,M,ledamot
+Alexander Christiansson,alexander.christiansson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Alma Sibrian Alfaro,janeth.tjorn@live.com,Västra Götalandsregionen,region,V,ersättare
+Anders Dahlén,aeg.dahlen@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Anders Fasth,anders.fasth@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ersättare
+Anders Karlsson,anders.karlsson01@molndal.se,Västra Götalandsregionen,region,KD,ersättare
+Anders Strand,anders.strand@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Andreas Exner,andreas.exner@boras.se,Västra Götalandsregionen,region,SD,ledamot
+Andreas Hektor,andreas.hector@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Anette Holgersson,anette.holgersson@lerum.se,Västra Götalandsregionen,region,V,ledamot
+Anette Holgersson,anetteholgersson68@gmail.com,Västra Götalandsregionen,region,V,ledamot
+Anette Nord,annette.nord@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ersättare
+Angela Fast Torstensson,angela.fast.torstensson@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Angelica Lundgren Bielinski,angelica.bielinski@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Anita Birgitta Afzelius-Alm,afzelius.larsson@skara.net,Västra Götalandsregionen,region,L,ledamot
+Ann Sörqvist,annesorqvist@gmail.com,Västra Götalandsregionen,region,C,ledamot
+Ann-Charlott Karlsson,ann-charlott.karlsson@vgregion.se,Västra Götalandsregionen,region,S,ersättare
+Ann-Mari Jonasson,ann-marie.jonasson@vanersborg.se,Västra Götalandsregionen,region,S,ersättare
+Ann-Sofie Fors,ann-sofie.fors@mellerud.se,Västra Götalandsregionen,region,M,ersättare
+Ann-Sofie Helen Hellvard,annsofie.hellvard@gmail.com,Västra Götalandsregionen,region,V,ersättare
+Anna Hansson,anna.hansson@mp.se,Västra Götalandsregionen,region,MP,ersättare
+Anna Kahn,anna.kahn@vgregion.se,Västra Götalandsregionen,region,V,ersättare
+Anna Sara Perslow,annasara.perslow@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Anna Svensson Sibinska,anna.sibinska@mp.se,Västra Götalandsregionen,region,,
+Anna Vedin,anna.vedin@kungalv.se,Västra Götalandsregionen,region,M,ersättare
+Anna Wallgren,anna.wallgren@lidkoping.se,Västra Götalandsregionen,region,KD,ersättare
+Anna-Karin Skatt,anna-karin.skatt@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Anne-Marie Franzén Molin,dinomin@telia.com,Västra Götalandsregionen,region,S,ersättare
+Annelie Hastig Olsson,annelie.hastig@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Annette Carlson,annette.carlson@boras.se,Västra Götalandsregionen,region,M,ersättare
+Annette Ternstedt,anette.ternstedt@bengtsfors.se,Västra Götalandsregionen,region,V,ersättare
+Annette Ternstedt,annette.ternstedt@gmail.com,Västra Götalandsregionen,region,V,ersättare
+Annica Erlandsson,annica.erlandsson@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Annika Carp,annika.carp@gmail.com,Västra Götalandsregionen,region,L,ersättare
+Annika Enghamre,annika.enghamre.13@telia.com,Västra Götalandsregionen,region,V,ledamot
+Annika Holmén,annika.holmen@gmail.com,Västra Götalandsregionen,region,V,ledamot
+Annika Holmén,annika.holmen@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Annika Åberg Darell,annika.aberg-darell@stenungsund.se,Västra Götalandsregionen,region,V,ersättare
+Arto Niskala,niskalaarto@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Astrid Mona Elisabet Eriksson,mona.eriksson@lerum.se,Västra Götalandsregionen,region,MP,ersättare
+Axel Josefson,axel.josefson@politiker.goteborg.se,Västra Götalandsregionen,region,M,ledamot nominerad av kommunerna
+Beatrice Sellström,beatrice.sellstrom@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Bengt Arne Reinholdsson,bengtarne.reinholdson@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Bengt Hansves,bengt.hansves@gmail.com,Västra Götalandsregionen,region,SD,ersättare
+Benny Halldin,benny@xn--rset-5qa.se,Västra Götalandsregionen,region,S,ledamot
+Bente Johansson,ekkert@live.se,Västra Götalandsregionen,region,M,ledamot
+Bertil Ahlstrand,bertil.ahlstrand@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Bertil Jonsson,bertil.jonsson@lidkoping.se,Västra Götalandsregionen,region,M,ledamot
+Bijan Zainali,bijan.zainali@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Birgit Andersson,finnekumla@telia.com,Västra Götalandsregionen,region,L,ersättare
+Birgitta Adolfsson,birgitta.adolfsson@vgregion.se,Västra Götalandsregionen,region,L,ledamot
+Birgitta Bergman,birgitta.bergman@politiker.boras.se,Västra Götalandsregionen,region,M,ersättare
+Björn Qvarnström,bjorn.qvarnstrom@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Björn Thodenius,bjorn.thodenius@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Björn Tidland,bjorn.tidland@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Britt-Marie Nordin,bm.nordin51@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Can Deniz Altintasli,vgrmail2018@gmail.com,Västra Götalandsregionen,region,V,ledamot
+Carin Ramneskär,carin@ramneskar.se,Västra Götalandsregionen,region,M,ersättare
+Carina Gullberg,carina.gullberg@gullspang.se,Västra Götalandsregionen,region,S,ledamot
+Carina Liljesand,carina.liljesand@vgregion.se,Västra Götalandsregionen,region,L,ledamot
+Carina Ridenius,carina.ridenius@gmail.com,Västra Götalandsregionen,region,M,ledamot
+Carina Åström,carina.astrom@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Carina Örgård,carina.orgard@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Caritha Jacobsson,caritha.jacobsson@munkedal.se,Västra Götalandsregionen,region,S,ersättare
+Carl Forsberg,carl.forsberg@vgregion.se,Västra Götalandsregionen,region,MP,ersättare
+Cecilia Andersson,cecilia.y.andersson@vgregion.se,Västra Götalandsregionen,region,C,ledamot
+Cecilia Dalman Eek,cecilia.dalmaneek@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Cecilia Gäfvert,cgafvert@hotmail.com,Västra Götalandsregionen,region,V,ersättare
+Christin Stormvall,christin.stormvall@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Christina Abrahamsson,christina@emtungatransport.se,Västra Götalandsregionen,region,M,ledamot
+Christina Hein,christina.hein24@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Christina Yngvesson,tinaredcap@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Conny Brännberg,conny.brannberg@vgregion.se,Västra Götalandsregionen,region,KD,förste vice ordförande
+Conny Jervhäll,connyjerv10@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Dag Forsström,dagfors@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Dan Åberg,dan.aberg@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Daniel Andersson,daniel.andersson@liberal.se,Västra Götalandsregionen,region,L,ledamot
+Daniel Persson,p.e.daniel.persson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Daniel Svensson,daniel.svensson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+David Sahlsten,david.sahlsten@vgregion.se,Västra Götalandsregionen,region,KD,ledamot
+Dennis Alvdén,dennis.alvden@moderatvg.se,Västra Götalandsregionen,region,M,ersättare
+Dennis Jeryd,dennis.jeryd@vgregion.se,Västra Götalandsregionen,region,S,vice ordf
+Dragana Todorovic,dragana.todorovic@vgregion.se,Västra Götalandsregionen,region,S,ersättare
+Dwight Sjöstedt,dwight.public@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Ed Kahrs,edkahrs@gmail.com,Västra Götalandsregionen,region,M,ledamot
+Egon Frid,egon.frid@telia.com,Västra Götalandsregionen,region,V,ersättare
+Egon Frid,egon.frid@vara.se,Västra Götalandsregionen,region,V,ersättare
+Elisabet Stålarm,estalarm@gmail.com,Västra Götalandsregionen,region,M,ombud
+Elise Benjaminsson,elise.benjaminsson@vgregion.se,Västra Götalandsregionen,region,M,ersättare
+Elise Norberg Pilhem,elise.norberg3@icloud.com,Västra Götalandsregionen,region,V,ledamot
+Elizabeth Fierro Fredriksson,elizabeth.fierro.fredriksson@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Ellen Kristina Elisabet Holmgren,holmgrenkristina@hotmail.com,Västra Götalandsregionen,region,M,ledamot
+Elving Andersson,elving.andersson@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Emina Music,emina.music@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Emma Holm,emmaholm_@outlook.com,Västra Götalandsregionen,region,V,ledamot
+Erik Andreasson,erikandreasson1990@gmail.com,Västra Götalandsregionen,region,V,ersättare
+Erik Kyrkander,erik@klurig.com,Västra Götalandsregionen,region,V,ersättare
+Esther O'Hara,esther.ohara@mp.se,Västra Götalandsregionen,region,MP,ersättare
+Eva Abrahamsson,eva.smogen@telia.com,Västra Götalandsregionen,region,M,ledamot
+Eva Espling,eva.espling@vgregion.se,Västra Götalandsregionen,region,V,ersättare
+Eva Forsberg Torstensson,ewa.thorstensson@hjo.se,Västra Götalandsregionen,region,M,ersättare
+Eva Forsberg Torstensson,ewa.torstensson@outlook.com,Västra Götalandsregionen,region,M,ersättare
+Eva Kristensen,eva.kristensen@partille.se,Västra Götalandsregionen,region,S,ersättare
+Eva Maria Olofsson,eva.olofsson@vgregion.se,Västra Götalandsregionen,region,V,ordförande
+Eva Ternegren,eva.ternegren@politiker.goteborg.se,Västra Götalandsregionen,region,MP,ledamot
+Eva Österlund Hjort,eva.hjort@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Eva-Karin Haglund,eva-karin.haglund@fv.tranemo.se,Västra Götalandsregionen,region,S,ersättare
+Eva-Karin Torhem Arnell,karin.torhem.arnell@mark.se,Västra Götalandsregionen,region,C,ledamot
+Eva-Lena Fransson,evalena.fransson@telia.com,Västra Götalandsregionen,region,S,ledamot
+Eva-Lena Öman,eva-lena.oman@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Eva-Lotta Pamp,eva-lotta.pamp@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Evalotta Liljenzin,evalotta@liljenzin.se,Västra Götalandsregionen,region,M,ersättare
+Evert Svenningsson,evert.svenningsson@telia.com,Västra Götalandsregionen,region,S,ledamot
+Fahimeh Nordborg,fahimeh.nordborg@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Fredrik Gullbrantz,fredrik.gullbrantz@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Fredrik Nordström,skaranordstrom@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Fredrik Olsson,feje72@gmail.com,Västra Götalandsregionen,region,KD,ersättare
+Frej Dristig,frej.dristig@lillaedet.se,Västra Götalandsregionen,region,SD,ersättare
+Frida Nilsson,frida.nilsson@lidkoping.se,Västra Götalandsregionen,region,C,vice ordf
+Georg De Laval,georg.delaval@gmail.com,Västra Götalandsregionen,region,D,ersättare
+Gert-Inge Andersson,gert-inge.andersson@politiker.trollhattan.se,Västra Götalandsregionen,region,S,ledamot
+Gertrud Ingelman,gertrud.ingelman@politiker.goteborg.se,Västra Götalandsregionen,region,V,ersättare
+Gladys San Roman Yannelli,carglayan1@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Glenn Ottosson,glenn.ottosson@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Glenn Ottosson,glenn.ottosson@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Greger Plannthin,greger.plannthin@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Gun-Britt Johansson,gun-britt.johansson@politiker.boras.se,Västra Götalandsregionen,region,V,ledamot
+Gunilla Andersson Gustafsson,gunilla.consulting@gmail.com,Västra Götalandsregionen,region,-,ersättare
+Gunilla Cederbom,gunilla.cederbom@vgregion.se,Västra Götalandsregionen,region,V,förste vice ordförande
+Gunilla Druve Jansson,gunilla.druve.jansson@vgregion.se,Västra Götalandsregionen,region,C,ledamot
+Gunilla Gomér,gunilla.gomer@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Gunilla Josefsson,gjosefsson54@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Gunilla Lindell,gunilla.lindell@vgregion.se,Västra Götalandsregionen,region,-,ledamot
+Gunnar Lidell,gunnar.lidell@vanersborg.se,Västra Götalandsregionen,region,M,ersättare
+Gunnar Lidén,diwe.liden@swipnet.se,Västra Götalandsregionen,region,M,ersättare
+Gunne Steen,gunne.steen@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Gunnel Adler,adlergunnel5@gmail.com,Västra Götalandsregionen,region,MP,ledamot
+Gustaf Josefson,gustaf.josefson@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Gustav Evert Magnusson,evert.g.magnusson@telia.com,Västra Götalandsregionen,region,S,ersättare
+Göte Karlsson,gote.karlsson@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Göte Karlsson,gotekarlsson10@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Hannyah Jörtoft,hannyah.jortoft@vgregion.se,Västra Götalandsregionen,region,-,ersättare
+Hans Johansson,hans.johansson@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Hans Schub,hans.schub@tanum.se,Västra Götalandsregionen,region,M,ledamot
+Hans Thornander,hans.thornander@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ersättare
+Hans Wessberg,hans.wessberg@molndal.se,Västra Götalandsregionen,region,-,ersättare
+Hans-Carl Carlson,hans-carl.carlson@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ersättare
+Hans-Inge Sältenberg,hans-inge.saltenberg@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Hans-Joachim Isenheim,ninalunch@hotmail.com,Västra Götalandsregionen,region,MP,ledamot
+Harri Ikonen,harri.ikonen@vgregion.se,Västra Götalandsregionen,region,S,ersättare
+Harriet Andreasson,harrietandreasson@gmail.com,Västra Götalandsregionen,region,L,ersättare
+Helen Eliasson,helen.m.eliasson@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Helen Persgren,helen.persgren@gmail.com,Västra Götalandsregionen,region,MP,ersättare
+Helena Holmberg,helena.holmberg@liberalerna.se,Västra Götalandsregionen,region,L,ledamot
+Helena Thelin,helena.thelin@sjusam.se,Västra Götalandsregionen,region,S,ledamot
+Helene Strand,helene.strand@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Heléne Granbom Angerheim,helene.granbom.angerheim@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Henrik Josten,henrik.josten@vanersborg.se,Västra Götalandsregionen,region,M,andre vice ordförande
+Henrik Ryberg,henrik.ryberg@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Henrik Sundström,henrik@advokatsundstrom.se,Västra Götalandsregionen,region,M,ersättare
+Hewa Cardoi,hewa.cardoi@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Håkan Andersson,hakan.u.andersson@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Håkan Linnarsson,hakan.linnarsson@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Håkan Lösnitz,hakan.losnitz@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Ida Balog,ida.balog@yahoo.se,Västra Götalandsregionen,region,M,ersättare
+Ida Jakobsson,ida.jakobsson@tanum.se,Västra Götalandsregionen,region,S,ledamot
+Ing-Marie Larsson,ingmarie.l@telia.com,Västra Götalandsregionen,region,L,ersättare
+Inga-Maj Krüger,inga.maj.kruger@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Ingegerd Granat,ingegerd.granat@telia.com,Västra Götalandsregionen,region,C,ersättare
+Ingela Jedvert,jedvert@telia.com,Västra Götalandsregionen,region,L,ersättare
+Inger Billman-Stark,inger.billman-stark@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Ingrid Andreae,ingrid.andreae@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Ingvar Frid,ingvar.frid@lerum.se,Västra Götalandsregionen,region,L,ersättare
+Ingvar Svensson,ingvar.s.svensson@telia.com,Västra Götalandsregionen,region,S,ledamot
+Jacob Brendelius,jacob.brendelius@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Jacob Wihlborg,jacob.wihlborg@molndal.se,Västra Götalandsregionen,region,S,ersättare
+Jan Alexandersson,jan.alexandersson@vgregion.se,Västra Götalandsregionen,region,V,ordförande
+Jan Lindblom,jan@lindblom.com,Västra Götalandsregionen,region,M,ledamot
+Jan Palmqvist,jan.palmqvist@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Jan Ripa,socdem.ripa@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Jan Utbult,jan.utbult@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ersättare
+Jan Åke Jansson,janakejansson@hotmail.com,Västra Götalandsregionen,region,KD,ersättare
+Jan Åke Simonsson,jan-ake.simonsson@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Jane Bredin,jane.bredin@comhem.se,Västra Götalandsregionen,region,M,ersättare
+Jane Åberg,jane.aberg@telia.com,Västra Götalandsregionen,region,S,ledamot
+Janette Olsson,janette.olsson@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Jannicke Stranne,jannicke.stranne@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Jenny Stang Corneliusson,jenny.corneliusson@tanum.se,Västra Götalandsregionen,region,S,ersättare
+Jens Christian Berlin,jens.christian.berlin@liberalerna.se,Västra Götalandsregionen,region,L,ersättare
+Jens Persson,jens.persson@grastorp.se,Västra Götalandsregionen,region,S,ersättare
+Jesper Johansson,politikerjesper@gmail.com,Västra Götalandsregionen,region,V,ledamot
+Jessica Lindblom,jessica.bredenberg@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Jessika Loftbring,jessika.loftbring@pol.ale.se,Västra Götalandsregionen,region,C,ersättare
+Jim Aleberg,jim.aleberg@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Jimmie Mikael Stranne,jimmie.stranne@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Joakim Hagberg,joakim.hagberg@hotmail.com,Västra Götalandsregionen,region,S,ersättare
+Joakim Sjöling,j.sjoling@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Joel Olsson,joel.olsson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Johan Ask,johan.ask@skovde.se,Västra Götalandsregionen,region,S,ledamot
+Johan Björkman,johan.bjorkman@svenljunga.se,Västra Götalandsregionen,region,M,ledamot
+Johan Fält,johan.falt@politiker.goteborg.se,Västra Götalandsregionen,region,M,ledamot
+Johan Nordin,johan.nordin@ale.se,Västra Götalandsregionen,region,S,ersättare
+Johan Stefan Evert Wiktorsson,johan.se.wiktorsson@outlook.com,Västra Götalandsregionen,region,M,ersättare
+Johan Sösaeter Johansson,johan.sosaeter.johansson@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Johanna Johansson,johanna.johansson@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Johnny Alexandersson,johnny_alexandersson@icloud.com,Västra Götalandsregionen,region,S,ersättare
+Johnny Bröndt,johnny.brondt@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Jon Haraldsson,jon.haraldsson@lerum.se,Västra Götalandsregionen,region,S,ersättare
+Jon Hjärne,jon.hjarne@politiker.boras.se,Västra Götalandsregionen,region,,
+Jonas Andersson,jonas.andersson@liberalerna.se,Västra Götalandsregionen,region,L,ledamot
+Jonas Blomster,jonas.blomster@mp.se,Västra Götalandsregionen,region,MP,ersättare
+Jonas Eriksson,jonas.eriksson@sef.se,Västra Götalandsregionen,region,S,ersättare
+Jonas Eriksson,jonas.j.eriksson@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Jonas Sundström,jonas.sundstrom@lidkoping.se,Västra Götalandsregionen,region,S,ersättare
+Jonathan Andersson,jonathan.andersson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Jonathan Pasic,jonathanpasic@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Jöran Fagerlund,joran.fagerlund@politiker.goteborg.se,Västra Götalandsregionen,region,V,ledamot
+Jörgen Hellman,jorgen.hellman@riksdagen.se,Västra Götalandsregionen,region,S,ledamot
+Jörgen Molin,jorgen.molin@telia.com,Västra Götalandsregionen,region,M,ersättare
+Kajsa Hamnén,kajsa.hamnen@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Kalle Blomgren,kalle.blomgren@vgregion.se,Västra Götalandsregionen,region,S,ersättare
+Karin Greenberg Gelotte,greenberg.karin@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Karin Maria Elisabet Olofsson,karin@storahogan.se,Västra Götalandsregionen,region,MP,ersättare
+Karin Veres,karin.veres@liberalerna.se,Västra Götalandsregionen,region,L,ledamot
+Karin Östring Bergman,karin.ostring.bergman@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Karl Johan Nordensten,karljohan.nordensten@mp.se,Västra Götalandsregionen,region,MP,ledamot
+Karl Wiktorsson,karl.wiktorsson@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Karola Svensson,karola.vilan@gmail.com,Västra Götalandsregionen,region,C,ersättare
+Karolina Bergström,karolina.bergstrom@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Katarina Bredberg,bredbergkatarina@outlook.com,Västra Götalandsregionen,region,S,ersättare
+Katarina Kuzmanovic,katarina.kuzmanovic@mp.se,Västra Götalandsregionen,region,MP,ersättare
+Katarina Lundin,katarina.lundin@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Kenneth Borgmalm,kenneth.borgmalm@telia.com,Västra Götalandsregionen,region,S,ledamot
+Kenneth Carlsson,kenneth.carlsson@liberal.se,Västra Götalandsregionen,region,L,ersättare
+Kenneth Gustavsson,kenneth.gustavsson@vgregion.se,Västra Götalandsregionen,region,C,ersättare
+Kent Lagrell,kent.lagrell@ockero.se,Västra Götalandsregionen,region,M,ledamot
+Kent Lagrell,kent.lagrell@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Kerstin Joelsson-Wallsby,kerstin.joelsson-wallsby@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Kjell Arne Evald Nordström,kjell.nordstrom@hokaregatan.se,Västra Götalandsregionen,region,S,ordförande
+Krista Femrell,krista.femrell@politiker.goteborg.se,Västra Götalandsregionen,region,SD,ledamot
+Krista Femrell,krista.gunilla.femrell@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Krister Johansson,christer.johansson@bollebygd.se,Västra Götalandsregionen,region,M,ledamot
+Krister Stensson,krister.stensson@telia.com,Västra Götalandsregionen,region,M,revisor
+Kristin Arplöw,kristinarplow2@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Kristina Carlsson,kristinacarlsson@telia.com,Västra Götalandsregionen,region,KD,ledamot
+Kristina Grapenholm,kristina.grapenholm@liberalerna.se,Västra Götalandsregionen,region,L,ledamot
+Kristina Jonäng,kristina.jonang@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Lars Carlström,lars.carlstrom09@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Lars Holmin,lars.holmin@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Lars Nordström,lars.nordstrom@geography.gu.se,Västra Götalandsregionen,region,L,ledamot
+Lars Tysklind,lars.tysklind@vgregion.se,Västra Götalandsregionen,region,L,ledamot
+Lars Åke Karlsson,larsake.carlsson77@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Lars-Arne Staxäng,l-a.staxang@telia.com,Västra Götalandsregionen,region,M,ledamot
+Lars-Erik Hansson,larserikhansson186@gmail.com,Västra Götalandsregionen,region,V,ordförande
+Lars-Inge Andersson,lars-inge.andersson@vgregion.se,Västra Götalandsregionen,region,KD,ersättare
+Larseric Bergqvist,larseric@bsins.se,Västra Götalandsregionen,region,V,ersättare
+Leif Andersson,leif.andersson@stromstad.se,Västra Götalandsregionen,region,S,ersättare
+Leif Blomqvist,leifblomqvist0@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Lena Bjurström,lbrbjurstrom@gmail.com,Västra Götalandsregionen,region,C,ersättare
+Lena Camp,lena.camp@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Lena Hult,lena.m.hult@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Lena Jagers Bladini,jagers.bladini@gmail.com,Västra Götalandsregionen,region,V,ersättare
+Lena Olofsdotter Jenemark,lena.jenemark@lidkoping.se,Västra Götalandsregionen,region,S,ersättare
+Lena Palmén,lena.palmen@vgregion.se,Västra Götalandsregionen,region,S,ersättare
+Lena Schoultz,schoultzlena@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Lena Sällström,l.sallstrom@telia.com,Västra Götalandsregionen,region,S,ersättare
+Lennart Jonsson,lennart.jonsson@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Lennart Jonsson,lennart.jonsson@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Liisa Kirjavainen Hyväri,liisa.k.hyvari@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Linda Högbacka,linda.hogbacka@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Linda Jansson,linda.elisabeth.jansson@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Linda Åshamre,linda.ashamre@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Linda-Maria Hermansson,linda-maria.hermansson@stenungsund.se,Västra Götalandsregionen,region,C,ersättare
+Linn Brandström,linn.brandstrom@toreboda.se,Västra Götalandsregionen,region,M,ledamot
+Linn Brandström,linn.brandstrom@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Linnea Hultmark,linnea.hultmark.hjo@gmail.com,Västra Götalandsregionen,region,C,ledamot
+Linnea Wall,linnea.wall@mariestad.se,Västra Götalandsregionen,region,S,ersättare
+Lisa Berglund,lisa.j.berglund@gmail.com,Västra Götalandsregionen,region,KD,ledamot
+Lisbeth Ider,ider.lisbeth@gmail.com,Västra Götalandsregionen,region,V,ersättare
+Lisbeth Svensson,lisbeth.k.i.svensson@telia.com,Västra Götalandsregionen,region,L,ersättare
+Lisbeth Svensson,lisbeth.svensson@liberalerna.se,Västra Götalandsregionen,region,L,ersättare
+Liselotte Fröjd,liselotte.frojd@tanum.se,Västra Götalandsregionen,region,M,ledamot nominerad av kommunerna
+Liza Kettil,liza.kettil@munkedal.se,Västra Götalandsregionen,region,S,ersättare
+Lo Göthberg Larsson,lo.gothberg.larsson@mp.se,Västra Götalandsregionen,region,MP,ersättare
+Louise Jeppsson,louise.jeppsson@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Louise Åsenfors,louise.asenfors@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Lucas Henriksson,lucas.henriksson@mp.se,Västra Götalandsregionen,region,MP,ersättare
+Madde Lind Jansdotter,madde.lind@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Madeleine Jonsson,madeleine.p.jonsson@vgregion.se,Västra Götalandsregionen,region,MP,ledamot
+Madeleine Librén,madeleine.libren@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Magnus Berntsson,magnus.berntsson@vgregion.se,Västra Götalandsregionen,region,KD,ledamot
+Magnus Gunnarsson,magnus.gunnarsson@mp.se,Västra Götalandsregionen,region,MP,ledamot
+Magnus Harjapää,magnus.harjapaa@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Magnus Jakobsson,magnus.jacobsson@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ledamot
+Magnus Linde,nilshilding@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Magnus Marelius,magnus.marelius@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Maj Ader,maj.ader@lidkoping.se,Västra Götalandsregionen,region,KD,ersättare
+Maj-Britt Eckerström,maj-britt.eckerstrom@politiker.boras.se,Västra Götalandsregionen,region,C,ersättare
+Malin Sjunneborn,malin.sjunneborn@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Marcus Ewerstrand,marcus.ewerstrand@outlook.com,Västra Götalandsregionen,region,M,ersättare
+Marcus Källander,marcuskallander@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Margareta Fredriksson,margareta.fredriksson@vgregion.se,Västra Götalandsregionen,region,L,ersättare
+Maria Adrell,maria.adrell@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Maria Andersson,maria.andersson@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Maria Brauer,maria.brauer@ockero.se,Västra Götalandsregionen,region,S,ledamot
+Maria Bruckshaw,maria.bruckshaw@cerama.nu,Västra Götalandsregionen,region,KD,ledamot
+Maria Hjärtqvist,maria.hjartqvist@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Maria Kornevik Jakobsson,maria.kornevik.jakobsson@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Maria Kornevik Jakobsson,maria.kornevik.jakobsson@harryda.se,Västra Götalandsregionen,region,C,ledamot
+Maria Maric,maria.maric@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ersättare
+Maria Martini,maria.martini@centerpartiet.se,Västra Götalandsregionen,region,C,ledamot
+Maria Nilsson,maria.anna.nilsson@vgregion.se,Västra Götalandsregionen,region,KD,ledamot
+Maria Radivoj,mariaradivoj@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Maria Renfors,maria.renfors@stenungsund.se,Västra Götalandsregionen,region,M,ersättare
+Marianne Berntsson,marianne.berndtson@vgregion.se,Västra Götalandsregionen,region,D,ledamot
+Marianne Bonnevier,marianne.bonnevier@lidkoping.se,Västra Götalandsregionen,region,MP,ersättare
+Marianne Nilsson,barbrobjarne@gmail.com,Västra Götalandsregionen,region,KD,ersättare
+Marie Lindqvist,marie.lindqvist@molndal.se,Västra Götalandsregionen,region,V,ledamot
+Marie Raask,marie.raask@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Mariette Höij,mariette.risberg@politiker.goteborg.se,Västra Götalandsregionen,region,D,ledamot
+Marika Isetorp,marika@isetorp.se,Västra Götalandsregionen,region,MP,ersättare
+Marina Johansson,marina.johansson@politiker.goteborg.se,Västra Götalandsregionen,region,S,ledamot nominerad av kommunerna
+Marina Sandgren,marina.l.fransson@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Marita Bengtsson,marita.bengtsson47@icloud.com,Västra Götalandsregionen,region,S,ledamot
+Marita Karlsson,marita.manstigen@gmail.com,Västra Götalandsregionen,region,L,ersättare
+Marith Hesse,marith.hesse@partille.se,Västra Götalandsregionen,region,M,ledamot
+Marjan Garmroudi,marjan.garmroudi@vgregion.se,Västra Götalandsregionen,region,V,andre vice ordförande
+Martin Carling,martin.carling@dalsed.se,Västra Götalandsregionen,region,C,ersättare
+Martin Johansson,martin.johansson@tjorn.se,Västra Götalandsregionen,region,-,ledamot
+Martin Johansson,solhydda@hotmail.com,Västra Götalandsregionen,region,V,ersättare
+Martin Sörbom,martin.sorbom@politiker.boras.se,Västra Götalandsregionen,region,SD,ersättare
+Martin Wannholt,martin.wannholt@vgregion.se,Västra Götalandsregionen,region,D,ledamot
+Martina Lundquist,ulla.martina.birgitta.lundquist@politiker.goteborg.se,Västra Götalandsregionen,region,SD,ersättare
+Matheus Enholm,matheus.enholm@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Mathias Olsson,mathias.olsson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Mats Andersson,mats.andersson@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Mats Berglund,mats.berglund@vgregion.se,Västra Götalandsregionen,region,V,representant
+Mats Bjelkemyr,mats.bjelkemyr@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Mats Brännström,mats.brannstrom@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Mats Palm,mats.palm@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Mats Pilhem,mats.pilhem@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Mattias Pettersson,mattias.pettersson@lidkoping.se,Västra Götalandsregionen,region,V,ledamot
+Maud Ekman,ekman.maud@gmail.com,Västra Götalandsregionen,region,V,ersättare
+Micaela Kronberg,micaela.kronberg@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Michael Karlsson,michael.karlsson@skara.se,Västra Götalandsregionen,region,S,förste vice ordförande
+Michael Melby,michael.melby@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Mikael Berglund,mikael.berglund@ale.se,Västra Götalandsregionen,region,M,ersättare
+Mikael Clarke,mikael.clarke@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Mikael Faleke,mikael.faleke@politiker.tibro.se,Västra Götalandsregionen,region,M,ersättare
+Mikael Staxäng,mikael.staxang@gmail.com,Västra Götalandsregionen,region,M,ersättare
+Mikael Wendt,mikael.wendt@liberalerna.se,Västra Götalandsregionen,region,L,ledamot
+Moez Dharsani,moez.dharsani@vgregion.se,Västra Götalandsregionen,region,S,ersättare
+Monika Beiring,monika.beiring@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Mosa Roshanghias,mosa.roshanghias@boras.se,Västra Götalandsregionen,region,MP,ersättare
+My Alnebratt,my.alnebratt@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Nanna Siewertz Tulinius,nanna.siewertz.tulinius@vgregion.se,Västra Götalandsregionen,region,L,ersättare
+Niclas Sunding,niclas.sunding@gmail.com,Västra Götalandsregionen,region,-,ersättare
+Nina Andersson,nina.siversbo@hotmail.se,Västra Götalandsregionen,region,C,ersättare
+Nina Terenziani,nina.terenziani@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Ola Wesley,ola.wesley@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Olle Jonsson,ollejohnsson5@gmail.com,Västra Götalandsregionen,region,L,ersättare
+Olof Andersson,andersolle@gmail.com,Västra Götalandsregionen,region,L,ersättare
+Olof Svensson,osgbg@hotmail.com,Västra Götalandsregionen,region,S,ledamot
+Oscar Dahl,carloscardahl@gmail.com,Västra Götalandsregionen,region,C,ersättare
+Oscar Pihlblad,oscar.pihlblad@vgregion.se,Västra Götalandsregionen,region,KD,ledamot
+Oskar Karlsson,oskar.k.karlsson@vgregion.se,Västra Götalandsregionen,region,V,ledamot
+Oskar Sköld,oskar.skold@outlook.com,Västra Götalandsregionen,region,S,ledamot
+Ove Kaye,ove.kaye@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Patric Cerny,patric.cerny@svenskakyrkan.se,Västra Götalandsregionen,region,L,ledamot
+Patrik Linde,patrik.linde@harryda.se,Västra Götalandsregionen,region,S,ledamot
+Peder Danesved,peder.danesved@gmail.com,Västra Götalandsregionen,region,L,ledamot
+Per Erik Norlin,pereriknorlin@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Per Eriksson,per.eriksson@bengtsfors.se,Västra Götalandsregionen,region,S,ersättare
+Per Landgren,per.landgren@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ersättare
+Per Tenggren,per.tenggren@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Per Vorberg,per.vorberg@moderaterna.se,Västra Götalandsregionen,region,M,ledamot
+Per-Eric Trulsson,per-eric.trulsson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Perallan Orrbeck,perallan.orrbeck@liberal.se,Västra Götalandsregionen,region,L,ledamot
+Pernilla Paijkull,pernillahagman@outlook.com,Västra Götalandsregionen,region,KD,ersättare
+Pernilla Stafsén,pernilla.stafsen@politiker.goteborg.se,Västra Götalandsregionen,region,S,ersättare
+Pernilla Taxén Börjesson,pernilla.taxen.borjesson@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Pernilla Wendesten,pernilla.wendesten@kristdemokraterna.se,Västra Götalandsregionen,region,KD,ledamot
+Peter Arvidsson,peter.arvidsson@politiker.harryda.se,Västra Götalandsregionen,region,-,ledamot
+Peter Friberg,peter.p.friberg@tidaholm.se,Västra Götalandsregionen,region,M,ersättare
+Peter Heie,peter.heie@vgregion.se,Västra Götalandsregionen,region,C,ledamot
+Peter Hermansson,peter.hermansson@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Peter Legendi,peter@legendi.se,Västra Götalandsregionen,region,S,ledamot
+Peter Rosholm,peter.rosholm@telia.com,Västra Götalandsregionen,region,S,ordförande
+Peter Spjuth,peter.spjuth@lillaedet.se,Västra Götalandsregionen,region,V,ersättare
+Peter Söderlund,peter.soderlund@politiker.tibro.se,Västra Götalandsregionen,region,L,ersättare
+Petra Elf,petra.elf@mp.se,Västra Götalandsregionen,region,MP,ersättare
+Petra Sundblad,petra.sundblad@sotenas.se,Västra Götalandsregionen,region,S,ledamot
+Petter Åström,petterast@me.com,Västra Götalandsregionen,region,M,ersättare
+Pierre Rydén,pierre.ryden@hjo.se,Västra Götalandsregionen,region,S,ersättare
+Pär Johnson,par.johnson@liberalerna.se,Västra Götalandsregionen,region,L,ledamot
+Pär Lundqvist,par.lundqvist@vgregion.se,Västra Götalandsregionen,region,L,ledamot
+Ralf Dahlgren,ralf.dahlgren@lerum.se,Västra Götalandsregionen,region,SD,ledamot
+Renée Bengtsson,renee.bengtsson@vgregion.se,Västra Götalandsregionen,region,S,ordförande
+Richard Brodd,richard.brodd@liberalerna.se,Västra Götalandsregionen,region,L,ersättare
+Richard Brodd,richard.brodd@vgregion.se,Västra Götalandsregionen,region,L,ersättare
+Richard Malm,richard.malm@ifmetall.se,Västra Götalandsregionen,region,S,ersättare
+Rita Stålbert,rita@stalbert.se,Västra Götalandsregionen,region,KD,ersättare
+Robert Hörnquist,robert.hornquist@live.se,Västra Götalandsregionen,region,L,ersättare
+Robert Sandberg,robert.sandberg@hotmail.com,Västra Götalandsregionen,region,S,ledamot
+Robert Yngve,robert.yngve66@gmail.com,Västra Götalandsregionen,region,KD,ledamot
+Roland Andersson,roland.boras@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Roland Karlsson,roland.karlsson@ulricehamn.se,Västra Götalandsregionen,region,C,ersättare
+Roland Wanner,roland.wanner2@gmail.com,Västra Götalandsregionen,region,MP,ersättare
+Rolf Gunnar Eriksson,rolf.eriksson@politiker.tibro.se,Västra Götalandsregionen,region,S,ersättare
+Ronnie Brolin,ronnie.brolin@ifocusstudios.se,Västra Götalandsregionen,region,M,ledamot
+Ronnie Brorsson,ronnie.brorsson@stromstad.se,Västra Götalandsregionen,region,S,ledamot
+Sanda Anton Henriksson,sanda.henriksson@politiker.goteborg.se,Västra Götalandsregionen,region,SD,ersättare
+Sandra Lindholm,sandra.lindholm@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Sara Andersson,sara.b.andersson@vgregion.se,Västra Götalandsregionen,region,S,ersättare
+Saskia Nordqvist,kia.nordqvist@gmail.com,Västra Götalandsregionen,region,MP,ledamot
+Sebastian Aronsson,sebastian.aronsson@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Sebastian Ekeroth Clausson,sebastian.ekeroth-clausson@mariestad.se,Västra Götalandsregionen,region,S,ledamot
+Sebastian Helin,sebastian.helin@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Sebastian Rinvall,sebbe.rinvall@gmail.com,Västra Götalandsregionen,region,V,ersättare
+Sofi Bringsoniou,sofi.bringsoniou@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Sofia Vinberg Kämpe,sofia.v.kampe@gmail.com,Västra Götalandsregionen,region,V,ersättare
+Sofia Wik,sofia.wik.politiker@gmail.com,Västra Götalandsregionen,region,C,ersättare
+Soraya Zarza Lundberg,soraya.zarza.lundberg@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Staffan Setterberg,setterberg@nativo.se,Västra Götalandsregionen,region,KD,ledamot
+Stefan Eliasson,stefan.eliasson@sd.se,Västra Götalandsregionen,region,SD,ersättare
+Stefan Svensson,stefan.k.svensson@vgregion.se,Västra Götalandsregionen,region,KD,ledamot
+Sten Höij,partillestenmontering@gmail.com,Västra Götalandsregionen,region,D,ersättare
+Stig Carlsson,stigce.carlsson@hotmail.com,Västra Götalandsregionen,region,S,ersättare
+Stig Lennart Roland Karlsson,roland.karlsson@telia.com,Västra Götalandsregionen,region,L,ledamot
+Stig-Olov Tingbratt,tingbratt@telia.com,Västra Götalandsregionen,region,C,ersättare
+Susanna Cassberg,susanna.cassberg@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Susanne Berglund,susannecberglund@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Susanne Sillberg Ligander,sus_ligander@hotmail.com,Västra Götalandsregionen,region,S,ersättare
+Suzanne Parenius,suzanne.parenius@lerum.se,Västra Götalandsregionen,region,C,ersättare
+Svante Classon,svante.classon@grastorp.se,Västra Götalandsregionen,region,C,ersättare
+Sören Runsteen,soren.runsteen@conara.se,Västra Götalandsregionen,region,KD,ersättare
+Theres Sahlström,theres.sahlstrom@skovde.se,Västra Götalandsregionen,region,M,ledamot nominerad av kommunerna
+Therese Eriksson Lehtimäki,therese.eriksson.lehtimaki@vgregion.se,Västra Götalandsregionen,region,V,ersättare
+Thomas Mellqvist,thomasmellqvist@gmail.com,Västra Götalandsregionen,region,C,ersättare
+Thony Andreasson Aderum,thony.andreasson.aderum@vgregion.se,Västra Götalandsregionen,region,MP,ersättare
+Tina Ehn,tina.ehn@vgregion.se,Västra Götalandsregionen,region,MP,ledamot
+Tina Ehn,tinatina.ehn@gmail.com,Västra Götalandsregionen,region,MP,ledamot
+Tina Wallenius,tina.wallenius@gmail.com,Västra Götalandsregionen,region,MP,ersättare
+Tobias Björk,tobias.bjork@vgregion.se,Västra Götalandsregionen,region,M,ledamot
+Tom Andersson,tom.andersson@mp.se,Västra Götalandsregionen,region,MP,ersättare
+Tomas Angervik,tomas.angervik@gmail.com,Västra Götalandsregionen,region,S,ledamot
+Tomas Angervik,tomas.angervik@molndal.se,Västra Götalandsregionen,region,S,ledamot
+Tomas Angervik,tomas.angervik@vgregion.se,Västra Götalandsregionen,region,S,ledamot
+Tomas Brandberg,tomas.brandberg@riksdagen.se,Västra Götalandsregionen,region,SD,ledamot
+Tomas Johansson,tomas.johansson@moderaterna.se,Västra Götalandsregionen,region,M,ledamot
+Tommy Larsson,tommy.larsson@lidkoping.se,Västra Götalandsregionen,region,KD,ersättare
+Tommy Mårtensson,t.martensson@telia.com,Västra Götalandsregionen,region,S,ersättare
+Tony Willner,tony.willner@vargarda.se,Västra Götalandsregionen,region,S,ledamot
+Tore Hult,sventore.hult@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Torgny Alstad,torgny.alstad@vgregion.se,Västra Götalandsregionen,region,V,ersättare
+Tuija Katrina Fabernäs,happytuija@icloud.com,Västra Götalandsregionen,region,V,ersättare
+Ulf Eriksson,ulf.a.eriksson@vgregion.se,Västra Götalandsregionen,region,C,ledamot
+Ulf Hanstål,ulf.hanstal@moderaterna.se,Västra Götalandsregionen,region,M,ersättare
+Ulf Olsson,ulf.olsson@boras.se,Västra Götalandsregionen,region,S,ledamot nominerad av kommunerna
+Ulf Rexefjord,ulf.rexefjord@mellerud.se,Västra Götalandsregionen,region,SD,ersättare
+Ulla Berne,ullaberne@outlook.com,Västra Götalandsregionen,region,M,ledamot
+Ulla Carlson,ulla.carlson@vansterpartiet.se,Västra Götalandsregionen,region,V,ledamot
+Ulla Marianne Börjesson,ulla.borjesson@fargelanda.se,Västra Götalandsregionen,region,S,ersättare
+Ulla Nathorst-Westfelt,ulla.nathorst-westfelt@vgregion.se,Västra Götalandsregionen,region,D,ersättare
+Ulla-Britt Hagström,ulla-britt.hagstrom@politiker.skovde.se,Västra Götalandsregionen,region,L,ledamot
+Ulla-Karin Johansson,ulla-karin.johansson@outlook.com,Västra Götalandsregionen,region,S,ledamot
+Ulrica Johansson,ulrika.johansson@centerpartiet.se,Västra Götalandsregionen,region,C,ersättare
+Ulrik Hammar,ulrik.hammar@liberalerna.se,Västra Götalandsregionen,region,L,ersättare
+Ulrik Nilsson,ulrik.nilsson@riksdagen.se,Västra Götalandsregionen,region,M,ersättare
+Valéria Kant,vkant.kd@gmail.com,Västra Götalandsregionen,region,KD,ersättare
+Vasvija Licina Medic,vasvija7@hotmail.com,Västra Götalandsregionen,region,V,ersättare
+Viktoria Haraldson,vickan@telia.com,Västra Götalandsregionen,region,C,ersättare
+Vivi-Ann Nilsson,vivi-ann.nilsson@vgregion.se,Västra Götalandsregionen,region,S,revisorsersättare
+Willy Kölborg,willy.kolborg@gmail.com,Västra Götalandsregionen,region,S,ersättare
+Yngve Johansson,yngve.klavan@gmail.com,Västra Götalandsregionen,region,MP,ersättare
+Yusuf Tohow,yusuf.tohow@politiker.goteborg.se,Västra Götalandsregionen,region,-,ledamot
+Yvonne Stafrén,yvonne.stafren@sd.se,Västra Götalandsregionen,region,SD,ledamot
+Zandra Pettersson,zandra.pettersson@vgregion.se,Västra Götalandsregionen,region,SD,ledamot
+Zimon Brohede,zimon@brohede.com,Västra Götalandsregionen,region,KD,ersättare
+Åke Fransson,ake.fransson@gotene.se,Västra Götalandsregionen,region,S,ersättare
 Adam Marttinen,adam.marttinen@riksdagen.se,Sveriges riksdag,riksdag,SD,Ledamot
 Adam Reuterskiöld,adam.reuterskiold@riksdagen.se,Sveriges riksdag,riksdag,M,Ledamot
 Adrian Magnusson,adrian.magnusson@riksdagen.se,Sveriges riksdag,riksdag,S,Ledamot
