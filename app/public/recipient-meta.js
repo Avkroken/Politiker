@@ -1,7 +1,7 @@
 ensureRecipientData=async function(){
   if(state.areas&&state.parties&&state.roles)return;
   // Statisk asset: ingen session/D1 behövs för filtermetadata. Hämta med
-  // revalidering per sidladdning så en ny export inte fastnar i localStorage.
+  // revalidering per sidladdning så en ny export används direkt.
   const resp=await fetch('/recipient-meta.json',{cache:'no-cache'});
   if(!resp.ok)throw new Error('Kunde inte ladda mottagarmetadata');
   const meta=await resp.json();
