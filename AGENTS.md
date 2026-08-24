@@ -33,4 +33,8 @@ Skicka aldrig direkt till `main`, force-pusha inte förbi skydd och kringgå int
 
 ## Svarsformat
 
-Led med nästa åtgärd eller resultat. Numrera flerstegsarbete, håll listor korta och ange konkret orsak/fix vid fel.
+**Läs [SKILLS.md](SKILLS.md) och följ den i varje svar.** Den är den fullständiga
+regeluppsättningen för svarsformat och gäller utan att någon aktiverar den.
+
+Kortversion: led med nästa åtgärd eller resultat, numrera flerstegsarbete, håll
+listor korta och ange konkret orsak/fix vid fel. Vid konflikt gäller SKILLS.md.
