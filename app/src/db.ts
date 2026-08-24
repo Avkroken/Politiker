@@ -53,6 +53,12 @@ export async function listRoles(db:D1Database){
 }
 async function rawRolesForCanonicalKeys(db:D1Database,keys:string[]):Promise<string[]>{if(!keys.length)return[];const wanted=new Set(keys);const{results}=await db.prepare("SELECT DISTINCT role FROM politicians WHERE role IS NOT NULL AND TRIM(role) != ''").all<{role:string}>();return results.filter(r=>wanted.has(canonicalRole(r.role).key)).map(r=>r.role);}
 
+export function isIrrelevantRecipientRole(areaType:string,role:string|null):boolean{
+  if((areaType!=="kommun"&&areaType!=="region")||!role?.trim())return false;
+  const r=role.trim().toLocaleLowerCase("sv-SE");
+  return r.includes("revisor")||r.includes("nämndeman")||r.includes("nämndemän")||r.includes("vigselförrätt")||r.includes("partnerskapsförrätt")||r==="god man"||r.startsWith("gode män");
+}
+
 export interface PoliticianSearchHit{name:string;email:string;affiliations:{role:string|null;area_name:string;party:string|null}[]}
 const AFF_SEP="\x1e",FIELD_SEP="\x1f";
 export async function searchPoliticiansInAreas(db:D1Database,areaNames:string[],query:string):Promise<PoliticianSearchHit[]>{
@@ -105,11 +111,11 @@ export async function getRecipientsForAreas(db:D1Database,areaNames:string[],exc
   if(hasPoolIntent){
     const rawRoles=includedRoleKeys.length?await rawRolesForCanonicalKeys(db,includedRoleKeys):[];
     if(!(includedRoleKeys.length&&rawRoles.length===0)){
-      let sql=`SELECT name,email,area_name FROM politicians WHERE email IS NOT NULL AND TRIM(email) != '' AND (verification_status IS NULL OR verification_status NOT IN ('dead','dead_via_send'))`;const params:unknown[]=[];
+      let sql=`SELECT name,email,area_name,area_type,role FROM politicians WHERE email IS NOT NULL AND TRIM(email) != '' AND (verification_status IS NULL OR verification_status NOT IN ('dead','dead_via_send'))`;const params:unknown[]=[];
       if(areaNames.length){sql+=` AND area_name IN (SELECT value FROM json_each(?))`;params.push(JSON.stringify(areaNames));}
       if(rawRoles.length){sql+=` AND role IN (SELECT value FROM json_each(?))`;params.push(JSON.stringify(rawRoles));}
       if(excludeParties.length){sql+=` AND (party IS NULL OR TRIM(party) NOT IN (SELECT value FROM json_each(?)))`;params.push(JSON.stringify(excludeParties));}
-      const{results}=await db.prepare(sql).bind(...params).all<{name:string;email:string;area_name:string}>();for(const r of results)byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"),{...r,email:r.email.trim()});
+      const{results}=await db.prepare(sql).bind(...params).all<{name:string;email:string;area_name:string;area_type:string;role:string|null}>();for(const r of results)if(!isIrrelevantRecipientRole(r.area_type,r.role))byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"),{name:r.name,email:r.email.trim(),area_name:r.area_name});
     }
   }
   if(policyKeys.length&&byEmail.size){
