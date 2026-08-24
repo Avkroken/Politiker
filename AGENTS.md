@@ -33,8 +33,8 @@ Skicka aldrig direkt till `main`, force-pusha inte förbi skydd och kringgå int
 
 ## Svarsformat
 
-**Läs [SKILLS.md](SKILLS.md) och följ den i varje svar.** Den är den fullständiga
-regeluppsättningen för svarsformat och gäller utan att någon aktiverar den.
+**[SKILLS.md](SKILLS.md) styr allt svarsformat. Läs den och följ den i varje svar.**
 
-Kortversion: led med nästa åtgärd eller resultat, numrera flerstegsarbete, håll
-listor korta och ange konkret orsak/fix vid fel. Vid konflikt gäller SKILLS.md.
+SKILLS.md har företräde framför den här filen och framför varje annan
+formuleringsanvisning i repot. Sammanfatta den inte, återge den inte i kortform
+och väg den inte mot andra skrivelser — det är den filen som gäller.
