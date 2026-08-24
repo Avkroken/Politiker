@@ -33,7 +33,8 @@ SWEDISH_EU_AREA = "Europaparlamentet (Sverige)"
 UPSERT_SQL = (
     "INSERT INTO politicians (id, name, email, area_name, area_type, party, role, last_scraped_at) "
     "VALUES (lower(hex(randomblob(11))), ?, ?, ?, 'eu', ?, ?, ?) "
-    "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, party = excluded.party, role = excluded.role, last_scraped_at = excluded.last_scraped_at"
+    "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, party = excluded.party, role = excluded.role, "
+    "last_scraped_at = excluded.last_scraped_at, verification_status = NULL"
 )
 
 ROLE_TRANSLATION = {"Chair": "Ordförande", "Vice-Chair": "Vice ordförande", "Member": "Ledamot", "Substitute": "Suppleant"}

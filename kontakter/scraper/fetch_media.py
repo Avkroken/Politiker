@@ -32,6 +32,8 @@ from d1 import D1Client
 UA = {"User-Agent": "politiker-contact-refresh/1.0 (+https://github.com/blixten85/politiker)"}
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 HREF_RE = re.compile(r'href=["\']([^"\']+)["\']', re.I)
+NON_EDITORIAL_LOCALS = {"kundservice"}
+PLACEHOLDER_LOCAL_RE = re.compile(r"(?:^|[._-])(?:f[oö]rnamn|rnamn)[._-]+efternamn(?:$|[._-])", re.I)
 
 
 @dataclass(frozen=True)
@@ -44,33 +46,25 @@ class Contact:
 
 
 STATIC_CONTACTS = [
-    # SVT
     Contact("SVT Nyheter", "svtnyheter@svt.se", "SVT", "Nyhetsredaktion", "https://www.svt.se/nyheter/inrikes/sa-kontaktar-du-svt-nyheter"),
     Contact("SVT Politik", "tipsapolitik@svt.se", "SVT", "Politik", "https://www.svt.se/nyheter/inrikes/senaste-nytt-om-val-2026"),
     Contact("Morgonstudion", "morgonstudion@svt.se", "SVT", "Nyhetsredaktion", "https://www.svt.se/nyheter/inrikes/sa-kontaktar-du-svt-nyheter"),
     Contact("SVT Nyheter grävdesk", "tips@svt.se", "SVT", "Granskning", "https://www.svt.se/nyheter/granskning/tipsa-svt-nyheter"),
     Contact("Uppdrag granskning", "granskning@svt.se", "SVT", "Granskning", "https://www.svt.se/nyheter/granskning/ug/kontakta-uppdrag-granskning"),
-    # Sveriges Radio
     Contact("Ekot", "ekot@sverigesradio.se", "Sveriges Radio/Ekot", "Nyhetsredaktion / Politik", "https://www.sverigesradio.se/grupp/11079"),
-    # TV4
     Contact("TV4 Nyheterna", "nyheterna@tv4.se", "TV4", "Nyhetsredaktion / Politik", "https://commercial.tv4.se/kontakta-oss/"),
     Contact("Kalla fakta", "kalla.fakta@tv4.se", "TV4", "Granskning", "https://commercial.tv4.se/kontakta-oss/"),
-    # Aftonbladet
     Contact("Aftonbladet Tipsa", "tipsa@aftonbladet.se", "Aftonbladet", "Nyhetstips", "https://www.aftonbladet.se/tipsa"),
     Contact("Aftonbladet Debatt", "debatt@aftonbladet.se", "Aftonbladet", "Ledare/opinion", "https://www.aftonbladet.se/omaftonbladet"),
     Contact("Anders Lindberg", "anders.lindberg@aftonbladet.se", "Aftonbladet", "Ledare/opinion – politisk chefredaktör", "https://www.aftonbladet.se/omaftonbladet/a/K39kjy/aftonbladets-redaktionsledning-och-ledningsgrupp"),
     Contact("Jonathan Jeppsson", "jonathan.jeppsson@aftonbladet.se", "Aftonbladet", "Granskning / Samhälle", "https://www.aftonbladet.se/omaftonbladet/a/K39kjy/aftonbladets-redaktionsledning-och-ledningsgrupp"),
     Contact("Jonna Sima", "jonna.sima@aftonbladet.se", "Aftonbladet", "Ledare/opinion – redaktionssekreterare", "https://www.aftonbladet.se/omaftonbladet/a/P9d1d0/om-ledare"),
-    # Expressen
     Contact("Expressen redaktionen", "redaktionen@expressen.se", "Expressen", "Nyhetsredaktion / Politik", "https://www.expressen.se/"),
     Contact("Expressen Tipsa", "tipsa@expressen.se", "Expressen", "Nyhetstips", "https://www.expressen.se/"),
     Contact("Expressen Ledare", "ledare@expressen.se", "Expressen", "Ledare/opinion", "https://extra.expressen.se/pdf/Almedalen120701.pdf"),
 ]
 
 UG_URL = "https://www.svt.se/nyheter/granskning/ug/kontakta-uppdrag-granskning"
-
-# Avdelningssidor där vi kan plocka upp aktuella publicerade yrkesadresser utan
-# att hårdkoda gamla namn. Resultatet är ett komplement till funktionsadresserna.
 SECTION_PAGES = [
     ("https://www.aftonbladet.se/omaftonbladet/a/K39kjy/aftonbladets-redaktionsledning-och-ledningsgrupp", "Aftonbladet", "Redaktionsledning", "aftonbladet.se"),
     ("https://www.aftonbladet.se/omaftonbladet/a/P9d1d0/om-ledare", "Aftonbladet", "Ledare/opinion", "aftonbladet.se"),
@@ -102,8 +96,12 @@ def display_name_from_email(email: str) -> str:
     return " ".join(part.replace("-", "-").capitalize() for part in local.split("."))
 
 
+def is_editorial_email(email: str) -> bool:
+    local = email.strip().lower().split("@", 1)[0]
+    return local not in NON_EDITORIAL_LOCALS and not PLACEHOLDER_LOCAL_RE.search(local)
+
+
 def scrape_ug() -> list[Contact]:
-    """Hämta hela aktuella UG-redaktionen direkt från SVT:s kontaktsida."""
     try:
         text = visible_text(fetch_html(UG_URL))
     except Exception as exc:
@@ -134,7 +132,6 @@ def scrape_ug() -> list[Contact]:
 
 
 def scrape_public_emails(url: str, organisation: str, role: str, domain: str) -> list[Contact]:
-    """Extrahera endast adresser som faktiskt publiceras på den officiella sidan."""
     try:
         text = visible_text(fetch_html(url))
     except Exception as exc:
@@ -142,10 +139,8 @@ def scrape_public_emails(url: str, organisation: str, role: str, domain: str) ->
         return []
     rows = []
     for email in sorted({m.group(0).lower() for m in EMAIL_RE.finditer(text)}):
-        if not email.endswith("@" + domain):
+        if not email.endswith("@" + domain) or not is_editorial_email(email):
             continue
-        # Generiska funktionsadresser finns redan i STATIC_CONTACTS och ska inte
-        # skapa dubletter med ett mer specifikt person-rollvärde här.
         if email.split("@", 1)[0] in {"tipsa", "redaktionen", "ekot", "debatt", "ledare"}:
             continue
         rows.append(Contact(display_name_from_email(email), email, organisation, role, url))
@@ -153,8 +148,6 @@ def scrape_public_emails(url: str, organisation: str, role: str, domain: str) ->
 
 
 def scrape_recent_section_authors(section_url: str, organisation: str, role: str, domain: str, max_articles: int = 20) -> list[Contact]:
-    """Följ aktuella artiklar från en officiell avdelningssida och samla bara
-    yrkesadresser som publiceras i artikel-HTML:n. Ingen adress konstrueras."""
     try:
         page = fetch_html(section_url)
     except Exception as exc:
@@ -179,14 +172,12 @@ def scrape_recent_section_authors(section_url: str, organisation: str, role: str
         except Exception:
             continue
         for email in sorted({m.group(0).lower() for m in EMAIL_RE.finditer(visible_text(raw))}):
-            if email.endswith("@" + domain):
+            if email.endswith("@" + domain) and is_editorial_email(email):
                 rows.append(Contact(display_name_from_email(email), email, organisation, role, url))
     return rows
 
 
 def dedupe(rows: list[Contact]) -> list[Contact]:
-    # Databasen har en rad per (email, organisation). Om samma adress hittas i
-    # flera roller väljs den mest specifika rollen i prioriteringsordning.
     priority = {"Politik": 6, "Granskning": 5, "Ledare/opinion": 4, "Redaktionsledning": 3, "Nyhetsredaktion": 2, "Nyhetstips": 1}
     out: dict[tuple[str, str], Contact] = {}
     for c in rows:
@@ -205,9 +196,6 @@ def main() -> None:
     rows.extend(scrape_ug())
     for page, org, role, domain in SECTION_PAGES:
         rows.extend(scrape_public_emails(page, org, role, domain))
-
-    # För mediehus vars politikredaktion saknar en tydlig funktionsadress får
-    # aktuella artikelbylines komplettera listan när yrkesmejl faktiskt publiceras.
     rows.extend(scrape_recent_section_authors("https://www.expressen.se/nyheter/politik/", "Expressen", "Politik", "expressen.se"))
     rows.extend(scrape_recent_section_authors("https://www.aftonbladet.se/nyheter/politik", "Aftonbladet", "Politik", "aftonbladet.se"))
 
