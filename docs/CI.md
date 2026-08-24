@@ -2,7 +2,7 @@
 
 ## Branchflöde
 
-`main` är den enda långlivade arbetsgrenen. Varje ändring görs på en kortlivad branch och går via PR till `main`. Auto-merge används inte. Required checks och review-trådar ska vara klara innan PR:n squash-mergas.
+`main` är den enda långlivade arbetsgrenen. Varje ändring görs på en kortlivad branch och går via PR till `main`. Auto-merge får aktiveras på PR:er; när required checks och review-trådar är klara mergar GitHub automatiskt. **Squash merge är den enda tillåtna merge-metoden.** Head-branchen raderas automatiskt efter merge.
 
 Vanlig CI körs på `pull_request` och på push till `main` där efter-merge-verifiering behövs.
 
