@@ -1,6 +1,9 @@
 name: Node typecheck & Python tests
 
 on:
+  # Merge-kön skickar merge_group.checks_requested. Utan den här
+  # triggern svarar inget jobb och kön fastnar tills timeout.
+  merge_group:
   push:
     branches: [main]
   pull_request:
