@@ -10,5 +10,5 @@ idna>=3.19
 # explicita golv uppgraderar de sårbara versionerna under imagebygget:
 # - setuptools <83.0.0: CVE-2026-59890; >=83 täcker även CVE-2025-47273
 # - msgpack <1.2.1: GHSA-6v7p-g79w-8964
-setuptools>=83.0.0
+setuptools>=84.0.0
 msgpack>=1.2.1
