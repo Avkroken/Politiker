@@ -139,7 +139,7 @@ def write_outputs(rows: list[dict], outdir: str) -> None:
         f.write("-- Genererad av export/export_d1.py — importera till ny D1 efter schema.sql.\n")
         f.write("-- wrangler d1 execute <db> --remote --file data/politiker.sql\n")
         for r in rows:
-            rid = hashlib.sha1(f"{r['email']}|{r['area_name']}".encode()).hexdigest()
+            rid = hashlib.sha256(f"{r['email']}|{r['area_name']}".encode()).hexdigest()
             vals = ", ".join([sqlesc(rid), sqlesc(r["name"]), sqlesc(r["email"]), sqlesc(r["area_name"]), sqlesc(r["area_type"]), sqlesc(r.get("party")), sqlesc(r.get("role")), "0", "'unknown'"])
             f.write(f"INSERT OR IGNORE INTO politicians ({cols}) VALUES ({vals});\n")
 
