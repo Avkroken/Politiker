@@ -42,8 +42,12 @@ uppgift blir liggande halvfärdiga.
 2. Implementera hela uppgiften och kör relevanta tester/typechecks innan push.
 3. Pusha till sloten och öppna PR från den till `main` som klar för granskning.
    Aktivera auto-merge — merge-kön tar PR:n så snart required checks är gröna.
-4. Lös CI- och reviewproblem i samma slot; PR:n uppdateras av varje push.
-5. **Squash merge är den enda tillåtna merge-metoden.** Efter merge rebasar
+4. Om en work-slot ändå har omergade commits utan öppen PR i mer än 60 minuter
+   öppnar `.github/workflows/pr-watchdog.yml` PR:n automatiskt och aktiverar
+   squash auto-merge. Required CI, relevanta review-trådar och merge queue
+   fortsätter att blockera faktisk merge tills alla gates är uppfyllda.
+5. Lös CI- och reviewproblem i samma slot; PR:n uppdateras av varje push.
+6. **Squash merge är den enda tillåtna merge-metoden.** Efter merge rebasar
    `.github/workflows/sync-pool.yml` varje slot på `main`.
 
 Skicka aldrig direkt till `main`, kringgå inte branch protection/rulesets och ändra
