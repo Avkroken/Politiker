@@ -1,9 +1,9 @@
 name: Docker build & Trivy
 
 # Bygger kontakter/scraper-imagen och skannar den med Trivy när Docker-underlaget
-# faktiskt påverkas. På övriga PR:er laddas en tom Trivy-SARIF upp så GitHubs
-# Code Scanning merge protection alltid får en analys för aktuell PR-head utan
-# att vi behöver göra ett dyrt, irrelevant Dockerbygge.
+# faktiskt påverkas. På övriga PR:er och merge-grupper laddas en tom Trivy-SARIF
+# upp så GitHubs Code Scanning merge protection alltid får en analys för aktuell
+# head utan att vi behöver göra ett dyrt, irrelevant Dockerbygge.
 
 on:
   # Merge-kön skickar merge_group.checks_requested. Utan den här
@@ -12,8 +12,7 @@ on:
   push:
     branches: [main]
     paths:
-      - kontakter/scraper/Dockerfile
-      - kontakter/scraper/requirements.txt
+      - kontakter/scraper/**
       - .github/workflows/docker.yml
       - .github/actions/trivy/**
   # Måste skapas för VARJE PR eftersom Protect main kräver en Trivy-analysis.
@@ -43,16 +42,24 @@ jobs:
         id: detect
         shell: bash
         run: |
-          # Schemalagd/manuell/main-körning ska alltid göra riktig skanning.
-          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
-            echo "image=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          case "${{ github.event_name }}" in
+            pull_request)
+              base="${{ github.event.pull_request.base.sha }}"
+              head="${{ github.event.pull_request.head.sha }}"
+              ;;
+            merge_group)
+              base="${{ github.event.merge_group.base_sha }}"
+              head="${{ github.event.merge_group.head_sha }}"
+              ;;
+            *)
+              # Schemalagd/manuell/main-körning ska alltid göra riktig skanning.
+              echo "image=true" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
 
-          git diff --name-only \
-            "${{ github.event.pull_request.base.sha }}" \
-            "${{ github.event.pull_request.head.sha }}" > /tmp/changed.txt
-          if grep -Eq '^(kontakter/scraper/(Dockerfile|requirements\.txt)|\.github/workflows/docker\.yml|\.github/actions/trivy/)' /tmp/changed.txt; then
+          git diff --name-only "$base" "$head" > /tmp/changed.txt
+          if grep -Eq '^(kontakter/scraper/|\.github/workflows/docker\.yml|\.github/actions/trivy/)' /tmp/changed.txt; then
             echo "image=true" >> "$GITHUB_OUTPUT"
           else
             echo "image=false" >> "$GITHUB_OUTPUT"
