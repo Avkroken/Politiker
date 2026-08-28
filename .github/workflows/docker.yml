@@ -12,8 +12,7 @@ on:
   push:
     branches: [main]
     paths:
-      - kontakter/scraper/Dockerfile
-      - kontakter/scraper/requirements.txt
+      - kontakter/scraper/**
       - .github/workflows/docker.yml
       - .github/actions/trivy/**
   # Måste skapas för VARJE PR eftersom Protect main kräver en Trivy-analysis.
@@ -60,7 +59,7 @@ jobs:
           esac
 
           git diff --name-only "$base" "$head" > /tmp/changed.txt
-          if grep -Eq '^(kontakter/scraper/(Dockerfile|requirements\.txt)|\.github/workflows/docker\.yml|\.github/actions/trivy/)' /tmp/changed.txt; then
+          if grep -Eq '^(kontakter/scraper/|\.github/workflows/docker\.yml|\.github/actions/trivy/)' /tmp/changed.txt; then
             echo "image=true" >> "$GITHUB_OUTPUT"
           else
             echo "image=false" >> "$GITHUB_OUTPUT"
