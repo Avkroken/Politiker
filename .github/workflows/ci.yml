@@ -57,7 +57,7 @@ jobs:
   python:
     name: CI / python
     needs: impact
-    if: ${{ needs.impact.outputs.python == 'true' }}
+    if: ${{ always() && (needs.impact.result != 'success' || needs.impact.outputs.python == 'true') }}
     runs-on: ubuntu-latest
     defaults:
       run:
