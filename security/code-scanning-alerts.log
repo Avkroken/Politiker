@@ -1,1 +1,47 @@
-[]
+[
+  {
+    "number": 52,
+    "tool": "Trivy",
+    "rule_id": "GHSA-6v7p-g79w-8964",
+    "rule_name": "LanguageSpecificPackageVulnerability",
+    "severity": "high",
+    "created_at": "2026-08-15T03:52:55Z",
+    "updated_at": "2026-08-28T17:13:42Z",
+    "url": "https://github.com/Avkroken/politiker/security/code-scanning/52",
+    "ref": "refs/heads/main",
+    "category": "trivy-kontakter-scraper",
+    "file": "Python",
+    "start_line": 1,
+    "end_line": 1
+  },
+  {
+    "number": 53,
+    "tool": "Trivy",
+    "rule_id": "CVE-2025-47273",
+    "rule_name": "LanguageSpecificPackageVulnerability",
+    "severity": "high",
+    "created_at": "2026-08-15T03:52:55Z",
+    "updated_at": "2026-08-28T17:13:42Z",
+    "url": "https://github.com/Avkroken/politiker/security/code-scanning/53",
+    "ref": "refs/heads/main",
+    "category": "trivy-kontakter-scraper",
+    "file": "Python",
+    "start_line": 1,
+    "end_line": 1
+  },
+  {
+    "number": 54,
+    "tool": "Trivy",
+    "rule_id": "CVE-2026-59890",
+    "rule_name": "LanguageSpecificPackageVulnerability",
+    "severity": "medium",
+    "created_at": "2026-08-15T03:52:55Z",
+    "updated_at": "2026-08-28T17:13:42Z",
+    "url": "https://github.com/Avkroken/politiker/security/code-scanning/54",
+    "ref": "refs/heads/main",
+    "category": "trivy-kontakter-scraper",
+    "file": "Python",
+    "start_line": 1,
+    "end_line": 1
+  }
+]
