@@ -51,7 +51,16 @@ jobs:
             for (const slot of slots) {
               core.startGroup(slot);
               try {
-                const branch = await github.rest.repos.getBranch({ owner, repo, branch: slot });
+                let branch;
+                try {
+                  branch = await github.rest.repos.getBranch({ owner, repo, branch: slot });
+                } catch (error) {
+                  if (error.status === 404) {
+                    core.warning(`${slot} saknas; sync-pool får återskapa sloten. Fortsätter med nästa.`);
+                    continue;
+                  }
+                  throw error;
+                }
                 const headSha = branch.data.commit.sha;
 
                 const comparison = await github.rest.repos.compareCommitsWithBasehead({
@@ -73,64 +82,69 @@ jobs:
                   base,
                   per_page: 100,
                 });
-                if (pulls.length > 0) {
-                  core.info(`${slot} har redan öppen PR #${pulls[0].number}.`);
-                  continue;
-                }
 
-                const tip = await github.rest.repos.getCommit({ owner, repo, ref: headSha });
-                const committedAt = tip.data.commit.committer?.date || tip.data.commit.author?.date;
-                if (!committedAt) {
-                  core.warning(`Kan inte läsa commit-tid för ${slot}@${headSha}; lämnar grenen orörd.`);
-                  continue;
-                }
+                let pr = pulls[0];
+                if (pr) {
+                  const marker = 'Den här PR:n öppnades automatiskt av `PR watchdog`.';
+                  if (!(pr.body || '').includes(marker)) {
+                    core.info(`${slot} har redan manuell PR #${pr.number}; lämnar auto-merge-policy till den.`);
+                    continue;
+                  }
+                  core.info(`${slot} har watchdog-PR #${pr.number}; verifierar auto-merge igen.`);
+                } else {
+                  const tip = await github.rest.repos.getCommit({ owner, repo, ref: headSha });
+                  const committedAt = tip.data.commit.committer?.date || tip.data.commit.author?.date;
+                  if (!committedAt) {
+                    core.warning(`Kan inte läsa commit-tid för ${slot}@${headSha}; lämnar grenen orörd.`);
+                    continue;
+                  }
 
-                const ageMs = now - Date.parse(committedAt);
-                const ageMinutes = Math.floor(ageMs / 60000);
-                if (ageMs <= maxAgeMs) {
-                  core.info(`${slot}@${headSha.slice(0, 7)} är ${ageMinutes} min gammal; gränsen är >${process.env.MAX_UNPR_MINUTES} min.`);
-                  continue;
-                }
+                  const ageMs = now - Date.parse(committedAt);
+                  const ageMinutes = Math.floor(ageMs / 60000);
+                  if (ageMs <= maxAgeMs) {
+                    core.info(`${slot}@${headSha.slice(0, 7)} är ${ageMinutes} min gammal; gränsen är >${process.env.MAX_UNPR_MINUTES} min.`);
+                    continue;
+                  }
 
-                const subject = (tip.data.commit.message || '').split('\n')[0].trim();
-                const title = subject || `auto: öppna PR för ${slot}`;
-                const body = [
-                  'Den här PR:n öppnades automatiskt av `PR watchdog`.',
-                  '',
-                  `Branch \`${slot}\` hade commits ovanpå \`${base}\` utan öppen PR i ${ageMinutes} minuter.`,
-                  `Watchdog-tip: \`${headSha.slice(0, 7)}\`.`,
-                  '',
-                  'Auto-merge armeras direkt. Required checks, relevanta review-trådar och merge queue måste fortfarande passera före squash merge.'
-                ].join('\n');
+                  const subject = (tip.data.commit.message || '').split('\n')[0].trim();
+                  const title = subject || `auto: öppna PR för ${slot}`;
+                  const body = [
+                    'Den här PR:n öppnades automatiskt av `PR watchdog`.',
+                    '',
+                    `Branch \`${slot}\` hade commits ovanpå \`${base}\` utan öppen PR i ${ageMinutes} minuter.`,
+                    `Watchdog-tip: \`${headSha.slice(0, 7)}\`.`,
+                    '',
+                    'Auto-merge armeras direkt. Required checks, relevanta review-trådar och merge queue måste fortfarande passera före squash merge.'
+                  ].join('\n');
 
-                let pr;
-                try {
-                  const created = await github.rest.pulls.create({
-                    owner,
-                    repo,
-                    head: slot,
-                    base,
-                    title,
-                    body,
-                    draft: false,
-                    maintainer_can_modify: true,
-                  });
-                  pr = created.data;
-                  core.notice(`Öppnade PR #${pr.number} för ${slot}.`);
-                } catch (error) {
-                  // En parallell manuell/automatisk körning kan ha hunnit öppna PR:n.
-                  if (error.status !== 422) throw error;
-                  const existing = await github.rest.pulls.list({
-                    owner,
-                    repo,
-                    state: 'open',
-                    head: `${owner}:${slot}`,
-                    base,
-                    per_page: 1,
-                  });
-                  if (existing.data.length === 0) throw error;
-                  pr = existing.data[0];
-                  core.info(`PR #${pr.number} öppnades parallellt; använder den.`);
+                  try {
+                    const created = await github.rest.pulls.create({
+                      owner,
+                      repo,
+                      head: slot,
+                      base,
+                      title,
+                      body,
+                      draft: false,
+                      maintainer_can_modify: true,
+                    });
+                    pr = created.data;
+                    core.notice(`Öppnade PR #${pr.number} för ${slot}.`);
+                  } catch (error) {
+                    // En parallell manuell/automatisk körning kan ha hunnit öppna PR:n.
+                    if (error.status !== 422) throw error;
+                    const existing = await github.rest.pulls.list({
+                      owner,
+                      repo,
+                      state: 'open',
+                      head: `${owner}:${slot}`,
+                      base,
+                      per_page: 1,
+                    });
+                    if (existing.data.length === 0) throw error;
+                    pr = existing.data[0];
+                    core.info(`PR #${pr.number} öppnades parallellt; använder den.`);
+                  }
                 }
 
                 const node = await github.graphql(`
