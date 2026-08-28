@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: codex-issue-remediation-${{ github.event.issue.number }}
+  group: codex-issue-remediation
   cancel-in-progress: false
 
 jobs:
