@@ -5,9 +5,7 @@ on:
     types: [created]
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: codex-issue-remediation
@@ -15,25 +13,56 @@ concurrency:
 
 jobs:
   bridge:
-    if: >-
-      github.event.issue.pull_request == null &&
-      (
-        (github.event.comment.user.login == 'gamnacken[bot]' && contains(github.event.comment.body, '<!-- skvallerbyttan-remediation:active -->')) ||
-        (github.event.comment.user.login == 'blixten85' && contains(github.event.comment.body, '<!-- skvallerbyttan-remediation:retry -->'))
-      )
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-      ISSUE_NUMBER: ${{ github.event.issue.number }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Validera betrodd remediation-trigger
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          issue_number="$(jq -r '.issue.number // empty' "$GITHUB_EVENT_PATH")"
+          is_pr="$(jq -r 'has("issue") and (.issue | has("pull_request"))' "$GITHUB_EVENT_PATH")"
+          user="$(jq -r '.comment.user.login // empty' "$GITHUB_EVENT_PATH")"
+          body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
+
+          eligible=false
+          if [ -n "$issue_number" ] && [ "$is_pr" != "true" ]; then
+            if [ "$user" = "gamnacken[bot]" ] && grep -Fq '<!-- skvallerbyttan-remediation:active -->' <<<"$body"; then
+              eligible=true
+            elif [ "$user" = "blixten85" ] && grep -Fq '<!-- skvallerbyttan-remediation:retry -->' <<<"$body"; then
+              eligible=true
+            fi
+          fi
+
+          echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
+          echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+
+      - name: Hämta Gamnacken App-token
+        if: steps.gate.outputs.eligible == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.GAMNACKEN_ID }}
+          private-key: ${{ secrets.GAMNACKEN_PEMKEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.eligible == 'true'
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: true
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Kontrollera om issue redan har en Codex-PR
+        if: steps.gate.outputs.eligible == 'true'
         id: existing
         shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
         run: |
           set -euo pipefail
           marker="<!-- skvallerbyttan-codex-pr:${ISSUE_NUMBER} -->"
@@ -44,9 +73,12 @@ jobs:
           fi
 
       - name: Välj ledig arbetsgren
-        if: steps.existing.outputs.exists != 'true'
+        if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
         id: branch
         shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin main work/fix work/chore work/feature
@@ -61,21 +93,26 @@ jobs:
             fi
           done
 
-          gh issue comment "$ISSUE_NUMBER" --body "<!-- skvallerbyttan-codex-dispatch:blocked -->
-Codex-dispatchen kunde inte starta: alla poolgrenar (`work/fix`, `work/chore`, `work/feature`) är upptagna eller ligger inte exakt på `main`. Ingen branch eller protection kringgicks."
+          body_file="$(mktemp)"
+          cat > "$body_file" <<'EOF'
+          <!-- skvallerbyttan-codex-dispatch:blocked -->
+          Codex-dispatchen kunde inte starta: alla poolgrenar (`work/fix`, `work/chore`, `work/feature`) är upptagna eller ligger inte exakt på `main`. Ingen branch eller protection kringgicks.
+          EOF
+          gh issue comment "$ISSUE_NUMBER" --body-file "$body_file"
           echo "Ingen ledig poolgren för Codex-remediation" >&2
           exit 1
 
       - name: Skapa seed-commit
-        if: steps.existing.outputs.exists != 'true'
+        if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
         shell: bash
         env:
           BRANCH: ${{ steps.branch.outputs.name }}
+          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
         run: |
           set -euo pipefail
           git checkout -B "$BRANCH" "origin/$BRANCH"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "gamnacken[bot]"
+          git config user.email "316993076+gamnacken[bot]@users.noreply.github.com"
 
           seed_dir=".github/codex-dispatch"
           seed_file="${seed_dir}/issue-${ISSUE_NUMBER}.md"
@@ -93,11 +130,13 @@ Codex-dispatchen kunde inte starta: alla poolgrenar (`work/fix`, `work/chore`, `
           git push origin "HEAD:$BRANCH"
 
       - name: Skapa PR och armera auto-merge
-        if: steps.existing.outputs.exists != 'true'
+        if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
         id: pr
         shell: bash
         env:
           BRANCH: ${{ steps.branch.outputs.name }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
         run: |
           set -euo pipefail
           body_file="$(mktemp)"
@@ -117,9 +156,11 @@ Codex-dispatchen kunde inte starta: alla poolgrenar (`work/fix`, `work/chore`, `
           gh pr merge --auto --squash "$pr_url"
 
       - name: Delegera arbetet till Codex på PR:n
-        if: steps.existing.outputs.exists != 'true'
+        if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
         shell: bash
         env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
           PR_URL: ${{ steps.pr.outputs.url }}
         run: |
           set -euo pipefail
@@ -140,5 +181,9 @@ Codex-dispatchen kunde inte starta: alla poolgrenar (`work/fix`, `work/chore`, `
           EOF
           gh pr comment "$PR_URL" --body-file "$prompt_file"
 
-          gh issue comment "$ISSUE_NUMBER" --body "<!-- skvallerbyttan-codex-pr:${ISSUE_NUMBER} -->
-Codex-remediation har flyttats till PR-kontext: ${PR_URL}. Auto-merge är armerad; CI, review-trådar och merge queue är fortsatt blockerande."
+          issue_body="$(mktemp)"
+          cat > "$issue_body" <<EOF
+          <!-- skvallerbyttan-codex-pr:${ISSUE_NUMBER} -->
+          Codex-remediation har flyttats till PR-kontext: ${PR_URL}. Auto-merge är armerad; CI, review-trådar och merge queue är fortsatt blockerande.
+          EOF
+          gh issue comment "$ISSUE_NUMBER" --body-file "$issue_body"
