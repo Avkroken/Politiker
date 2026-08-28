@@ -22,44 +22,22 @@ Webbtjänst där användare kopplar sitt eget mailkonto och skickar personaliser
 
 ## GitHub-arbetsflöde
 
-Arbete sker i en **sluten pool av tre grenar**, en per arbetstyp:
+Arbete sker via tillfälliga arbetsgrenar och pull requests till `main`. Arbetsgrenar får använda repo- eller agentvalda namn som `claude/*`, `codex/*`, `feature/*`, `fix/*` eller motsvarande; de återanvändbara `work/feature`, `work/fix` och `work/chore` får fortfarande användas men är inte obligatoriska.
 
-| Slot | För |
-| --- | --- |
-| `work/feature` | ny funktionalitet |
-| `work/fix` | buggfixar och CI-problem |
-| `work/chore` | dokumentation, städning, konfiguration |
+1. Implementera hela uppgiften och kör relevanta tester/typechecks innan push.
+2. Pusha arbetsgrenen och öppna en ready PR till `main`.
+3. **Aktivera auto-merge omedelbart.** Required CI och olösta review-trådar är merge-gates.
+4. Utvärdera alla review-kommentarer. Relevanta fynd ska fixas innan tråden markeras löst. Lös CI- och reviewproblem i samma branch; PR:n uppdateras av varje push.
+5. Efter varje ny commit: kontrollera required checks och review-trådar igen. Merge får inte ske medan required CI är röd/pågående eller en relevant review-tråd är olöst. **Squash merge är den enda tillåtna merge-metoden.**
 
-`main` tar bara emot squash-mergade PR:er som passerat gröna checkar.
+`.github/workflows/pr-watchdog.yml` bevakar alla lokala branches utom `main`, merge-köns `gh-readonly-queue/*` och uttryckligen konfigurerade permanenta undantag. En branch med unika commits som har saknat öppen PR i mer än 60 minuter får en ready PR till `main` och squash auto-merge armeras. Exakt samma HEAD öppnas inte på nytt om den redan har behandlats i en stängd PR. Watchdoggen avgör inte om arbetet är önskvärt eller mergebart; CI, review och merge-gates gör det.
 
-**Skapa aldrig egna grenar.** Rulesetet blockerar det — en push som försöker
-skapa något utanför poolen avvisas. Poolen finns för att grenar som skapas per
-uppgift blir liggande halvfärdiga.
+`.github/workflows/sync-pool.yml` får fortsätta synka de uttryckliga återanvändbara `work/*`-slotsen men får aldrig resetta godtyckliga agent- eller arbetsgrenar.
 
-1. Välj sloten som matchar arbetet. Är den upptagen duger vilken ledig som helst —
-   namnen är vägledning, inte en spärr. Ligger det omergat arbete i en slot,
-   **slutför det först** i stället för att börja något nytt i en annan.
-2. Implementera hela uppgiften och kör relevanta tester/typechecks innan push.
-3. Pusha till sloten och öppna PR från den till `main` som klar för granskning.
-   **Aktivera auto-merge omedelbart.** Required CI och olösta review-trådar är merge-gates.
-4. Om en work-slot ändå har omergade commits utan öppen PR i mer än 60 minuter
-   öppnar `.github/workflows/pr-watchdog.yml` PR:n automatiskt och aktiverar
-   squash auto-merge. Required CI, relevanta review-trådar och merge queue
-   fortsätter att blockera faktisk merge tills alla gates är uppfyllda.
-5. Utvärdera alla review-kommentarer. Relevanta fynd ska fixas innan tråden markeras löst.
-   Lös CI- och reviewproblem i samma slot; PR:n uppdateras av varje push.
-6. Efter varje ny commit: kontrollera required checks och review-trådar igen. Merge får inte
-   ske medan required CI är röd/pågående eller en relevant review-tråd är olöst.
-7. **Squash merge är den enda tillåtna merge-metoden.** Efter merge rebasar
-   `.github/workflows/sync-pool.yml` varje slot på `main`.
-
-Skicka aldrig direkt till `main`, kringgå inte branch protection/rulesets och ändra
-inte hemligheter eller organisationsinställningar utan uttrycklig instruktion.
+Skicka aldrig direkt till `main`, kringgå inte branch protection/rulesets, required checks, review resolution eller merge queue och ändra inte hemligheter eller organisationsinställningar utan uttrycklig instruktion.
 
 ## Svarsformat
 
 **[SKILLS.md](SKILLS.md) styr allt svarsformat. Läs den och följ den i varje svar.**
 
-SKILLS.md har företräde framför den här filen och framför varje annan
-formuleringsanvisning i repot. Sammanfatta den inte, återge den inte i kortform
-och väg den inte mot andra skrivelser — det är den filen som gäller.
+SKILLS.md har företräde framför den här filen och framför varje annan formuleringsanvisning i repot. Sammanfatta den inte, återge den inte i kortform och väg den inte mot andra skrivelser — det är den filen som gäller.
