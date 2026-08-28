@@ -10,18 +10,15 @@ name: Synka grenpoolen med huvudgrenen
 # workflowen kan återskapa en slot som råkat försvinna.
 #
 # INVARIANT:
-#   - En slot utan öppen PR ska peka exakt på aktuell huvudgren.
+#   - En slot utan öppen PR och utan oskyddat arbete ska peka exakt på aktuell huvudgren.
+#   - En slot med oskyddat arbete yngre än watchdog-gränsen lämnas orörd så att
+#     watchdog kan öppna PR efter 60 minuter.
 #   - En slot med öppen PR får innehålla endast det aktiva PR-arbetet ovanpå
 #     aktuell huvudgren och rebasas när huvudgrenen flyttas.
 #
-# Detta är avsiktligt strikt. Squash-merge bevarar inte commit-identitet, så
-# gamla slot-commits får aldrig användas som historik efter att PR:n är klar.
-# När en PR mergas eller stängs återställs sloten därför direkt till main.
-#
-# En dedikerad GitHub App-token används för pushar. Appen måste kunna bypassa
-# non_fast_forward för poolgrenarna eftersom lediga slots återställs med en
-# force-with-lease till exakt huvudgrens-SHA. Lease-villkoret förhindrar att
-# parallella ändringar skrivs över.
+# Squash-merge bevarar inte commit-identitet, så gamla slot-commits får aldrig
+# användas som historik efter att PR:n är klar. En ledig slot återställs därför
+# till main först när den saknar färskt oskyddat arbete.
 
 on:
   push:
@@ -40,6 +37,7 @@ permissions:
 
 env:
   SLOTS: "work/feature work/fix work/chore docs/content"
+  WATCHDOG_GRACE_MINUTES: "70"
 
 jobs:
   sync:
@@ -100,8 +98,6 @@ jobs:
             fi
             PREV=$(git rev-parse FETCH_HEAD)
 
-            # Läs PR-läget INNAN vi bestämmer om sloten ska rebasas eller resetas.
-            # Om API:t inte kan läsas gör vi ingen destruktiv ändring.
             OPEN_PRS=""
             if OPEN_PRS_RAW="$(gh api -H 'Accept: application/vnd.github+json' \
                  "repos/${GITHUB_REPOSITORY}/pulls?state=open&head=${OWNER}:${SLOT}&per_page=100" \
@@ -120,9 +116,23 @@ jobs:
             fi
 
             if [ "$OPEN_PRS" -eq 0 ]; then
-              # Hård invariant för ledig slot: exakt samma commit som main.
               if [ "$PREV" != "$BASE_SHA" ]; then
-                echo "$SLOT är ledig. Återställer exakt till $BASE. Forkastad spets: $PREV"
+                # Work-slots får en grace-period så PR-watchdog hinner rädda arbete
+                # som ännu saknar PR. docs/content hanteras fortsatt strikt.
+                case "$SLOT" in
+                  work/*)
+                    COMMITTED_AT=$(git show -s --format=%ct "$PREV" 2>/dev/null || echo 0)
+                    NOW=$(date +%s)
+                    AGE_MINUTES=$(( (NOW - COMMITTED_AT) / 60 ))
+                    if [ "$COMMITTED_AT" -gt 0 ] && [ "$AGE_MINUTES" -lt "$WATCHDOG_GRACE_MINUTES" ]; then
+                      echo "$SLOT har oskyddat arbete (${AGE_MINUTES} min); lämnas orörd för PR-watchdog."
+                      echo "::endgroup::"
+                      continue
+                    fi
+                    ;;
+                esac
+
+                echo "$SLOT är ledig utan färskt oskyddat arbete. Återställer till $BASE. Forkastad spets: $PREV"
                 if ! git push --force-with-lease="refs/heads/$SLOT:$PREV" \
                      origin "$BASE_SHA:refs/heads/$SLOT"; then
                   echo "::warning::Kunde inte återställa ledig slot $SLOT."
@@ -145,8 +155,6 @@ jobs:
               continue
             fi
 
-            # Aktiv PR: bevara endast aktuellt PR-arbete genom att rebasa sloten
-            # på huvudgrenen. Vid konflikt kastas inget automatiskt.
             if [ "$PREV" = "$BASE_SHA" ]; then
               echo "$SLOT har $OPEN_PRS öppen PR men inga commits ovanpå $BASE ännu."
               echo "::endgroup::"
