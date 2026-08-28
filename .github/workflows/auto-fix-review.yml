@@ -40,8 +40,7 @@ jobs:
         with:
           client-id: ${{ vars.GAMNACKEN_ID }}
           private-key: ${{ secrets.GAMNACKEN_PEMKEY }}
-          permissions:
-            issues: write
+          permission-issues: write
 
       - name: Be Codex åtgärda betrodd review-feedback
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
@@ -116,7 +115,7 @@ jobs:
               marker,
               `@codex address that feedback from ${summary}: ${sourceUrl}`,
               '',
-              'Ändra endast PR-grenen. Lös inte review-tråden förrän ändringen är pushad och relevant feedback faktiskt är åtgärdad. Ordinarie required checks och merge queue avgör om [...]
+              'Ändra endast PR-grenen. Lös inte review-tråden förrän ändringen är pushad och relevant feedback faktiskt är åtgärdad. Ordinarie required checks och merge queue avgör om ändringen får mergas.'
             ].join('\n');
 
             await github.rest.issues.createComment({
