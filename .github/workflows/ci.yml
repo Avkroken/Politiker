@@ -1,9 +1,6 @@
-name: Node typecheck & Python tests
+name: CI
 
 on:
-  # Merge-kön skickar merge_group.checks_requested. Utan den här
-  # triggern svarar inget jobb och kön fastnar tills timeout.
-  merge_group:
   push:
     branches: [main]
   pull_request:
@@ -18,6 +15,7 @@ concurrency:
 
 jobs:
   impact:
+    name: CI / impact
     runs-on: ubuntu-latest
     outputs:
       python: ${{ steps.impact.outputs.python }}
@@ -34,10 +32,8 @@ jobs:
         run: bash .github/scripts/ci-impact.sh
 
   typecheck:
+    name: typecheck
     runs-on: ubuntu-latest
-    # Ingen matris: en matris med ett enda värde gör check-kontexten
-    # "typecheck (app)" i stället för "typecheck", och rulesetet tappar
-    # kravet så fort matrisen ändras.
     defaults:
       run:
         working-directory: app
@@ -59,8 +55,9 @@ jobs:
         run: npm run validate
 
   python:
+    name: python
     needs: impact
-    if: ${{ needs.impact.outputs.python == 'true' }}
+    if: ${{ always() && (needs.impact.result != 'success' || needs.impact.outputs.python == 'true') }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -91,3 +88,17 @@ jobs:
           else
             echo "Ingen tests-katalog, hoppar över."
           fi
+
+  required:
+    name: CI / required
+    if: ${{ always() }}
+    needs: [typecheck, python]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kontrollera required CI
+        env:
+          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
+          PYTHON_RESULT: ${{ needs.python.result }}
+        run: |
+          test "$TYPECHECK_RESULT" = "success"
+          test "$PYTHON_RESULT" = "success" -o "$PYTHON_RESULT" = "skipped"

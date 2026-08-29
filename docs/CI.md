@@ -2,7 +2,9 @@
 
 ## Branchflöde
 
-`main` är den enda långlivade arbetsgrenen. Varje ändring görs på en kortlivad branch och går via PR till `main`. Auto-merge får aktiveras på PR:er; när required checks och review-trådar är klara mergar GitHub automatiskt. **Squash merge är den enda tillåtna merge-metoden.** Head-branchen raderas automatiskt efter merge.
+`main` är huvudgrenen och tar bara emot ändringar via PR. Arbete görs på den återanvändbara grenpoolen `work/feature`, `work/fix`, `work/chore` samt `docs/content` för ändringar inom dess särskilda dokumentationsscope. Skapa inte kortlivade engångsgrenar.
+
+PR öppnas mot `main` och auto-merge aktiveras omedelbart. Required checks, relevanta review-trådar och merge queue avgör när PR:n får mergas. **Squash merge är den enda tillåtna merge-metoden.** Efter merge synkroniserar repositoryts pool-workflow arbetsgrenarna tillbaka mot aktuell `main`.
 
 Vanlig CI körs på `pull_request` och på push till `main` där efter-merge-verifiering behövs.
 
