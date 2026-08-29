@@ -119,7 +119,7 @@ jobs:
           git commit -m "chore: seed Codex remediation for #${ISSUE_NUMBER}"
           git push origin "HEAD:$BRANCH"
 
-      - name: Skapa PR
+      - name: Skapa PR och armera auto-merge
         if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
         id: pr
         shell: bash
@@ -136,15 +136,16 @@ jobs:
 
           Automatisk Codex-remediation för säkerhetsissue #${ISSUE_NUMBER}.
 
-          Seed-filen under `.github/codex-dispatch/` är tillfällig och required `typecheck` blockerar merge tills Codex har tagit bort den.
+          Seed-filen under \`.github/codex-dispatch/\` är tillfällig och required \`typecheck\` blockerar merge tills Codex har tagit bort den.
 
           Fixes #${ISSUE_NUMBER}
           EOF
 
           pr_url="$(gh pr create --base main --head "$BRANCH" --title "fix(security): remediate issue #${ISSUE_NUMBER}" --body-file "$body_file")"
           echo "url=$pr_url" >> "$GITHUB_OUTPUT"
+          gh pr merge --auto --squash "$pr_url"
 
-      - name: Spara issue-association och armera auto-merge
+      - name: Spara issue-association och verifiera auto-merge
         if: steps.gate.outputs.eligible == 'true'
         id: reconcile
         shell: bash
@@ -162,11 +163,16 @@ jobs:
           fi
           echo "url=$pr_url" >> "$GITHUB_OUTPUT"
 
+          auto_merge_enabled="$(gh pr view "$pr_url" --json autoMergeRequest --jq '.autoMergeRequest.enabledAt // empty')"
+          if [ -z "$auto_merge_enabled" ]; then
+            gh pr merge --auto --squash "$pr_url"
+          fi
+
           association_marker="<!-- skvallerbyttan-codex-pr:${ISSUE_NUMBER} -->"
           association_found="$(
             gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments?per_page=100" |
-              jq -r --arg marker "$association_marker" \
-                '.[] | select(.user.login == "gamnacken[bot]" and ((.body // "") | contains($marker))) | .id' |
+              jq -r --arg marker "$association_marker" --arg url "$pr_url" \
+                '.[] | select(.user.login == "gamnacken[bot]" and ((.body // "") | contains($marker)) and ((.body // "") | contains($url))) | .id' |
               sed -n '1p'
           )"
           if [ -z "$association_found" ]; then
@@ -176,11 +182,6 @@ jobs:
           Codex-remediation har flyttats till PR-kontext: ${pr_url}. Auto-merge är armerad; required CI och review-trådar är fortsatt blockerande.
           EOF
             gh issue comment "$ISSUE_NUMBER" --body-file "$issue_body"
-          fi
-
-          auto_merge_enabled="$(gh pr view "$pr_url" --json autoMergeRequest --jq '.autoMergeRequest.enabledAt // empty')"
-          if [ -z "$auto_merge_enabled" ]; then
-            gh pr merge --auto --squash "$pr_url"
           fi
 
       - name: Delegera arbetet till Codex på PR:n
@@ -216,7 +217,7 @@ jobs:
           - Read and follow AGENTS.md and SKILLS.md before changing code.
           - Make the smallest safe fix without changing or dismissing the security alert state.
           - Keep all work on this existing PR/branch; do not create another branch or PR.
-          - Delete `.github/codex-dispatch/issue-${ISSUE_NUMBER}.md` before completion; required `typecheck` intentionally blocks merge while it exists.
+          - Delete \`.github/codex-dispatch/issue-${ISSUE_NUMBER}.md\` before completion; required \`typecheck\` intentionally blocks merge while it exists.
           - Run relevant checks and fix every valid CI or review finding on this same PR.
           - Re-read review summaries and unresolved inline threads after every push.
           - Resolve a review thread only after its valid finding is fixed or a concrete evidentiary reply shows why no change is correct.
