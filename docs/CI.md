@@ -4,7 +4,7 @@
 
 `main` är huvudgrenen och tar bara emot ändringar via PR. Arbete görs på den återanvändbara grenpoolen `work/feature`, `work/fix`, `work/chore` samt `docs/content` för ändringar inom dess särskilda dokumentationsscope. Skapa inte kortlivade engångsgrenar.
 
-PR öppnas mot `main` och auto-merge aktiveras omedelbart. Required checks, relevanta review-trådar och merge queue avgör när PR:n får mergas. **Squash merge är den enda tillåtna merge-metoden.** Efter merge synkroniserar repositoryts pool-workflow arbetsgrenarna tillbaka mot aktuell `main`.
+PR öppnas mot `main`. När required checks, relevanta reviewtrådar och övriga live gates redan är uppfyllda och GitHub bedömer PR:n som direkt mergebar ska den mergas direkt. Auto-merge används när obligatoriska gates fortfarande väntar och repositoryt stöder det. Repositoryts live ruleset/merge queue bestämmer tillåten merge-metod. Efter merge synkroniserar pool-workflowen arbetsgrenarna tillbaka mot aktuell `main`.
 
 Vanlig CI körs på `pull_request` och på push till `main` där efter-merge-verifiering behövs.
 
