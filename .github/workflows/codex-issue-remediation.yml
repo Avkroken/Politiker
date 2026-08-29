@@ -13,6 +13,7 @@ jobs:
     outputs:
       eligible: ${{ steps.gate.outputs.eligible }}
       issue_number: ${{ steps.gate.outputs.issue_number }}
+      retry: ${{ steps.gate.outputs.retry }}
     steps:
       - name: Validera betrodd remediation-trigger
         id: gate
@@ -25,16 +26,19 @@ jobs:
           body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
 
           eligible=false
+          retry=false
           if [ -n "$issue_number" ] && [ "$is_pr" != "true" ]; then
             if [ "$user" = "gamnacken[bot]" ] && grep -Fq '<!-- skvallerbyttan-remediation:active -->' <<<"$body"; then
               eligible=true
             elif [ "$user" = "blixten85" ] && grep -Fq '<!-- skvallerbyttan-remediation:retry -->' <<<"$body"; then
               eligible=true
+              retry=true
             fi
           fi
 
           echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
           echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+          echo "retry=$retry" >> "$GITHUB_OUTPUT"
 
   bridge:
     needs: gate
@@ -220,6 +224,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ISSUE_NUMBER: ${{ needs.gate.outputs.issue_number }}
           PR_URL: ${{ steps.reconcile.outputs.url }}
+          EXPLICIT_RETRY: ${{ needs.gate.outputs.retry }}
         run: |
           set -euo pipefail
           pr_number="$(gh pr view "$PR_URL" --json number --jq '.number')"
@@ -230,7 +235,7 @@ jobs:
                 '.[] | select(.user.login == "gamnacken[bot]" and ((.body // "") | contains($marker))) | .id' |
               sed -n '1p'
           )"
-          if [ -n "$delegation_found" ]; then
+          if [ "$EXPLICIT_RETRY" != "true" ] && [ -n "$delegation_found" ]; then
             echo "Codex-delegering finns redan på PR #${pr_number}."
             exit 0
           fi
