@@ -2,9 +2,11 @@
 
 ## Branchflöde
 
-`main` är huvudgrenen och tar bara emot ändringar via PR. Arbete görs på den återanvändbara grenpoolen `work/feature`, `work/fix`, `work/chore` samt `docs/content` för ändringar inom dess särskilda dokumentationsscope. Skapa inte kortlivade engångsgrenar.
+`main` tar bara emot ändringar via pull request. Arbete görs på kortlivade branches; repositoryt har ingen obligatorisk återanvändbar branchpool och använder inte merge queue.
 
-PR öppnas mot `main`. När required checks, relevanta reviewtrådar och övriga live gates redan är uppfyllda och GitHub bedömer PR:n som direkt mergebar ska den mergas direkt. Auto-merge används när obligatoriska gates fortfarande väntar och repositoryt stöder det. Repositoryts live ruleset/merge queue bestämmer tillåten merge-metod. Efter merge synkroniserar pool-workflowen arbetsgrenarna tillbaka mot aktuell `main`.
+Öppna en ready PR mot `main` och aktivera auto-merge omedelbart. Live-ruleseten kräver `typecheck`, `python`, lösta review-trådar och squash merge. Direkt merge används bara när det uttryckligen begärts.
+
+Codex-remediation använder körningsunika branches under `automation/codex-issue/`. Seed-filen under `.github/codex-dispatch/` skapar PR-kontext men måste tas bort av Codex innan PR:n kan mergas; required `typecheck` blockerar annars PR:n.
 
 Vanlig CI körs på `pull_request` och på push till `main` där efter-merge-verifiering behövs.
 
@@ -23,4 +25,4 @@ Produktionsdeploy sker från `main`. `.github/workflows/release.yml` bestämmer 
 
 ## Säkerhet
 
-Säkerhetsskanning ska behålla stabila required-check- och Code Scanning-identiteter. Målet är minsta säkra CI-mängd, inte minsta möjliga antal checks.
+OSV och Docker/Trivy kör kompletterande säkerhetskontroller. Code Scanning-identiteter ska hållas stabila. En grön Docker/Trivy-workflow betyder inte automatiskt noll fynd eftersom Trivy-resultat rapporteras via SARIF; finding-count och alert-livscykel ska verifieras när säkerhetsfixar görs.
