@@ -32,7 +32,7 @@ jobs:
         run: bash .github/scripts/ci-impact.sh
 
   typecheck:
-    name: CI / typecheck
+    name: typecheck
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -55,7 +55,7 @@ jobs:
         run: npm run validate
 
   python:
-    name: CI / python
+    name: python
     needs: impact
     if: ${{ always() && (needs.impact.result != 'success' || needs.impact.outputs.python == 'true') }}
     runs-on: ubuntu-latest
