@@ -7,13 +7,12 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: codex-issue-remediation
-  cancel-in-progress: false
-
 jobs:
-  bridge:
+  gate:
     runs-on: ubuntu-latest
+    outputs:
+      eligible: ${{ steps.gate.outputs.eligible }}
+      issue_number: ${{ steps.gate.outputs.issue_number }}
     steps:
       - name: Validera betrodd remediation-trigger
         id: gate
@@ -37,8 +36,16 @@ jobs:
           echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
           echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
 
+  bridge:
+    needs: gate
+    if: needs.gate.outputs.eligible == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: codex-issue-remediation
+      queue: max
+      cancel-in-progress: false
+    steps:
       - name: Hämta Gamnacken App-token
-        if: steps.gate.outputs.eligible == 'true'
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -49,44 +56,60 @@ jobs:
           permission-pull-requests: write
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: steps.gate.outputs.eligible == 'true'
         with:
           ref: main
           fetch-depth: 0
           persist-credentials: true
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Kontrollera om issue redan har en Codex-PR
-        if: steps.gate.outputs.eligible == 'true'
+      - name: Kontrollera om issue redan har en aktiv Codex-PR
         id: existing
         shell: bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ needs.gate.outputs.issue_number }}
         run: |
           set -euo pipefail
-          marker="<!-- skvallerbyttan-codex-pr:${ISSUE_NUMBER} -->"
-          if gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments?per_page=100" --jq '.[].body' | grep -Fq -- "$marker"; then
+          marker="<!-- skvallerbyttan-remediation-issue:${ISSUE_NUMBER} -->"
+          pr_url="$(
+            gh api "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" |
+              jq -r --arg marker "$marker" --arg repo "$GITHUB_REPOSITORY" \
+                '.[] | select(.head.repo.full_name == $repo and ((.body // "") | contains($marker))) | .html_url' |
+              head -n 1
+          )"
+
+          if [ -n "$pr_url" ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "url=$pr_url" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Välj ledig arbetsgren
-        if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
+        if: steps.existing.outputs.exists != 'true'
         id: branch
         shell: bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ needs.gate.outputs.issue_number }}
         run: |
           set -euo pipefail
-          git fetch --no-tags origin main work/fix work/chore work/feature
+          git fetch --no-tags origin main
           main_sha="$(git rev-parse origin/main)"
 
           for branch in work/fix work/chore work/feature; do
+            if ! git fetch --no-tags origin "$branch"; then
+              echo "Poolgrenen $branch saknas; fortsätter med återstående slots." >&2
+              continue
+            fi
+
             branch_sha="$(git rev-parse "origin/${branch}")"
-            open_prs="$(gh pr list --state open --head "$branch" --json number --jq 'length')"
+            open_prs="$(
+              gh api "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" |
+                jq --arg branch "$branch" --arg repo "$GITHUB_REPOSITORY" \
+                  '[.[] | select(.head.repo.full_name == $repo and .head.ref == $branch)] | length'
+            )"
+
             if [ "$branch_sha" = "$main_sha" ] && [ "$open_prs" = "0" ]; then
               echo "name=$branch" >> "$GITHUB_OUTPUT"
               exit 0
@@ -96,18 +119,18 @@ jobs:
           body_file="$(mktemp)"
           cat > "$body_file" <<'EOF'
           <!-- skvallerbyttan-codex-dispatch:blocked -->
-          Codex-dispatchen kunde inte starta: alla poolgrenar (`work/fix`, `work/chore`, `work/feature`) är upptagna eller ligger inte exakt på `main`. Ingen branch eller protection kringgicks.
+          Codex-dispatchen kunde inte starta: alla tillgängliga poolgrenar (work/fix, work/chore, work/feature) är upptagna, saknas eller ligger inte exakt på main. Ingen branch eller protection kringgicks.
           EOF
           gh issue comment "$ISSUE_NUMBER" --body-file "$body_file"
           echo "Ingen ledig poolgren för Codex-remediation" >&2
           exit 1
 
       - name: Skapa seed-commit
-        if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
+        if: steps.existing.outputs.exists != 'true'
         shell: bash
         env:
           BRANCH: ${{ steps.branch.outputs.name }}
-          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ needs.gate.outputs.issue_number }}
         run: |
           set -euo pipefail
           git checkout -B "$BRANCH" "origin/$BRANCH"
@@ -130,13 +153,13 @@ jobs:
           git push origin "HEAD:$BRANCH"
 
       - name: Skapa PR och armera auto-merge
-        if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
+        if: steps.existing.outputs.exists != 'true'
         id: pr
         shell: bash
         env:
           BRANCH: ${{ steps.branch.outputs.name }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ needs.gate.outputs.issue_number }}
         run: |
           set -euo pipefail
           body_file="$(mktemp)"
@@ -146,21 +169,29 @@ jobs:
 
           Automatisk Codex-remediation för säkerhetsissue #${ISSUE_NUMBER}.
 
-          Seed-filen under `.github/codex-dispatch/` är tillfällig och ska tas bort av Codex innan PR:n är färdig.
+          Seed-filen under .github/codex-dispatch/ är tillfällig och ska tas bort av Codex innan PR:n är färdig.
 
           Fixes #${ISSUE_NUMBER}
           EOF
 
           pr_url="$(gh pr create --base main --head "$BRANCH" --title "fix(security): remediate issue #${ISSUE_NUMBER}" --body-file "$body_file")"
           echo "url=$pr_url" >> "$GITHUB_OUTPUT"
+
+          issue_body="$(mktemp)"
+          cat > "$issue_body" <<EOF
+          <!-- skvallerbyttan-codex-pr:${ISSUE_NUMBER} -->
+          Codex-remediation har flyttats till PR-kontext: ${pr_url}.
+          EOF
+          gh issue comment "$ISSUE_NUMBER" --body-file "$issue_body"
+
           gh pr merge --auto --squash "$pr_url"
 
       - name: Delegera arbetet till Codex på PR:n
-        if: steps.gate.outputs.eligible == 'true' && steps.existing.outputs.exists != 'true'
+        if: steps.existing.outputs.exists != 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          ISSUE_NUMBER: ${{ steps.gate.outputs.issue_number }}
+          ISSUE_NUMBER: ${{ needs.gate.outputs.issue_number }}
           PR_URL: ${{ steps.pr.outputs.url }}
         run: |
           set -euo pipefail
@@ -173,17 +204,10 @@ jobs:
           - Read and follow AGENTS.md and SKILLS.md before changing code.
           - Make the smallest safe fix without changing or dismissing the security alert state.
           - Keep all work on this existing PR/branch; do not create another branch or PR.
-          - Delete `.github/codex-dispatch/issue-${ISSUE_NUMBER}.md` before completion.
+          - Delete .github/codex-dispatch/issue-${ISSUE_NUMBER}.md before completion.
           - Run the relevant tests/typechecks and fix every valid CI or review finding on this same PR.
           - Re-read review summaries and unresolved inline threads after every push.
           - Resolve a review thread only after its valid finding is fixed or a concrete evidentiary reply shows why no change is correct.
           - Auto-merge is already armed; do not bypass branch protection, required checks, review resolution, or the merge queue.
           EOF
           gh pr comment "$PR_URL" --body-file "$prompt_file"
-
-          issue_body="$(mktemp)"
-          cat > "$issue_body" <<EOF
-          <!-- skvallerbyttan-codex-pr:${ISSUE_NUMBER} -->
-          Codex-remediation har flyttats till PR-kontext: ${PR_URL}. Auto-merge är armerad; CI, review-trådar och merge queue är fortsatt blockerande.
-          EOF
-          gh issue comment "$ISSUE_NUMBER" --body-file "$issue_body"
