@@ -1,0 +1,19 @@
+name: Finalize security PR
+
+on: push
+
+jobs:
+  ready:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Mark existing PR ready for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: "337"
+        run: |
+          set -euo pipefail
+          PR_ID="$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq .node_id)"
+          gh api graphql -f query='mutation($id:ID!){markPullRequestReadyForReview(input:{pullRequestId:$id}){pullRequest{number isDraft}}}' -f id="$PR_ID"
