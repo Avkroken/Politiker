@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Den här filen innehåller instruktioner för AI-agenter som arbetar i repositoryt.
+Den här filen innehåller instruktioner för AI-agenter som arbetar i repositoryt. Live repository configuration är verkställande sanning när faktisk enforcement skiljer sig från dokumentation.
 
 Root-`AGENTS.md` är den auktoritativa källan för repositoryövergripande agentpolicy. En mer specifik `AGENTS.md` längre ned i katalogträdet får lägga till regler för sitt subtree, men ska inte duplicera eller motsäga den repositoryövergripande policyn.
 
@@ -10,7 +10,7 @@ Följ dessutom de repository-specifika instruktionerna längre ned i denna fil.
 
 ## Arbetsprincip
 
-Leverera fungerande, verifierade och avgränsade ändringar. CI, GitHub Copilot Code Review och mänskliga reviewers är oberoende verifieringslager och ska inte vara den första debuggern för fel som agenten rimligen kan upptäcka själv före en pull request. Ändra inte mer än uppgiften kräver och bevara befintlig arkitektur och repository-specifika konventioner om det inte finns ett konkret skäl att ändra dem.
+Leverera fungerande, verifierade och avgränsade ändringar. CI, GitHub Copilot Code Review och mänskliga reviewers är oberoende verifieringslager och ska inte vara den första debuggern för fel som agenten rimligen kan upptäcka själv före en pull request. Ändra inte mer än uppgiften kräver, bevara befintlig arkitektur och repository-specifika konventioner och inför inte breaking changes om de inte uttryckligen krävs av uppgiften.
 
 ## Innan implementation
 
@@ -22,44 +22,39 @@ Leverera fungerande, verifierade och avgränsade ändringar. CI, GitHub Copilot 
 
 ## Pre-PR quality gate
 
-Innan en ready pull request skapas eller uppdateras ska agenten granska hela den egna diffen mot PR:ns base branch, kontrollera korrekthet, säkerhet, felhantering, kompatibilitet och relevanta edge cases, köra alla relevanta lokala tester samt tillämplig lint/typecheck/build, lägga till eller uppdatera tester när beteende ändras och detta är praktiskt testbart, kontrollera att inga secrets/credentials/debugrester/oavsiktliga filer har lagts till och fixa legitima egna findings före extern review.
-
-Efter en senare commit eller push ska påverkad validering köras igen. Om full lokal validering inte är möjlig ska detta redovisas konkret i PR:n; hitta inte på ett grönt resultat.
+Innan en ready PR skapas eller uppdateras ska agenten granska hela diffen mot base branch, kontrollera korrekthet, säkerhet, felhantering, kompatibilitet och relevanta edge cases, köra relevanta tester/lint/typecheck/build, uppdatera tester när beteende ändras och detta är praktiskt testbart, kontrollera att inga secrets/debugrester/oavsiktliga filer lagts till och fixa legitima egna findings före extern review. Efter senare commits ska påverkad validering köras igen. Om full lokal validering inte är möjlig ska begränsningen redovisas konkret.
 
 ## Review-signal
 
-Prioritera funktionell och teknisk signal framför redaktionell puts. Rapportera inte rena stavnings-, grammatik-, interpunktions-, wording- eller stilfel i README, dokumentation, Markdown, kodkommentarer, docstrings eller annan mänskligt läsbar prosa. Rapportera däremot ett textfel när det materiellt kan ändra teknisk betydelse, säkerhet, korrekthet, användarbeteende eller en instruktion som förväntas köras eller kopieras bokstavligt, samt typos i maskin- eller semantikbärande innehåll såsom identifierare, strängkonstanter, paths, konfigurationsnycklar, environment-variabler, API-fält, kommandon, flags, selectors, protokoll- och enumvärden.
-
-Prioritera korrekthet, säkerhet, tillförlitlighet, kompatibilitet, tester och underhållbarhet.
+Prioritera funktionell och teknisk signal framför redaktionell puts. Rapportera inte rena stavnings-, grammatik-, interpunktions-, wording- eller stilfel i mänskligt läsbar prosa. Rapportera däremot textfel som materiellt kan ändra teknisk betydelse, säkerhet, korrekthet, användarbeteende eller bokstavliga instruktioner samt typos i maskin- eller semantikbärande innehåll såsom identifierare, strängkonstanter, paths, config keys, environment-variabler, API-fält, kommandon, flags, selectors, protokoll- och enumvärden.
 
 ## Reviewnivå och eskalering
 
-Använd lägsta reviewnivå som ger tillräcklig säkerhet.
-
-- **Low:** GitHub Copilot Code Review Lite för rutinmässiga, lokala och väl avgränsade ändringar.
-- **Medium:** Copilot Balanced för icke-trivial logik, flera sammanhängande komponenter eller API-/kompatibilitetsbeteende.
-- **High:** minst Balanced för auth/access control, credentials/secrets, persistent data/schema/migrationer, concurrency/retries/idempotency, distributed/cross-service state, protokoll/integrationskontrakt, releaseflöden, privilegierad infrastruktur eller stora/riskfyllda refactors. Om frågan fortfarande kräver en separat djup implementation eller ett oberoende andra pass, delegera via den installerade OpenAI Codex-agentens faktiska GitHub-`@handle`.
-- **Critical:** Balanced + Codex när ett fel trovärdigt kan innebära auth bypass, secret exposure, dataförlust/-korruption, destruktiv/irreversibel migration eller annan exceptionell produktionspåverkan. Om frågan fortfarande är olöst eller väsentligt tvetydig, begär ett separat andra pass från den installerade Anthropic Claude-agentens faktiska GitHub-`@handle`.
-
-Bygg inte ett nytt router-workflow enbart för denna eskalering. Native GitHub-delegering är standardvägen så länge inget organisationsbeslut säger annat.
+Low använder Copilot Lite; Medium använder Balanced; High använder minst Balanced och vid behov installerad OpenAI Codex-agent via dess faktiska GitHub-handle; Critical använder Balanced + Codex och vid kvarstående kritisk tvetydighet installerad Anthropic Claude-agent via dess faktiska GitHub-handle. Gissa eller hårdkoda inte mention-namn. Bygg inte ett nytt router-workflow enbart för eskaleringen.
 
 ## Pull request och merge
 
-Pusha aldrig direkt till `main`. Följ repositoryts specifika branchmodell och skapa en ready PR först när pre-PR-gaten är genomförd.
+Pusha aldrig direkt till `main`. Följ repositoryts branchmodell och skapa en ready PR först när pre-PR-gaten är genomförd.
 
-Efter varje ny commit eller push ska den aktuella PR-statusen verifieras igen: aktuell HEAD, required checks/CI, mergeability, mergekonflikter och obligatoriska review-trådar/blockers.
+Efter varje ny commit eller push ska aktuell HEAD, required checks/CI, mergeability och mergekonflikter verifieras igen. Läs och utvärdera dessutom alla review-kommentarer och alla nya, öppna eller återöppnade review-trådar; relevanta findings ska åtgärdas innan PR:n betraktas som klar.
 
-När GitHub bedömer PR:n som direkt mergebar och alla tillämpliga repository-gates är uppfyllda — required checks/CI är klara och godkända, inga mergekonflikter finns och inga relevanta obligatoriskt olösta review-trådar eller andra blockers återstår — ska PR:n mergas omedelbart.
+När GitHub bedömer PR:n som direkt mergebar och alla tillämpliga live gates är uppfyllda — required checks är godkända, inga konflikter eller relevanta olösta reviewtrådar/blockers återstår och ingen relevant review-feedback är outhanterad — ska PR:n mergas omedelbart.
 
-Försök inte aktivera auto-merge på en PR som redan är direkt mergebar. Använd auto-merge när PR:n ännu inte kan mergas enbart därför att obligatoriska gates fortfarande väntar och repositoryt stöder auto-merge. Repositoryts aktuella ruleset, merge queue och repositoryinställningar bestämmer vilka merge-metoder som är tillåtna. Om GitHub inte tillåter merge trots att PR:n ser grön ut ska den konkreta blockeraren identifieras; forcera eller kringgå inte repositoryskydd.
+Försök inte aktivera auto-merge på en PR som redan är direkt mergebar. Använd auto-merge när PR:n ännu inte kan mergas enbart därför att obligatoriska gates fortfarande väntar och repositoryt stöder auto-merge. Live ruleset, merge queue och GitHub-inställningar bestämmer tillåten merge-metod. Forcera eller kringgå inte repositoryskydd.
 
 ## Credentials och AI-infrastruktur
 
-Committa eller exponera aldrig secrets, tokens, privata nycklar eller andra credentials. Lägg inte till `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` eller annan extern AI-provider-credential i repository, Actions secrets eller organisationskonfiguration utan uttryckligt godkännande från repository- eller organisationsägaren. Ändra inte billing, Copilot-policy, repository secrets eller organisationsinställningar enbart för att möjliggöra AI-routing utan uttryckligt godkännande. Föredra befintliga GitHub/Copilot-native mekanismer framför nya workflows, botar eller dispatchers när de redan löser uppgiften.
+Committa eller exponera aldrig secrets, tokens, privata nycklar eller andra credentials. Lägg inte till externa AI-provider-credentials eller ändra billing/Copilot-policy/secrets/organisationsinställningar enbart för AI-routing utan uttryckligt ägargodkännande. Föredra GitHub/Copilot-native mekanismer.
+
+## Verifiering efter ändringar
+
+Ett lyckat API-svar, workflow-anrop eller deployment-request är inte i sig bevis på att ändringen är aktiv. När uppgiften ändrar GitHub-inställningar, permissions, deployments, routes, bindings eller annan runtime-/live-konfiguration ska relevant resulterande state verifieras.
 
 ## Definition of done
 
-En agentuppgift är inte klar förrän implementationen är färdig och avgränsad, relevanta tester/checks har körts eller en konkret begränsning dokumenterats, den slutliga diffen självgranskats, legitima review-findings åtgärdats, PR-status verifierats mot aktuell HEAD, PR:n antingen mergats därför att alla gates är uppfyllda eller har auto-merge aktiverat därför att endast väntande obligatoriska gates återstår, och ingen repositoryregel har kringgåtts.
+För en uppgift som skapar eller uppdaterar en PR är arbetet inte klart förrän ändringen är färdig och avgränsad, relevanta checks är körda eller begränsningen dokumenterad, diffen självgranskad, all review-feedback läst och utvärderad, legitima findings åtgärdade, PR-status verifierad mot aktuell HEAD, eventuell live-state verifierad när tillämpligt och PR:n antingen mergad när alla gates är uppfyllda eller har auto-merge aktiverat när endast väntande obligatoriska gates återstår.
+
+För read-only reviews, investigations, frågor eller live-konfigurationsuppgifter utan PR gäller inte PR-/mergekraven ovan; uppgiften är klar när efterfrågat arbete är genomfört och relevant resulterande status verifierats.
 
 <!-- AVKROKEN-COMMON:END -->
 
@@ -98,10 +93,10 @@ Arbete sker i en sluten pool av fyra återanvändbara grenar:
 
 Skapa inte andra arbetsgrenar. Välj en ledig slot som passar arbetet; om en poolgren redan har omergat arbete ska det arbetet slutföras först. `docs/content` används endast när ändringen ryms inom dess särskilda dokumentationsscope.
 
-`.github/workflows/sync-pool.yml` är den verkställande synkroniseringsmodellen för poolen och deklarerar samma fyra slots. Efter merge synkroniseras poolgrenarna mot `main` enligt workflowens invariants. Ändra inte den modellen utan att verifiera faktisk enforcement och `scope-policy`.
+`.github/workflows/sync-pool.yml` är den verkställande synkroniseringsmodellen för poolen och deklarerar samma fyra slots. Workflowen får inte återställa poolarbete som hör till en stängd men omergad PR; closed-PR-synk ska endast köras efter faktisk merge. Efter merge synkroniseras poolgrenarna mot `main` enligt workflowens invariants.
 
 ### Svarsformat
 
 **[SKILLS.md](SKILLS.md) styr allt svarsformat. Läs den och följ den i varje svar.**
 
-SKILLS.md har företräde framför den här filen och framför varje annan formuleringsanvisning i repot. Sammanfatta den inte, återge den inte i kortform och väg den inte mot andra skrivelser — det är den filen som gäller.
+SKILLS.md har företräde framför den här filen och framför varje annan formuleringsanvisning i repot.
