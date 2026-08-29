@@ -15,6 +15,7 @@ name: Synka grenpoolen med huvudgrenen
 #     watchdog kan öppna PR efter 60 minuter.
 #   - En slot med öppen PR får innehålla endast det aktiva PR-arbetet ovanpå
 #     aktuell huvudgren och rebasas när huvudgrenen flyttas.
+#   - En stängd men omergad PR får aldrig utlösa slot-reset.
 #
 # Squash-merge bevarar inte commit-identitet, så gamla slot-commits får aldrig
 # användas som historik efter att PR:n är klar. En ledig slot återställs därför
@@ -41,6 +42,7 @@ env:
 
 jobs:
   sync:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
