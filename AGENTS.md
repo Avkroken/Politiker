@@ -20,6 +20,12 @@ Webbtjänst där användare kopplar sitt eget mailkonto och skickar personaliser
 - Föredra minsta nödvändiga behörighet och befintliga standardmekanismer framför nya wrappers eller specialflöden.
 - GitHub Actions pinnas till commit-SHA när praktiskt möjligt.
 
+## Pre-PR quality gate
+
+Innan en PR öppnas ska agenten själv behandla ändringen som produktionskod: läs relevanta instruktioner och dokument, förstå befintlig implementation och närliggande tester, granska hela diffen mot `main` för korrekthet, oavsiktliga ändringar, säkerhet, kompatibilitet och projektkonventioner, och kör alla relevanta tester/typechecks/lint/builds som repot definierar. Lägg till eller uppdatera tester när beteende ändras och regressionsprov för buggfixar när praktiskt.
+
+Fixa egna fynd och lokala valideringsfel före PR. CI, Copilot och andra reviewers är oberoende verifiering och får inte användas som ersättning för att förstå koden, testa implementationen eller självgranska diffen. Öppna PR först när ändringen rimligen bedöms komplett och merge-ready, med förbehåll för de oberoende merge-gatesen. Upprepa relevant självgranskning och validering efter varje senare commit.
+
 ## GitHub-arbetsflöde
 
 Arbete sker i en **sluten pool av tre grenar**, en per arbetstyp:
