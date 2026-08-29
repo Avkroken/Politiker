@@ -19,7 +19,7 @@
     "wrangler": "^4.125.0"
   },
   "dependencies": {
-    "mammoth": "^1.12.1",
+    "mammoth": "^1.12.2",
     "unpdf": "^1.8.1"
   }
 }
