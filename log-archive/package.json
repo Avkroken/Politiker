@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "deploy:production": "node ../scripts/deploy-production.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260816.1",
