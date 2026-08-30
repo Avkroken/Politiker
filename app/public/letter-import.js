@@ -20,9 +20,9 @@
   }
 
   function validateText(text){
-    if(text.includes('\uFFFD'))throw new Error('Texten innehåller trasiga ersättningstecken (�). Importen stoppades så att de inte skickas vidare.');
-    if(/[\u0000\u0001-\u0008\u000B\u000C\u000E-\u001F]/.test(text))throw new Error('Texten innehåller ogiltiga kontrolltecken och kan inte importeras säkert.');
-    if(COMMON_MOJIBAKE.test(text))throw new Error('Texten ser felkodad ut (t.ex. Ã¥/â€“). Importen stoppades. Spara dokumentet som UTF-8 eller Windows-1252 och försök igen.');
+    if(text.includes('\uFFFD'))throw new Error('Texten innehåller trasiga ersättningstecken (�). Rätta texten innan du fortsätter.');
+    if(/[\u0000\u0001-\u0008\u000B\u000C\u000E-\u001F]/.test(text))throw new Error('Texten innehåller ogiltiga kontrolltecken och kan inte användas säkert.');
+    if(COMMON_MOJIBAKE.test(text))throw new Error('Texten ser felkodad ut (t.ex. Ã¥/â€“). Rätta texten eller importera dokumentet på nytt.');
     return text;
   }
 
@@ -42,7 +42,7 @@
         return{text,encoding};
       }catch(error){lastError=error}
     }
-    if(lastError instanceof Error&&/felkodad|trasiga|kontrolltecken/.test(lastError.message))throw lastError;
+    if(lastError instanceof Error&&/felkodad|ersättningstecken|kontrolltecken/.test(lastError.message))throw lastError;
     throw new Error('Alla tecken i dokumentet kunde inte avkodas korrekt. Importen stoppades.');
   }
 
@@ -70,7 +70,7 @@
     return /^(?:https?:|mailto:)/i.test(href)?href:null;
   }
 
-  function sanitizeHtml(html){
+  function sanitizeHtml(html,{validate=true}={}){
     requireDom();
     const parsed=new DOMParser().parseFromString(String(html||''),'text/html');
     for(const el of [...parsed.body.querySelectorAll('*')]){
@@ -81,25 +81,26 @@
       for(const attr of [...el.attributes])el.removeAttribute(attr.name);
       if(tag==='a'&&href){el.setAttribute('href',href);el.setAttribute('rel','noopener noreferrer')}
     }
-    validateText(parsed.body.textContent||'');
+    if(validate)validateText(parsed.body.textContent||'');
     return parsed.body.innerHTML;
   }
 
-  function htmlToText(html){
+  function htmlToText(html,{validate=true}={}){
     requireDom();
-    const parsed=new DOMParser().parseFromString(sanitizeHtml(html),'text/html');
+    const parsed=new DOMParser().parseFromString(sanitizeHtml(html,{validate:false}),'text/html');
     for(const br of [...parsed.body.querySelectorAll('br')])br.replaceWith('\n');
     for(const el of [...parsed.body.querySelectorAll('p,div,li,blockquote,h1,h2,h3')])el.append('\n');
     const text=(parsed.body.textContent||'').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
-    validateText(text);
+    if(validate)validateText(text);
     return text;
   }
 
-  function normalizeStoredHtml(value){
+  function storedToEditorText(value){
     const text=String(value||'');
     if(!text)return'';
-    return /<\/?(?:p|br|div|strong|em|b|i|u|ul|ol|li|blockquote|h[1-3]|span|a)\b/i.test(text)?sanitizeHtml(text):textToHtml(text);
+    if(/<\/?(?:p|br|div|strong|em|b|i|u|ul|ol|li|blockquote|h[1-3]|span|a)\b/i.test(text))return htmlToText(text,{validate:false});
+    return text.replace(/\r\n?/g,'\n');
   }
 
-  global.PolitikerLetterImport={decodeTextBytes,readFileText,validateText,textToHtml,sanitizeHtml,htmlToText,normalizeStoredHtml,sniffHtmlCharset};
+  global.PolitikerLetterImport={decodeTextBytes,readFileText,validateText,textToHtml,sanitizeHtml,htmlToText,storedToEditorText,sniffHtmlCharset};
 })(globalThis);
