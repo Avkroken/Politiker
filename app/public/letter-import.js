@@ -34,15 +34,12 @@
     else if(bytes.length>=2&&bytes[0]===0xFE&&bytes[1]===0xFF)candidates.push('utf-16be');
     if(html){const declared=sniffHtmlCharset(bytes);if(declared)candidates.push(declared)}
     candidates.push('utf-8','windows-1252');
-    let lastError=null;
     for(const encoding of [...new Set(candidates)]){
-      try{
-        const text=new TextDecoder(encoding,{fatal:true}).decode(bytes);
-        validateText(text);
-        return{text,encoding};
-      }catch(error){lastError=error}
+      let text;
+      try{text=new TextDecoder(encoding,{fatal:true}).decode(bytes)}catch{continue}
+      validateText(text);
+      return{text,encoding};
     }
-    if(lastError instanceof Error&&/felkodad|ersättningstecken|kontrolltecken/.test(lastError.message))throw lastError;
     throw new Error('Alla tecken i dokumentet kunde inte avkodas korrekt. Importen stoppades.');
   }
 
