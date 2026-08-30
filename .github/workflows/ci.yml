@@ -66,6 +66,9 @@ jobs:
       - name: Validera JavaScript, Worker-typer, TypeScript och Wrangler-deployment
         run: npm run validate
 
+      - name: Validera log-archive Worker med appens låsta Wrangler
+        run: npx wrangler deploy --dry-run --config ../log-archive/wrangler.jsonc --outdir ../log-archive/.wrangler/dry-run
+
   python:
     name: python
     needs: impact
