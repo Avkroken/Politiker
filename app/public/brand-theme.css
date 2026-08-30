@@ -7,10 +7,11 @@
   --muted:#bdcadb;
   --faint:#879bb5;
   --line:#0d4d7d;
-  --accent:#fecc00;
+  --accent:#ffcd00;
   --accent-strong:#ffe36b;
   --accent-blue:#006aa7;
   --accent-blue-strong:#1689cd;
+  --warning:#ffcd00;
   --shadow:0 20px 64px rgba(0,0,0,.38);
 }
 
@@ -22,17 +23,22 @@ body{
     linear-gradient(180deg,#010c1c 0%,#02162d 48%,#010c1c 100%);
 }
 
+::selection{background:rgba(255,205,0,.28);color:#fff}
 .button{min-height:44px}
 .input{min-height:44px;background:#03182f}
+.input:focus{box-shadow:0 0 0 2px rgba(255,205,0,.08)}
 .button--primary{
   color:#011224;
-  border-color:#ffd528;
-  background:linear-gradient(180deg,#ffe35c 0%,#fecc00 100%);
-  box-shadow:0 8px 28px rgba(254,204,0,.13);
+  border-color:#ffda33;
+  background:linear-gradient(180deg,#ffe35c 0%,#ffcd00 100%);
+  box-shadow:0 8px 28px rgba(255,205,0,.13);
 }
 .button--primary:hover{background:linear-gradient(180deg,#ffe97a 0%,#ffd525 100%)}
 .button--secondary{border-color:#1b639a;background:rgba(0,106,167,.16)}
 .button--secondary:hover,.button--quiet:hover{background:rgba(0,106,167,.25);border-color:#2a7db8}
+.badge--accent{border-color:rgba(255,205,0,.58)}
+.badge--warning{border-color:rgba(255,205,0,.48)}
+.notice--warning{border-color:rgba(255,205,0,.5)}
 
 .card,.sheet,.modal{
   border-color:var(--line);
@@ -51,15 +57,40 @@ body{
   background:rgba(1,12,28,.94);
   border-bottom-color:rgba(13,77,125,.88);
 }
-.site-header__inner{min-height:78px}
-.brand{min-width:190px}
-.brand__logo{
-  width:190px;
-  max-width:45vw;
-  max-height:62px;
-  object-fit:contain;
-  object-position:left center;
+.site-header__inner{min-height:72px}
+.brand{
+  min-width:0;
+  max-width:310px;
+  flex:0 1 auto;
+  overflow:hidden;
 }
+.brand__lockup{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.brand__mark{
+  display:block;
+  width:52px;
+  height:52px;
+  flex:0 0 52px;
+  object-fit:contain;
+}
+.brand__wordmark{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  line-height:.88;
+}
+.brand__word{
+  display:block;
+  white-space:nowrap;
+  font-weight:900;
+  letter-spacing:.018em;
+}
+.brand__word--politiker{color:var(--accent);font-size:1.45rem}
+.brand__word--kontakt{color:var(--accent-blue-strong);font-size:1.39rem}
 .primary-nav .button[aria-current="page"],
 .mobile-nav .button[aria-current="page"]{
   color:#011224;
@@ -89,7 +120,7 @@ body{
   width:min(180px,28%);
   height:3px;
   border-radius:99px;
-  background:linear-gradient(90deg,var(--accent),rgba(254,204,0,0));
+  background:linear-gradient(90deg,var(--accent),rgba(255,205,0,0));
 }
 .hero:after{
   width:min(36vw,380px);
@@ -124,19 +155,35 @@ body{
   top:24px;
   right:20px;
   margin:0;
-  color:rgba(254,204,0,.6);
+  color:rgba(255,205,0,.6);
 }
 
-.auth-brand{
-  padding-top:122px;
-}
+.auth-brand{padding-top:112px}
 .auth-brand:before{
-  width:350px;
-  max-width:88vw;
-  height:112px;
-  background-image:url("/brand-logo.png");
-  background-position:left center;
+  left:0;
+  top:8px;
+  width:88px;
+  max-width:none;
+  height:88px;
+  background-image:url("/brand-mark.png");
+  background-position:center;
+  background-repeat:no-repeat;
   background-size:contain;
+}
+.auth-brand:after{
+  content:"POLITIKER\A KONTAKT";
+  position:absolute;
+  left:102px;
+  top:20px;
+  white-space:pre;
+  font-weight:900;
+  font-size:2rem;
+  line-height:.88;
+  letter-spacing:.018em;
+  background:linear-gradient(180deg,var(--accent) 0 48%,var(--accent-blue-strong) 48% 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
 }
 .auth .card:first-child{
   position:relative;
@@ -157,21 +204,30 @@ body{
 .faq-home-link{margin-left:auto}
 
 @media(max-width:860px){
-  .site-header__inner{min-height:72px}
-  .brand__logo{width:178px;max-width:55vw}
+  .site-header__inner{min-height:68px}
+  .brand{max-width:270px}
+  .brand__mark{width:46px;height:46px;flex-basis:46px}
+  .brand__word--politiker{font-size:1.27rem}
+  .brand__word--kontakt{font-size:1.22rem}
   .hero{min-height:450px}
   .hero:after{width:300px;right:-70px;opacity:.16}
 }
 
 @media(max-width:560px){
-  .site-header__inner{min-height:68px}
-  .brand__logo{width:162px;max-width:66vw;max-height:54px}
+  .site-header__inner{min-height:62px;gap:10px}
+  .brand{max-width:calc(100% - 84px)}
+  .brand__lockup{gap:8px}
+  .brand__mark{width:38px;height:38px;flex-basis:38px}
+  .brand__word--politiker{font-size:1.02rem}
+  .brand__word--kontakt{font-size:.98rem}
+  .menu-button{min-width:64px;padding-inline:8px}
   .hero{min-height:420px;padding:26px;background:linear-gradient(145deg,#031b35,#010c1c)}
   .hero:before{left:26px;bottom:24px;width:120px}
   .hero:after{width:230px;right:-84px;top:38%;opacity:.11}
   .hero + .grid .card{min-height:160px;padding-top:82px}
   .hero + .grid .card:before{width:52px;height:52px}
-  .auth-brand{padding-top:108px}
-  .auth-brand:before{width:290px;height:94px}
+  .auth-brand{padding-top:100px}
+  .auth-brand:before{top:8px;width:72px;height:72px}
+  .auth-brand:after{left:84px;top:19px;font-size:1.62rem}
   .faq-home-link{font-size:.9rem;padding-inline:10px}
 }
