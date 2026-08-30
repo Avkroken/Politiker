@@ -48,13 +48,21 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, review-stat
 - Föredra minsta nödvändiga behörighet och befintliga standardmekanismer framför nya wrappers eller specialflöden.
 - GitHub Actions ska pinnas till commit-SHA när praktiskt möjligt.
 
-## GitHub Actions
+## GitHub Actions och Cloudflare
 
 - `.github/workflows/ci.yml` producerar required contexts `typecheck` och `python`.
 - Required `typecheck` blockerar alla PR:er som fortfarande innehåller `.github/codex-dispatch/issue-*.md`; en remediation-seed får aldrig nå `main`.
+- Required `typecheck` ska validera både `app` och `log-archive`: appens fulla `npm run validate` samt Wrangler dry-run av tail-konsumenten.
 - `.github/workflows/osv-scanner.yml` och `.github/workflows/docker.yml` är kompletterande säkerhetsverifiering och är inte required contexts i nuvarande ruleset.
 - `.github/workflows/codex-issue-remediation.yml` skapar en körningsunik remediation-branch, öppnar PR och armerar auto-merge direkt.
 - `.github/workflows/auto-fix-review.yml` får begära Codex-fix för uttryckligen betrodd review-feedback men får inte lösa review-tråden åt implementationen.
+- Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Actions ska inte deploya produktion.
+- `app` och `log-archive` ska använda `npm run deploy:production` som Workers Builds deploy command.
+- `scripts/deploy-production.mjs` failar stängt på fel Workers Builds-branch eller ogiltig build-SHA, deployar med `wrangler deploy --strict` och märker deploymenten med Git-SHA.
+- App-Workern är ensam D1-migrationsägare och ska köra `infra/apply-migrations.sh` före production deploy. `log-archive` använder inte D1 och får inte köra dessa migrationer.
+- Efter app-deploy måste huvuddomänen svara HTTP 200. `log-archive` är bara tail-konsument och ska inte exponeras publikt för health-check.
+- Workers Builds watch paths ska omfatta respektive Worker-root och `scripts/**`; appen ska dessutom bevaka relevant `shared/**` och `infra/migrations/**`.
+- `wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers och övrig versionshanterad Worker-konfiguration.
 
 ## Verifiering
 
