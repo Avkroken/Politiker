@@ -11,11 +11,13 @@ const WORKERS = {
   app: {
     name: "politiker",
     migrate: true,
+    outdir: "dist",
     checks: [{ url: "https://politiker.denied.se/", status: 200 }],
   },
   "log-archive": {
     name: "politiker-log-archive",
     migrate: false,
+    outdir: null,
     checks: [],
   },
 };
@@ -106,6 +108,7 @@ export async function deployProduction({
   if (worker.migrate) run("bash", ["../infra/apply-migrations.sh"], spawn);
 
   const deployArgs = ["deploy", "--strict"];
+  if (worker.outdir) deployArgs.push("--outdir", worker.outdir);
   if (commitSha) deployArgs.push("--message", `Git ${commitSha}`);
   run("wrangler", deployArgs, spawn);
 
