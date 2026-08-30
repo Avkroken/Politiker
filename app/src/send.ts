@@ -2,8 +2,11 @@ import { randomId } from "../../shared/crypto";
 import { getRecipientsForAreas, countSentToday, countSentTodayForCredential, getMailCredential } from "./db";
 import type { Env } from "./db";
 import type { SendJobMessage } from "../../shared/types";
+import { decryptLetterData, encryptLetterData } from "./letter-privacy";
 
 const STAGE_CHUNK_SIZE = 500;
+const MAX_LETTER_HTML_BYTES = 1024 * 1024;
+const COMMON_MOJIBAKE = /(?:Ã¥|Ã¤|Ã¶|Ã…|Ã„|Ã–|Ã©|Ã¨|Ã¼|Ã±|â€“|â€”|â€™|â€œ|â€|â€¦|Â |ï¿½)/;
 type SendJobAction = "cancel" | "retry" | "delete";
 
 interface StagedRecipient {
@@ -17,6 +20,36 @@ interface SendRateInput {
   nextDailyLimit?: number | null;
   action?: SendJobAction;
   mailCredentialId?: string;
+  letterHtml?: string;
+  subject?: string;
+}
+
+interface SendJobListRow {
+  id: string;
+  letter_id: string;
+  mail_credential_id: string;
+  total_recipients: number;
+  sent_count: number;
+  bounce_count: number;
+  status: string;
+  daily_limit: number | null;
+  next_daily_limit: number | null;
+  limit_switch_at: number | null;
+  created_at: number;
+  finished_at: number | null;
+  pending_count: number;
+  queued_count: number;
+  last_error: string | null;
+  subject: string | null;
+  stored_letter_html: string;
+}
+
+export function validateLetterContent(letterHtml: string): void {
+  if (typeof letterHtml !== "string" || !letterHtml.trim()) throw new Error("Brevtext krävs");
+  if (new TextEncoder().encode(letterHtml).byteLength > MAX_LETTER_HTML_BYTES) throw new Error("Brevtexten är för stor");
+  if (letterHtml.includes("\uFFFD")) throw new Error("Brevtexten innehåller trasiga ersättningstecken (�). Rätta texten innan du fortsätter.");
+  if (COMMON_MOJIBAKE.test(letterHtml)) throw new Error("Brevtexten ser felkodad ut. Rätta texten eller importera dokumentet på nytt.");
+  if (/[\u0000\u0001-\u0008\u000B\u000C\u000E-\u001F]/.test(letterHtml)) throw new Error("Brevtexten innehåller ogiltiga kontrolltecken");
 }
 
 function parseRateInput(input: SendRateInput, now = Date.now()) {
@@ -351,12 +384,29 @@ export async function getSendJobsForAccount(env: Env, accountId: string) {
             sj.created_at, sj.finished_at,
             (SELECT COUNT(*) FROM send_job_recipients r WHERE r.send_job_id = sj.id AND r.status = 'pending') AS pending_count,
             (SELECT COUNT(*) FROM send_job_recipients r WHERE r.send_job_id = sj.id AND r.status = 'queued') AS queued_count,
-            (SELECT error FROM send_job_recipients r WHERE r.send_job_id = sj.id AND r.error IS NOT NULL ORDER BY COALESCE(r.finished_at, r.queued_at) DESC LIMIT 1) AS last_error
-     FROM send_jobs sj WHERE sj.account_id = ? ORDER BY sj.created_at DESC LIMIT 50`,
+            (SELECT error FROM send_job_recipients r WHERE r.send_job_id = sj.id AND r.error IS NOT NULL ORDER BY COALESCE(r.finished_at, r.queued_at) DESC LIMIT 1) AS last_error,
+            (SELECT subject FROM send_job_recipients r WHERE r.send_job_id = sj.id AND r.status IN ('pending','queued') ORDER BY r.rowid LIMIT 1) AS subject,
+            l.html_body AS stored_letter_html
+     FROM send_jobs sj
+     JOIN letters l ON l.id = sj.letter_id
+     WHERE sj.account_id = ? ORDER BY sj.created_at DESC LIMIT 50`,
   )
     .bind(now, now, now, accountId)
-    .all();
-  return results;
+    .all<SendJobListRow>();
+
+  return Promise.all(results.map(async (row) => {
+    const { stored_letter_html: storedLetterHtml, ...job } = row;
+    let letter_html: string | null = null;
+    if (["pending", "sending"].includes(row.status)) {
+      try {
+        const decrypted = await decryptLetterData(env, storedLetterHtml);
+        letter_html = decrypted || null;
+      } catch {
+        letter_html = null;
+      }
+    }
+    return { ...job, letter_html };
+  }));
 }
 
 async function handleSendJobAction(
@@ -427,6 +477,39 @@ async function handleSendJobAction(
   return { ok: true, deleted: true };
 }
 
+async function updateRemainingLetter(
+  env: Env,
+  accountId: string,
+  sendJobId: string,
+  input: SendRateInput,
+): Promise<Record<string, unknown>> {
+  const job = await env.DB.prepare(
+    "SELECT id, letter_id, status FROM send_jobs WHERE id = ? AND account_id = ?",
+  ).bind(sendJobId, accountId).first<{ id: string; letter_id: string; status: string }>();
+  if (!job) throw new Error("Utskicket hittades inte");
+  if (!["pending", "sending"].includes(job.status)) throw new Error("Bara ett pågående utskick kan redigeras");
+
+  const statements: D1PreparedStatement[] = [];
+  if (input.letterHtml !== undefined) {
+    validateLetterContent(input.letterHtml);
+    statements.push(
+      env.DB.prepare("UPDATE letters SET html_body = ? WHERE id = ?")
+        .bind(await encryptLetterData(env, input.letterHtml), job.letter_id),
+    );
+  }
+  if (input.subject !== undefined) {
+    if (input.subject.length > 998) throw new Error("Ämnesraden är för lång");
+    const subject = input.subject.trim() || null;
+    statements.push(
+      env.DB.prepare("UPDATE send_job_recipients SET subject = ? WHERE send_job_id = ? AND status IN ('pending','queued')")
+        .bind(subject, sendJobId),
+    );
+  }
+  if (!statements.length) throw new Error("Ingen brevändring angavs");
+  await env.DB.batch(statements);
+  return { ok: true, updated: true };
+}
+
 export async function updateSendJobRate(
   env: Env,
   accountId: string,
@@ -434,6 +517,9 @@ export async function updateSendJobRate(
   input: SendRateInput,
 ): Promise<Record<string, unknown>> {
   if (input.action) return handleSendJobAction(env, accountId, sendJobId, input);
+  if (input.letterHtml !== undefined || input.subject !== undefined) {
+    return updateRemainingLetter(env, accountId, sendJobId, input);
+  }
 
   const job = await env.DB.prepare(
     "SELECT id, mail_credential_id, status FROM send_jobs WHERE id = ? AND account_id = ?",
