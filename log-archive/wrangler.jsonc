@@ -3,6 +3,21 @@
   "name": "politiker-log-archive",
   "main": "src/index.js",
   "compatibility_date": "2026-08-21",
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1,
+      "persist": true
+    }
+  },
   "workers_dev": false,
   // Ingen route och ingen cron: Workern anropas bara som tail-konsument.
   // Kopplingen deklareras av producenten, i app/wrangler.jsonc:
