@@ -12,3 +12,10 @@ test('recipient metadata is revalidated instead of persisted in localStorage', (
   assert.doesNotMatch(source, /localStorage/);
   assert.doesNotMatch(source, /RECIPIENT_META_TTL_MS/);
 });
+
+test('empty static metadata falls back to authenticated D1 endpoints', () => {
+  assert.match(source, /if\(meta\.areas\.length\)/);
+  assert.match(source, /api\('\/api\/areas'\)/);
+  assert.match(source, /api\('\/api\/parties'\)/);
+  assert.match(source, /api\('\/api\/roles'\)/);
+});

@@ -148,6 +148,8 @@ def main() -> None:
     client = D1Client()
     outdir = os.path.join(os.path.dirname(__file__), "..", "data")
     rows = fetch_all(client)
+    if not rows:
+        raise RuntimeError("D1-exporten gav noll publicerbara politiker; vägrar skriva tom mottagarmetadata")
     write_outputs(rows, outdir)
     print(f"Skrev {len(rows)} aktiva politiker + recipient-meta.json till data/")
 
