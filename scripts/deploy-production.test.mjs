@@ -45,7 +45,7 @@ test("app applies migrations before strict deploy and then checks production", a
 
   assert.deepEqual(calls, [
     ["bash", "../infra/apply-migrations.sh"],
-    ["wrangler", "deploy", "--strict", "--message", `Git ${SHA}`],
+    ["wrangler", "deploy", "--strict", "--outdir", "dist", "--message", `Git ${SHA}`],
   ]);
 });
 
