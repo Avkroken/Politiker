@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "number": 890,
+    "tool": "CodeQL",
+    "rule_id": "js/xss-through-dom",
+    "rule_name": "js/xss-through-dom",
+    "severity": "high",
+    "created_at": "2026-08-30T17:29:52Z",
+    "updated_at": "2026-08-30T17:30:13Z",
+    "url": "https://github.com/Avkroken/Politiker/security/code-scanning/890",
+    "ref": "refs/heads/main",
+    "category": "/language:javascript-typescript",
+    "file": "app/public/letter-import.js",
+    "start_line": 72,
+    "end_line": 72
+  }
+]
