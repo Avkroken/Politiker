@@ -19,7 +19,7 @@ Cloudflare D1 är kanonisk runtime-datakälla. Git får inte användas som produ
 
 - Pusha aldrig direkt till `main`.
 - Använd en kortlivad branch och öppna en ready PR till `main`.
-- Aktivera auto-merge omedelbart när PR:n skapats, även medan CI eller review pågår.
+- Aktivera auto-merge omedelbart när PR:n skapats, även medan CI eller review pågår, men endast när live-rulesetet redan verifierats fail-closed för den aktuella mergepolicyn.
 - Använd inte direkt merge om det inte uttryckligen begärts.
 - Live-rulesetet tillåter endast squash merge.
 - Repositoryt använder inte merge queue och har ingen obligatorisk återanvändbar branchpool.
@@ -29,18 +29,25 @@ Cloudflare D1 är kanonisk runtime-datakälla. Git får inte användas som produ
 
 För `main` gäller:
 
-- required status check: `typecheck`
-- required status check: `python`
+- required status check: `CI / required`
+- required status check: `scan-pr / osv-scan`
+- required commit status: `CodeRabbit`, producerad av CodeRabbit och avseende PR:ns aktuella HEAD
+- required status checks körs strikt mot aktuell `main`; en inaktuell PR-head får inte mergeas
+- Code Scanning merge protection kräver färdig CodeQL-analys och blockerar nya CodeQL-säkerhetsfynd från medium och uppåt samt relevanta error/warning-fynd
+- Code Scanning merge protection kräver färdig Trivy-analys och blockerar nya high/critical-fynd; lägre basimagefynd rapporteras men är inte mergeblockerande
+- GitHub Code Quality ska vara mergegate för nya findings på warning-nivå och uppåt
 - olösta review-trådar blockerar merge
-- 0 approvals krävs
-- Copilot Code Review är aktiverad; live-rulesetet har `review_on_push` avstängt
+- 0 mänskliga approvals krävs; review-enforcement sker via explicita bot-/analysgates i stället för ett generellt approval-krav
+- Copilot Code Review är rådgivande och ska ha `review_on_push` aktiverat så varje ny push kan granskas; Copilot är inte en mergegate
 - squash är enda tillåtna merge-metod
+
+CodeRabbit använder repositorykonfigurationen i `.coderabbit.yaml` med inheritance från organisationen. `commit_status` ska vara aktiv och `fail_commit_status` ska vara aktiv. Statusen `CodeRabbit` får endast räknas som godkänd när den är `success` för den HEAD som faktiskt ska mergas. `pending`, `failure` eller saknad status blockerar merge. Automatisk incremental review ska vara aktiv efter varje ny push.
 
 Alla review-kommentarer och trådar ska läsas och utvärderas. Relevanta findings åtgärdas i samma PR. En tråd markeras resolved först när eventuell nödvändig fix är pushad och verifierad.
 
-Efter varje ny commit ska relevant CI och review-status kontrolleras igen. När required checks är gröna och alla relevanta review-trådar är resolved ska den redan armerade auto-merge-funktionen föra PR:n till `main`.
+Efter varje ny commit ska relevant CI, security och review-status kontrolleras igen. När samtliga required gates är godkända och alla relevanta review-trådar är resolved ska den redan armerade auto-merge-funktionen föra PR:n till `main`.
 
-Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, review-state eller repositoryinställning identifieras. Kringgå aldrig repositoryskydd.
+Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, security-state, review-state eller repositoryinställning identifieras. Kringgå aldrig repositoryskydd.
 
 ## Cloudflare-kontrollplan
 
@@ -65,10 +72,11 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, review-stat
 
 ## GitHub Actions
 
-- `.github/workflows/ci.yml` producerar required contexts `typecheck` och `python`.
-- Required `typecheck` blockerar PR:er som fortfarande innehåller `.github/codex-dispatch/issue-*.md`; en remediation-seed får aldrig nå `main`.
+- `.github/workflows/ci.yml` producerar den stabila mergegaten `CI / required`; den sammanfattar `typecheck` och den impact-styrda Python-verifieringen.
+- `typecheck` blockerar PR:er som fortfarande innehåller `.github/codex-dispatch/issue-*.md`; eftersom `CI / required` kräver `typecheck` får en remediation-seed aldrig nå `main`.
 - `typecheck` ska validera appens tester, lokal D1-migrationskedja, Worker-typer, TypeScript och Wrangler dry-run samt ett separat dry-run av `log-archive`.
-- `.github/workflows/osv-scanner.yml` och `.github/workflows/docker.yml` är kompletterande säkerhetsverifiering.
+- `.github/workflows/osv-scanner.yml` producerar PR-gaten `scan-pr / osv-scan`; OSV:s PR-workflow ska misslyckas på nya sårbara beroenden.
+- `.github/workflows/docker.yml` bygger relevant image och laddar alltid upp Trivy-SARIF för aktuell HEAD, eller en explicit tom Trivy-analys när image inte berörs. Trivy-fynd verkställs av Code Scanning-regeln, inte av Trivys process-exitkod.
 - `.github/workflows/codex-issue-remediation.yml` skapar en körningsunik remediation-branch, öppnar PR och armerar auto-merge.
 - `.github/workflows/auto-fix-review.yml` får begära Codex-fix för uttryckligen betrodd review-feedback men får inte lösa review-tråden åt implementationen.
 
@@ -82,7 +90,7 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, review-stat
 
 ## Verifiering
 
-Granska hela diffen mot `main` före PR. Kör eller verifiera relevanta tester, typecheck, Python-CI och säkerhetsjobb efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer har lagts till.
+Granska hela diffen mot `main` före PR. Kör eller verifiera relevant `CI / required`, OSV, CodeQL, Trivy, Code Quality och CodeRabbit-status efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer har lagts till.
 
 När ändringen påverkar Cloudflare runtime, bindings, secrets, routes, queues, migrationer eller annan live-konfiguration ska den deployade konfigurationen verifieras efter merge. För appändringar innebär det normalt en grön `Workers Builds: politiker` på den mergade `main`-SHA:n där native migration, strict deploy och produktionsverifiering har passerat.
 
@@ -92,4 +100,4 @@ När ändringen påverkar Cloudflare runtime, bindings, secrets, routes, queues,
 
 ## Definition of done
 
-En PR-baserad uppgift är klar först när implementationen är färdig, diffen självgranskad, all review-feedback utvärderad, required `typecheck` och `python` är gröna, relevanta review-trådar är resolved och auto-merge har mergat PR:n eller är armerad medan en verifierad extern gate fortfarande väntar.
+En PR-baserad uppgift är klar först när implementationen är färdig, diffen självgranskad, all review-feedback utvärderad, samtliga required CI/security/review-gates gäller aktuell HEAD, relevanta review-trådar är resolved och PR:n har mergats av normal repositorypolicy eller är kvar därför att en verifierad extern gate väntar.
