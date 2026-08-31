@@ -1,0 +1,146 @@
+/* Pass 2D: final mobile polish on top of brand-polish-2c.css. */
+
+/* Hero: let the approved Stockholm photography read more clearly without reducing text contrast. */
+.hero:before{
+  background-position:right 43%;
+  background-size:auto 158%;
+  opacity:.84;
+  filter:saturate(1.14) contrast(1.08) brightness(1.03);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,transparent 52%,rgba(0,0,0,.18) 61%,rgba(0,0,0,.74) 72%,#000 82%);
+  mask-image:linear-gradient(90deg,transparent 0%,transparent 52%,rgba(0,0,0,.18) 61%,rgba(0,0,0,.74) 72%,#000 82%);
+}
+.hero:after{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.042),transparent 18%),
+    linear-gradient(90deg,rgba(1,12,28,.76) 0 43%,rgba(1,12,28,.44) 58%,rgba(1,12,28,.04) 84%),
+    radial-gradient(circle at 88% 76%,rgba(255,205,0,.15),transparent 21%);
+}
+
+/* Selected recipient groups: keep the state obvious without turning the full grid yellow. */
+#area-groups .choice[aria-pressed="true"]{
+  color:#f8fbff;
+  border-color:rgba(42,125,184,.96);
+  background:
+    radial-gradient(circle at 100% 0,rgba(255,205,0,.08),transparent 36%),
+    linear-gradient(180deg,rgba(255,255,255,.026),transparent 38%),
+    linear-gradient(145deg,#062743,#03182f);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 12px 30px rgba(0,0,0,.20),
+    0 0 0 1px rgba(0,106,167,.08),
+    0 0 24px rgba(0,106,167,.07);
+}
+#area-groups .choice[aria-pressed="true"] strong{color:#fff}
+#area-groups .choice[aria-pressed="true"] .muted{color:#c4d1e1}
+#area-groups .choice[aria-pressed="true"]:after{
+  height:3px;
+  opacity:.96;
+  background:linear-gradient(90deg,var(--accent) 0 28%,#79aa76 52%,var(--accent-blue) 100%);
+  box-shadow:0 0 16px rgba(0,106,167,.18);
+}
+
+/* Advanced filters: calmer nesting and denser checkbox rhythm while preserving touch targets. */
+details.details:has(#area-list){
+  border-color:rgba(29,109,166,.76);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.02),transparent 28%),
+    linear-gradient(145deg,#041f3b,#03172e);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.025),
+    0 14px 34px rgba(0,0,0,.18);
+}
+details.details:has(#area-list)[open]{
+  border-color:rgba(29,109,166,.88);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.03),
+    0 18px 42px rgba(0,0,0,.20),
+    0 0 26px rgba(0,106,167,.05);
+}
+details.details:has(#area-list)>summary{
+  color:var(--accent-strong);
+}
+details.details:has(#area-list)>.stack{
+  gap:14px;
+}
+details.details:has(#area-list) details.details{
+  border-color:rgba(20,83,132,.72);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.015),transparent 34%),
+    #041c36;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.018);
+}
+details.details:has(#area-list) details.details[open]{
+  border-color:rgba(29,109,166,.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.022),
+    0 10px 26px rgba(0,0,0,.14);
+}
+details.details:has(#area-list) details.details>summary{
+  color:#e9f1fb;
+}
+details.details:has(#area-list) details.details[open]>summary{
+  color:var(--accent-strong);
+}
+#area-list .check,
+#body-list .check,
+#media-list .check,
+#role-list .check,
+#party-list .check{
+  min-height:44px;
+  padding:2px 0;
+  gap:10px;
+  line-height:1.24;
+}
+#area-list .check input,
+#body-list .check input,
+#media-list .check input,
+#role-list .check input,
+#party-list .check input{
+  flex:0 0 auto;
+  margin:0;
+}
+
+@media(max-width:560px){
+  .hero:before{
+    background-position:right 43%;
+    background-size:auto 150%;
+    opacity:.82;
+    filter:saturate(1.14) contrast(1.08) brightness(1.03);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,transparent 48%,rgba(0,0,0,.14) 58%,rgba(0,0,0,.68) 70%,#000 83%);
+    mask-image:linear-gradient(90deg,transparent 0%,transparent 48%,rgba(0,0,0,.14) 58%,rgba(0,0,0,.68) 70%,#000 83%);
+  }
+  .hero:after{
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.032),transparent 16%),
+      linear-gradient(90deg,rgba(1,12,28,.76) 0 46%,rgba(1,12,28,.40) 61%,rgba(1,12,28,.03) 87%),
+      radial-gradient(circle at 90% 76%,rgba(255,205,0,.14),transparent 22%);
+  }
+
+  /* A final odd recipient card spans the grid instead of looking stranded. */
+  #area-groups .choice:last-child:nth-child(odd){
+    grid-column:1/-1;
+  }
+
+  details.details:has(#area-list){
+    padding-inline:14px;
+  }
+  details.details:has(#area-list)>.stack{
+    gap:12px;
+  }
+  details.details:has(#area-list) details.details{
+    padding-inline:13px;
+  }
+  #area-list .check,
+  #body-list .check,
+  #media-list .check,
+  #role-list .check,
+  #party-list .check{
+    min-height:44px;
+    padding:1px 0;
+    font-size:.96rem;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  #area-groups .choice{transition:none!important}
+}
