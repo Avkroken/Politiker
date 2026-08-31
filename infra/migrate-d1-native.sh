@@ -25,7 +25,7 @@ has_native_baseline() {
 
 verify_legacy_state() {
   local migration name
-  for migration in "$REPO_DIR"/infra/migrations/*.sql; do
+  for migration in "$REPO_DIR"/infra/legacy-migrations/*.sql; do
     name=$(basename "$migration")
     if ! query "SELECT 'FOUND_MIGRATION' AS marker FROM schema_migrations WHERE filename='$name' LIMIT 1" 2>/dev/null \
       | grep -Fq 'FOUND_MIGRATION'; then
