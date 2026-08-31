@@ -14,7 +14,7 @@
     "database_name": "politiker-eu",
     "database_id": "78777055-bf37-4388-86ad-69bdf782e2cd",
     "migrations_table": "d1_migrations",
-    "migrations_dir": "../infra/d1-migrations"
+    "migrations_dir": "../infra/migrations"
   }],
   "kv_namespaces": [{ "binding": "SESSIONS", "id": "23255cc6e67a4a19b19e5ea67a676b40" }],
   "queues": {"producers":[{"queue":"politiker-send-jobs","binding":"SEND_QUEUE"}],"consumers":[{"queue":"politiker-send-jobs","max_batch_size":10,"max_retries":10,"dead_letter_queue":"politiker-send-jobs-dlq"}]},
