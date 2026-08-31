@@ -37,7 +37,8 @@ Required checks filtreras inte bort på workflow-nivå med `paths:`. Ett impact-
 
 `.coderabbit.yaml` är repoets versionshanterade tillägg till organisationens CodeRabbit-konfiguration och använder `inheritance: true`.
 
-- `commit_status: true` publicerar statuscontexten `CodeRabbit` för committen som granskas.
+- `review_progress: false` väljer den legacy commit-status som rulesetet kan kräva deterministiskt.
+- `commit_status: true` publicerar statuscontexten `CodeRabbit` för committen som granskas när `review_progress` är avstängt.
 - `fail_commit_status: true` gör en review som inte kan slutföras blockerande i stället för godkänd.
 - `auto_incremental_review: true` gör att varje ny push granskas igen.
 - `auto_pause_after_reviewed_commits: 0` förhindrar att senare HEAD:ar lämnas utan automatisk incremental review efter ett antal commits.
