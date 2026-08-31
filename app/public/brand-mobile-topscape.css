@@ -1,0 +1,108 @@
+/* Mobile-first top-scene treatment for both entry heroes and the signed-in header. */
+@media(max-width:560px){
+  /* Header banner: continue the approved Stockholm/Sweden atmosphere only in the gap between wordmark and Menu. */
+  .site-header{
+    overflow:hidden;
+  }
+  .site-header__inner{
+    position:relative;
+    isolation:isolate;
+  }
+  .site-header__inner::before{
+    content:"";
+    position:absolute;
+    z-index:1;
+    top:7px;
+    bottom:7px;
+    left:clamp(155px,44vw,180px);
+    right:72px;
+    pointer-events:none;
+    background:
+      linear-gradient(90deg,rgba(1,12,28,.92),rgba(0,106,167,.12) 24%,rgba(255,205,0,.08) 58%,rgba(1,12,28,.92) 100%),
+      url("/og-image.png") 91% 52%/auto 205% no-repeat;
+    opacity:.68;
+    filter:saturate(1.16) contrast(1.08) brightness(.94);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.82) 18%,#000 48%,rgba(0,0,0,.78) 78%,transparent 100%);
+    mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.82) 18%,#000 48%,rgba(0,0,0,.78) 78%,transparent 100%);
+  }
+  .site-header__inner>.brand,
+  .site-header__inner>.menu-button{
+    position:relative;
+    z-index:2;
+  }
+
+  /* Signed-in start hero: show the actual Stockholm scene, not only a diffuse glow. */
+  .hero{
+    isolation:isolate;
+    background:
+      radial-gradient(circle at 88% 30%,rgba(0,106,167,.16),transparent 34%),
+      linear-gradient(145deg,#031a33 0%,#010c1c 88%);
+  }
+  .hero:before{
+    z-index:0;
+    background-position:100% 50%;
+    background-size:auto 106%;
+    opacity:.90;
+    filter:saturate(1.14) contrast(1.07) brightness(1.02);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,transparent 30%,rgba(0,0,0,.18) 39%,rgba(0,0,0,.74) 53%,#000 66%);
+    mask-image:linear-gradient(90deg,transparent 0%,transparent 30%,rgba(0,0,0,.18) 39%,rgba(0,0,0,.74) 53%,#000 66%);
+  }
+  .hero:after{
+    z-index:1;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.025),transparent 15%),
+      linear-gradient(90deg,rgba(1,12,28,.96) 0 36%,rgba(1,12,28,.82) 49%,rgba(1,12,28,.48) 64%,rgba(1,12,28,.12) 86%,rgba(1,12,28,.03) 100%),
+      radial-gradient(circle at 90% 76%,rgba(255,205,0,.08),transparent 23%);
+  }
+  .hero>*{
+    position:relative;
+    z-index:2;
+  }
+
+  /* Signed-out entry hero: turn the logo/intro area into the same photographic top scene. */
+  .page--narrow .auth-brand{
+    isolation:isolate;
+    overflow:hidden;
+    margin-bottom:18px;
+    padding:108px 18px 26px;
+    border:1px solid rgba(17,95,153,.86);
+    border-radius:20px;
+    background:
+      radial-gradient(circle at 88% 28%,rgba(0,106,167,.17),transparent 34%),
+      linear-gradient(145deg,#031a33,#010c1c 88%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.04),
+      0 22px 58px rgba(0,0,0,.28),
+      0 0 34px rgba(0,106,167,.06);
+  }
+  .page--narrow .auth-brand:before{
+    z-index:3;
+    left:18px;
+    top:16px;
+    width:248px;
+    max-width:76vw;
+    height:72px;
+  }
+  .page--narrow .auth-brand:after{
+    content:"";
+    position:absolute;
+    z-index:0;
+    inset:0;
+    pointer-events:none;
+    border-radius:inherit;
+    background:
+      linear-gradient(90deg,rgba(1,12,28,.97) 0 34%,rgba(1,12,28,.84) 49%,rgba(1,12,28,.46) 66%,rgba(1,12,28,.12) 88%,rgba(1,12,28,.04) 100%),
+      linear-gradient(180deg,rgba(1,12,28,.08),rgba(1,12,28,.18)),
+      url("/og-image.png") 100% 52%/auto 105% no-repeat;
+    filter:saturate(1.12) contrast(1.06) brightness(1.01);
+  }
+  .page--narrow .auth-brand h1,
+  .page--narrow .auth-brand p{
+    position:relative;
+    z-index:2;
+    text-shadow:0 8px 26px rgba(0,0,0,.42);
+  }
+  .page--narrow .auth-brand p{
+    color:#dce7f3;
+  }
+}
