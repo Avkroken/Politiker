@@ -1,105 +1,93 @@
 # Politikerkontakt
 
-Politikerkontakt är ett gratis och öppet verktyg för att göra det enklare för människor att kontakta sina folkvalda, även när många mottagare behöver nås samtidigt.
+Politikerkontakt är ett gratis och öppet verktyg för att göra det enklare att kontakta folkvalda, även när många mottagare behöver nås samtidigt.
 
 Live: https://politiker.denied.se
 
-Projektets grundprincip är enkel: folkvalda har många kanaler för att nå befolkningen. Politikerkontakt ger människor en praktisk kanal i motsatt riktning. Plattformen är infrastruktur för användarens kommunikation och tar inte själv politisk ställning.
+Tjänsten låter användaren välja mottagare bland offentligt publicerade kontaktuppgifter, skriva sitt eget brev och skicka det genom ett mailkonto som användaren själv har kopplat. Plattformen producerar eller publicerar inte egna politiska budskap.
 
-## Vad tjänsten gör
+## Arkitektur
 
-- Låter användaren välja mottagare bland offentligt publicerade politiska kontaktuppgifter.
-- Låter användaren skriva och redigera sitt eget brev.
-- Skickar användarens brev genom ett e-postkonto som användaren själv har kopplat.
-- Hanterar stora utskick med kö, dygnstak, leverantörsgränser och studs-/felhantering.
-- Ger användaren historik och status för sina egna utskick.
-- Har konto, OAuth, TOTP 2FA, API-nycklar, kontakt/feedback och administrativ statistik.
+Produktionen körs på Cloudflare och har en enda tydlig kontrollplan:
 
-Politikerkontakt producerar, publicerar eller skickar **inte egna politiska brev eller ställningstaganden** och är inte en redaktion.
+- `app/` — huvud-Worker med API, frontend, kökonsument, cron och Durable Object.
+- `log-archive/` — Tail Worker som arkiverar Worker-loggar till R2.
+- `shared/` — delad TypeScript-kod för bland annat SMTP, Graph, kryptering och validering.
+- `kontakter/` — separat insamling och normalisering av offentliga mottagarkontakter.
+- `infra/migrations/` — Wranglers native D1-migrationer.
 
-## Mottagare
+`app/wrangler.jsonc` är source of truth för versionshanterad Worker-konfiguration: bindings, routes, queues, cron, assets, Durable Objects, Tail Worker, publika variabler och namn på obligatoriska secrets. Secret-värden ligger endast i Cloudflare.
 
-Databasen byggs från offentliga källor och omfattar bland annat Europaparlamentet, Riksdagen, regeringen/departement, Sveriges regioner och kommuner, media samt relevanta valda organ inom Svenska kyrkan. Insamlings- och uppdateringslogiken finns i `kontakter/`.
+Cloudflare D1 är den kanoniska runtime-datakällan. Produktionsdatabasen exporteras inte tillbaka till Git och Git används inte som databasbackup.
 
-Mottagarurvalet är inte en tvingande tratt. Användaren kan sluta filtrera på valfri nivå och kombinera flera mottagargrenar i samma utskick. Det går exempelvis att välja hela Riksdagen samtidigt som kommun- och regiondelen begränsas till ett visst sakområde. Parti och enskilda mottagare är ytterligare frivilliga filter, inte obligatoriska steg.
+## Cloudflare-resurser
 
-Kommun- och regionorgan normaliseras till begripliga politiska huvudområden i stället för att exponera hundratals lokala nämndnamn. Exempel är Social & omsorg, Skola & utbildning, Hälso- & sjukvård, Samhällsbyggnad, Miljö, Teknik & infrastruktur, Kultur & fritid och Arbetsmarknad & näringsliv. Originalnamnet på nämnden kan fortfarande finnas i källdatan, men används inte som huvudnavigering.
+Huvud-Workern använder:
 
-Media kan väljas brett eller begränsas med en redaktionell underkategori. Utan underkategori ingår alla valda mediekontakter. Med en underkategori begränsas endast media-grenen till den valda inriktningen, exempelvis Politik, Opinion & debatt eller Nyhetsredaktion. Politik omfattar även relevanta granskande redaktioner. Generiska tips- och redaktionsadresser hör inte till någon precisionskategori och följer därför bara med när Media väljs utan underkategori; ämnesspecifika funktionsadresser kan däremot klassificeras efter sitt faktiska område.
+- D1 för konto-, brev-, mottagar- och sändningsstate,
+- KV för sessioner,
+- Queues för sändjobb,
+- Durable Objects för delad rate limiting per mailkoppling,
+- R2 för temporära bilagor,
+- Worker Static Assets för frontend,
+- Tail Worker + R2 för loggarkiv.
 
-Importerade parti-, organ- och rolluppgifter normaliseras innan de används för mottagarfiltrering. Syftet är att hålla filtren inriktade på relevanta mottagare även när källorna använder varierande benämningar eller innehåller administrativa uppdrag.
+D1-schema hanteras endast av Wranglers migrationssystem. Nya schemaändringar läggs som nya filer i `infra/migrations/`.
 
-## Integritet och dataminimering
+## Mottagardata
 
-Tjänsten är byggd för att behandla så lite användardata som möjligt.
+Databasen byggs från offentliga källor och omfattar bland annat Europaparlamentet, Riksdagen, regeringen/departement, Sveriges regioner och kommuner, media samt relevanta valda organ inom Svenska kyrkan.
 
-- Ett konto kräver i grunden en e-postadress; den kan vara separat från det mailkonto som används för utskick.
-- Tjänsten kräver inte användarens namn, personnummer, bostadsadress eller telefonnummer.
-- IP-adresser används inte för användarprofiler eller beteendespårning.
-- Ingen annonserings- eller beteendespårning används.
-- Anslutningsuppgifter för mail skyddas med applikationskryptering.
-- Brevinnehåll lagras krypterat medan det behövs för utskicket.
-- Kortast retention är standard för privata brev; användaren kan välja en begränsad längre retention.
-- Brevtext och temporära bilagor raderas efter retentionstiden. Minimal metadata om status, antal skickade/studsade meddelanden och tidpunkter kan behållas för historik, statistik och drift.
-- Cloudflare D1 används som databas med EU-jurisdiktion och R2 används för temporära bilagor.
+Insamlingsjobben under `kontakter/` är dataproducenter. De får uppdatera kontaktdata med minsta nödvändiga behörighet men äger inte Cloudflare-provisionering, D1-schema eller Worker-deploy.
 
-## Utskick
+## Utskick och integritet
 
-Utskick går via användarens egen mailkoppling, exempelvis SMTP eller Microsoft Graph. Systemmail används endast för tekniska mail som verifiering och lösenordsåterställning och konfigureras separat av den som driver installationen.
+Utskick går via användarens egen mailkoppling, exempelvis SMTP eller Microsoft Graph. Cloudflare Queues hanterar jobbet och en Durable Object per mailkoppling håller sändningstakten inom leverantörens gränser. Leveransfel registreras direkt av sändkön i D1.
 
-Kösystemet använder Cloudflare Queues och D1. En Durable Object per mailkoppling upprätthåller delad sändningstakt mellan parallella jobb och skyddar mot att leverantörens gränser överskrids.
+Tjänsten kräver i grunden endast en e-postadress för konto. Mailcredentials och temporärt brevinnehåll krypteras, temporära bilagor lagras i R2 och brevdata raderas enligt vald retention. Ingen annonserings- eller beteendespårning används.
 
-## Repots struktur
+## Lokal utveckling
 
-| Katalog | Innehåll |
-| --- | --- |
-| `app/` | Cloudflare Worker, API, kökonsument, retention och frontend |
-| `shared/` | Delad TypeScript-kod, bland annat SMTP, kryptering och typer |
-| `kontakter/` | Insamling, normalisering och uppdatering av offentliga kontaktuppgifter |
-| `infra/` | D1-schema, databasbootstrap och provisioneringsverktyg |
-
-Viktiga delar i `app/src/` är `send-queue.ts` för faktisk sändning, `rate-limiter.ts` för sändningstakt, `letter-privacy.ts` för skydd/retention och auth/OAuth-modulerna för kontoåtkomst.
-
-## Köra en egen kopia
-
-Förutsättningar: Git, Cloudflare-konto, Node.js 24+, npm, Python 3 och OpenSSL.
-
-```bash
-git clone https://github.com/blixten85/politiker.git
-cd politiker
-bash infra/configure.sh
-bash infra/check-config.sh
-bash infra/setup.sh
-```
-
-`configure.sh` skapar en git-ignorerad `infra/.env` och frågar bara efter den externa konfiguration som inte kan skapas automatiskt. `setup.sh` hanterar Cloudflare-inloggning, D1, KV, Queues, R2, schema/migrationer, Worker-secrets och deploy. OAuth och bounce-hantering är valfria.
-
-Fullständig installationsguide, inklusive var varje Client ID, secret, SMTP-uppgift och API-token hämtas: **[`docs/SETUP.md`](docs/SETUP.md)**.
-
-För lokal utveckling:
+Förutsättningar: Node.js enligt `.node-version`, npm och Wrangler-autentisering när fjärrresurser behöver administreras.
 
 ```bash
 cd app
 npm ci
 cp .dev.vars.example .dev.vars
-npx wrangler dev --remote
+npx wrangler d1 migrations apply politiker-eu --local
+npm run dev
 ```
 
-Validering före deploy:
+`.dev.vars` innehåller endast lokala secret-värden som deklareras i `wrangler.jsonc`. Icke-hemlig konfiguration kommer från Wrangler-konfigurationen.
+
+Full verifiering före PR:
 
 ```bash
 cd app
 npm run validate
 ```
 
-## CI, deploy och release
+Python-delen verifieras separat av repositoryts CI.
 
-Arbete går via `dev` → PR → `main`. GitHub Actions kör projektets CI-kontroller. Produktion deployas av Cloudflare från `main`, så kod på `dev` deployas inte till produktion. Databasschema och bootstrap hanteras separat från den automatiska Worker-deployen. GitHub Releases versionssätts automatiskt från commitmeddelanden; se `docs/CI.md` för reglerna.
+## Produktion
+
+Arbete görs på kortlivade branches och går via PR till `main`. GitHub Actions validerar kod och säkerhet men deployar inte produktion.
+
+Cloudflare Workers Builds äger produktionsdeploy från `main`:
+
+| Worker | Root directory | Deploy command |
+| --- | --- | --- |
+| `politiker` | `app` | `npm run migrate:production && npm run deploy && npm run verify:production` |
+| `politiker-log-archive` | `log-archive` | `npm run deploy` |
+
+`npm run migrate:production` kör Wranglers native D1-migrationer direkt mot remote D1 före Worker-deploy. Det finns ingen alternativ repo-lokal deploy- eller migrationsmotor.
+
+Se `docs/CI.md` för CI/deploy-kontraktet och `docs/SETUP.md` för Cloudflare-konfiguration och lokal utveckling.
+
+## Egen installation
+
+Repositoryts `wrangler.jsonc` beskriver Avkrokens produktion och innehåller därför dess icke-hemliga resource IDs och domän. En fork ska skapa egna Cloudflare-resurser och ersätta dessa identifierare i sin Wrangler-konfiguration; kopiera aldrig produktions-secrets eller produktionsdata.
 
 ## Säkerhet
 
-SMTP-/mailhemligheter och temporärt brevinnehåll skyddas med applikationskryptering. Säkerhetskänsliga kontoändringar kräver en färsk webbsession, API-nycklar har begränsade operationer och publika skrivvägar skyddas med bland annat Turnstile/rate limiting där det behövs. Säkerhetsbrister rapporteras enligt `SECURITY.md`.
-
-## Kontakt och källkod
-
-Källkoden finns öppet i detta GitHub-repo. Frågor om tjänsten kan skickas via tjänstens kontaktfunktion eller den kontaktadress som anges av den aktuella installationen.
+Säkerhetskänsliga kontoändringar kräver en färsk session. API-nycklar har begränsade operationer och publika skrivvägar skyddas med rate limiting och andra relevanta kontroller. Säkerhetsbrister rapporteras enligt `SECURITY.md`.
