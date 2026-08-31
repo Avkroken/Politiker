@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# Behåll organisationens CodeRabbit-inställningar men gör reviewstatusen
+# fail-closed och deterministisk för just detta repository.
+inheritance: true
+
+reviews:
+  # Använd legacy commit-statusen eftersom den ger den verifierade, stabila
+  # statuscontexten `CodeRabbit` som GitHubs ruleset kan kräva på exakt HEAD.
+  review_progress: false
+  commit_status: true
+  # Om CodeRabbit inte kan slutföra reviewen ska statusen bli failure i stället
+  # för ett falskt success.
+  fail_commit_status: true
+  auto_review:
+    enabled: true
+    # Varje ny push ska granskas; en tidigare HEAD får inte återanvändas.
+    auto_incremental_review: true
+    # Inaktivera standardpausen efter fem granskade commits.
+    auto_pause_after_reviewed_commits: 0
+    drafts: false
