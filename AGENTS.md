@@ -32,17 +32,16 @@ För `main` gäller:
 - required status check: `CI / required`
 - required status check: `docker`
 - required status check: `scan-pr / osv-scan`
-- required CodeRabbit-reviewgate ska avse PR:ns aktuella HEAD och komma från CodeRabbits kanoniska review-progress-yta
+- required status check: `CodeRabbit`; statusen ska produceras för PR:ns aktuella HEAD
 - required status checks körs strikt mot aktuell `main`; en inaktuell PR-head får inte mergeas
 - Code Scanning merge protection kräver färdig CodeQL-analys och blockerar nya CodeQL-säkerhetsfynd från medium och uppåt samt relevanta error/warning-fynd
 - Code Scanning merge protection kräver färdig Trivy-analys och blockerar nya high/critical-fynd; lägre basimagefynd rapporteras men är inte mergeblockerande
-- GitHub Code Quality ska vara mergegate för nya findings på warning-nivå och uppåt
 - olösta review-trådar blockerar merge
 - 0 mänskliga approvals krävs; review-enforcement sker via explicita bot-/analysgates i stället för ett generellt approval-krav
 - Copilot Code Review är rådgivande och ska ha `review_on_push` aktiverat så varje ny push kan granskas; Copilot är inte en mergegate
 - squash är enda tillåtna merge-metod
 
-CodeRabbit använder repositorykonfigurationen i `.coderabbit.yaml` med inheritance från organisationen. `review_progress` och `fail_commit_status` ska vara aktiva, incremental review ska köras efter varje push och automatisk paus ska vara avstängd. Legacy-läget med `review_progress: false` och `commit_status: true` får inte användas som mergebevis: i PR #372 observerades `success` med beskrivningen `Review rate limited` trots att reviewn inte hade slutförts. CodeRabbit-gaten får därför endast godkännas när den kanoniska review-progress-ytan visar avslutad review för den HEAD som faktiskt ska mergas. Pending, failure, rate limit, saknad status eller en review av en äldre HEAD blockerar merge.
+CodeRabbit använder repositorykonfigurationen i `.coderabbit.yaml` med inheritance från organisationen. `commit_status` och `fail_commit_status` ska vara aktiva, incremental review ska köras efter varje push och automatisk paus ska vara avstängd. Rulesetet kräver statuscontexten `CodeRabbit` för den commit som faktiskt ska mergas. Pending, failure eller saknad status blockerar merge. I PR #372 observerades på en äldre HEAD `success` med beskrivningen `Review rate limited`; den observationen är skälet till att `fail_commit_status` måste vara aktiv så en review som inte kan slutföras inte får se godkänd ut. En walkthrough-kommentar eller review av en äldre HEAD är inte mergebevis.
 
 Alla review-kommentarer och trådar ska läsas och utvärderas. Relevanta findings åtgärdas i samma PR. En tråd markeras resolved först när eventuell nödvändig fix är pushad och verifierad.
 
@@ -78,7 +77,7 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, security-st
 - `typecheck` ska validera appens tester, lokal D1-migrationskedja, Worker-typer, TypeScript och Wrangler dry-run samt ett separat dry-run av `log-archive`.
 - `.github/workflows/osv-scanner.yml` producerar PR-gaten `scan-pr / osv-scan`; OSV:s PR-workflow ska misslyckas på nya sårbara beroenden.
 - `.github/workflows/docker.yml` producerar terminalgaten `docker`. Den bygger relevant image och laddar upp Trivy-SARIF för aktuell HEAD, eller en explicit tom Trivy-analys när image inte berörs. `docker` ska vara required så image-/workflowfel inte kan döljas bakom utebliven SARIF; Trivy-fynd verkställs dessutom av Code Scanning-regeln.
-- `.github/workflows/codex-issue-remediation.yml` skapar en körningsunik remediation-branch, öppnar PR och armerar auto-merge.
+- `.github/workflows/codex-issue-remediation.yml` skapar en körningsunik remediation-branch, öppnar PR och kan armera auto-merge först när repositoryts live-ruleset har verifierats som den fail-closed mergepolicy som beskrivs ovan; workflowen ska inte duplicera rulesetet med en egen policytolk.
 - `.github/workflows/auto-fix-review.yml` får begära Codex-fix för uttryckligen betrodd review-feedback men får inte lösa review-tråden åt implementationen.
 
 ## Säkerhet
@@ -91,7 +90,7 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, security-st
 
 ## Verifiering
 
-Granska hela diffen mot `main` före PR. Kör eller verifiera relevant `CI / required`, `docker`, OSV, CodeQL, Trivy, Code Quality och CodeRabbit-review för aktuell HEAD efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer har lagts till.
+Granska hela diffen mot `main` före PR. Kör eller verifiera relevant `CI / required`, `docker`, OSV, CodeQL, Trivy och CodeRabbit-status för aktuell HEAD efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer har lagts till.
 
 När ändringen påverkar Cloudflare runtime, bindings, secrets, routes, queues, migrationer eller annan live-konfiguration ska den deployade konfigurationen verifieras efter merge. För appändringar innebär det normalt en grön `Workers Builds: politiker` på den mergade `main`-SHA:n där native migration, strict deploy och produktionsverifiering har passerat.
 

@@ -11,13 +11,12 @@ Före merge ska live-rulesetet kräva:
 - `CI / required` från GitHub Actions.
 - `docker` från Docker/Trivy-workflowens terminaljobb.
 - `scan-pr / osv-scan` från OSV:s PR-workflow.
-- CodeRabbits kanoniska review-progress för exakt aktuell PR-HEAD; pending, rate limit, failure, saknad review eller äldre HEAD blockerar.
+- statuscontexten `CodeRabbit` för exakt aktuell PR-HEAD.
 - strict required status checks, så PR-head måste vara uppdaterad med aktuell `main`.
 - Code Scanning merge protection för CodeQL och Trivy.
-- GitHub Code Quality på warning-nivå och uppåt.
 - lösta review-trådar och squash merge.
 
-Generella mänskliga approvals är inte required. CodeRabbit är en explicit reviewgate och Copilot Code Review är rådgivande. Copilot ska ha `review_on_push` aktiverat så en ny push inte återanvänder en gammal review.
+Generella mänskliga approvals är inte required. CodeRabbit är en explicit statusgate och Copilot Code Review är rådgivande. Copilot ska ha `review_on_push` aktiverat så en ny push inte återanvänder en gammal review.
 
 ## Selektiv CI
 
@@ -38,14 +37,14 @@ Required checks filtreras inte bort på workflow-nivå med `paths:`. Ett impact-
 
 `.coderabbit.yaml` är repoets versionshanterade tillägg till organisationens CodeRabbit-konfiguration och använder `inheritance: true`.
 
-- `review_progress: true` använder CodeRabbits kanoniska review-progress-yta.
-- `fail_commit_status: true` gör reviewfel blockerande på den aktiva review-statusytan.
+- `commit_status: true` publicerar statuscontexten `CodeRabbit` för committen som granskas.
+- `fail_commit_status: true` gör en review som inte kan slutföras blockerande i stället för godkänd.
 - `auto_incremental_review: true` gör att varje ny push granskas igen.
 - `auto_pause_after_reviewed_commits: 0` förhindrar att senare HEAD:ar lämnas utan automatisk incremental review efter ett antal commits.
 
-Legacy-läget `review_progress: false` + `commit_status: true` är inte en tillräcklig mergegate i detta repository. Under PR #372 observerades statusen `CodeRabbit = success` med beskrivningen `Review rate limited` samtidigt som CodeRabbit uttryckligen rapporterade att reviewgränsen var nådd och reviewn inte hade slutförts. En sådan status får därför aldrig vara mergebevis.
+På en äldre HEAD i PR #372 observerades `CodeRabbit = success` med beskrivningen `Review rate limited` innan den fail-closed-konfigurationen var etablerad. Den observationen visar varför `commit_status` inte får användas ensam: `fail_commit_status` måste också vara aktiv.
 
-Den avsedda CodeRabbit-gaten ska avse exakt aktuell HEAD och endast godkännas när CodeRabbits kanoniska review-progress visar att reviewn är avslutad. En walkthrough-kommentar, `Review queued`, `Review in progress`, `Review rate limited`, failure, saknad status eller review av en äldre HEAD blockerar.
+Rulesetet ska kräva statuscontexten `CodeRabbit` på den commit som faktiskt ska mergas. Saknad, pending eller failure blockerar merge. En walkthrough-kommentar, en pågående review eller review av en äldre HEAD är inte mergebevis. Efter varje push ska en ny CodeRabbit-status observeras på den nya HEAD:en innan merge tillåts.
 
 Copilot Code Review är separat från CodeRabbit. `review_on_push` ska vara aktiverat, men Copilot är inte en hard gate eftersom tjänsten kan vara otillgänglig på grund av quota/policy och dess review inte lämnar ett GitHub approval-beslut.
 
@@ -55,7 +54,7 @@ OSV:s PR-workflow jämför målbranch och PR-head och ska misslyckas när PR:n i
 
 Docker/Trivy-workflowen bygger relevant scraper-image. När imagen inte påverkas laddas en explicit tom Trivy-SARIF upp för aktuell HEAD; när den påverkas laddas den faktiska Trivy-analysen upp. `docker` är required för själva image-/workflowresultatet. Trivy-processen har avsiktligt exit code 0 eftersom låga och medelhöga basimagefynd ska rapporteras utan att stoppa all utveckling; Code Scanning merge protection ska i stället kräva Trivy-resultatet och blockera nya high/critical-säkerhetsfynd.
 
-CodeQL körs genom GitHubs Code Scanning default setup. Merge protection ska kräva en färdig CodeQL-analys och blockera nya säkerhetsfynd från medium och uppåt samt relevanta error/warning-fynd. GitHub Code Quality är en separat, avsedd CodeQL-baserad analys och ska inte tas bort bara för att båda funktionerna använder CodeQL; Code Quality ska vara mergegate för nya warning/error-fynd.
+CodeQL körs genom GitHubs Code Scanning default setup. Merge protection ska kräva en färdig CodeQL-analys och blockera nya säkerhetsfynd från medium och uppåt samt relevanta error/warning-fynd. GitHub Code Quality är inte en mergegate i detta repository eftersom ingen separat `CodeQL - Code Quality`-check har verifierats på aktuell PR-HEAD; en sådan gate får inte läggas till förrän analysen faktiskt är aktiverad och observerad stabilt.
 
 ## Cloudflare-owned production deploy
 
