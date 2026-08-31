@@ -5,8 +5,9 @@
 inheritance: true
 
 reviews:
-  # CodeRabbit sätter commit-statusen `CodeRabbit` till pending medan reviewn
-  # pågår och success först när reviewn är färdig.
+  # Rulesetet kräver den stabila legacy commit-statusen `CodeRabbit`.
+  # CodeRabbit använder commit_status endast när review_progress är avstängt.
+  review_progress: false
   commit_status: true
   # Reviewfel, quota-/integrationsproblem eller annan oförmåga att granska får
   # inte kunna se ut som en färdig review.
@@ -15,4 +16,6 @@ reviews:
     enabled: true
     # Varje ny push ska granskas; en tidigare HEAD får inte återanvändas.
     auto_incremental_review: true
+    # Inaktivera standardpausen efter fem granskade commits.
+    auto_pause_after_reviewed_commits: 0
     drafts: false
