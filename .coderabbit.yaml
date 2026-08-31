@@ -5,10 +5,12 @@
 inheritance: true
 
 reviews:
-  # Använd CodeRabbits kanoniska GitHub review-progress-yta/check run.
-  review_progress: true
-  # Om CodeRabbit inte kan slutföra reviewen ska den aktiva statusytan bli
-  # failure i stället för ett falskt success.
+  # Använd legacy commit-statusen eftersom den ger den verifierade, stabila
+  # statuscontexten `CodeRabbit` som GitHubs ruleset kan kräva på exakt HEAD.
+  review_progress: false
+  commit_status: true
+  # Om CodeRabbit inte kan slutföra reviewen ska statusen bli failure i stället
+  # för ett falskt success.
   fail_commit_status: true
   auto_review:
     enabled: true
