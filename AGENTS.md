@@ -9,8 +9,8 @@ Den här filen är repositoryts auktoritativa arbetsinstruktion. Live GitHub-kon
 - `app/` — Cloudflare Worker med `fetch`, `queue` och `scheduled`.
 - `log-archive/` — tail-konsument som arkiverar `app/`:s loggevent till R2.
 - `shared/` — delad validering, kryptering, SMTP och typer.
-- `infra/` — Cloudflare-provisionering och schema.
-- `kontakter/` — Python-skrapning, export och verifiering av kontaktdata.
+- `infra/` — D1-migrationer och övergångsverktyg för Cloudflare.
+- `kontakter/` — Python-insamling, normalisering och verifiering av kontaktdata.
 - D1, KV, Queues och Durable Objects används i produktion.
 
 ## Brancher och pull requests
@@ -61,10 +61,11 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, review-stat
 - `app` ska använda deploy command `npm run migrate:production && npm run deploy && npm run verify:production`.
 - `log-archive` ska använda deploy command `npm run deploy`.
 - Appens `deploy` ska vara direkt `wrangler deploy --strict --outdir dist`; `log-archive` ska använda direkt `wrangler deploy --strict`. Skapa inte repo-lokala Worker-deploywrappers för branchkontroll, Git-SHA-metadata eller annan kontrollplanslogik som Workers Builds redan äger.
-- App-Workern är ensam D1-migrationsägare. `migrate:production` kör den befintliga idempotenta `infra/apply-migrations.sh` före Worker-deploy. Den mekanismen är ett avsiktligt legacy-undantag och får inte ersättas med en annan migrationsmotor utan en explicit plan för befintligt migrationsstate. `log-archive` använder inte D1 och får inte köra migrationerna.
+- App-Workern är ensam D1-migrationsägare. Nya och framtida schemaändringar ska använda Wranglers native D1 migrations under `infra/migrations/` och state-tabellen `d1_migrations`.
+- `infra/migrate-d1-native.sh`, `infra/apply-migrations.sh` och `infra/legacy-migrations/` är en uttrycklig engångsbrygga för den befintliga produktionsdatabasens äldre `schema_migrations`-state. Lägg inga nya migrationer där. Bryggan ska tas bort efter en verifierat lyckad native produktionsdeploy.
 - `scripts/verify-production.mjs` får endast verifiera att appens huvuddomän svarar HTTP 200 efter deploy. `log-archive` är bara tail-konsument och ska inte exponeras publikt för health-check.
-- Workers Builds watch paths ska vara `app/**`, `shared/**`, `infra/migrations/**`, `infra/apply-migrations.sh` och `scripts/verify-production.mjs` för appen; `log-archive/**` för tail-konsumenten.
-- `wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers och övrig versionshanterad Worker-konfiguration.
+- Workers Builds watch paths ska vara `app/**`, `shared/**`, `infra/migrations/**` och `scripts/verify-production.mjs` för appen; `log-archive/**` för tail-konsumenten. Tillfälliga bridge-filer behöver inte vara permanenta watch paths.
+- `wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers, required secret names och övrig versionshanterad Worker-konfiguration.
 
 ## Verifiering
 
