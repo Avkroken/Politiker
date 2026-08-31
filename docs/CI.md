@@ -4,19 +4,20 @@
 
 `main` tar bara emot ändringar via pull request. Arbete görs på kortlivade branches; repositoryt använder inte merge queue.
 
-Öppna en ready PR mot `main`. Auto-merge får armeras direkt först när live-rulesetet är verifierat fail-closed för policyn nedan. Direkt merge används bara när det uttryckligen begärts.
+Öppna en ready PR mot `main`. Auto-merge får armeras först när live-rulesetet är verifierat fail-closed för policyn nedan. Direkt merge används bara när det uttryckligen begärts.
 
 Före merge ska live-rulesetet kräva:
 
 - `CI / required` från GitHub Actions.
+- `docker` från Docker/Trivy-workflowens terminaljobb.
 - `scan-pr / osv-scan` från OSV:s PR-workflow.
-- commit-statusen `CodeRabbit` från CodeRabbit för aktuell PR-HEAD.
+- CodeRabbits kanoniska review-progress för exakt aktuell PR-HEAD; pending, rate limit, failure, saknad review eller äldre HEAD blockerar.
 - strict required status checks, så PR-head måste vara uppdaterad med aktuell `main`.
 - Code Scanning merge protection för CodeQL och Trivy.
 - GitHub Code Quality på warning-nivå och uppåt.
 - lösta review-trådar och squash merge.
 
-Generella mänskliga approvals är inte required. CodeRabbit är en explicit statusgate och Copilot Code Review är rådgivande. Copilot ska ha `review_on_push` aktiverat så en ny push inte återanvänder en gammal review.
+Generella mänskliga approvals är inte required. CodeRabbit är en explicit reviewgate och Copilot Code Review är rådgivande. Copilot ska ha `review_on_push` aktiverat så en ny push inte återanvänder en gammal review.
 
 ## Selektiv CI
 
@@ -31,15 +32,20 @@ Required checks filtreras inte bort på workflow-nivå med `paths:`. Ett impact-
 
 `typecheck` kör appens tester, native D1-migrationer mot lokal D1, TypeScript typecheck, Wrangler dry-run, produktionsverifierarens Node-test och separat Wrangler dry-run av `log-archive`. GitHub Actions innehåller ingen produktionsdeploykedja.
 
+`docker` är Docker/Trivy-workflowens stabila terminalgate. Den kör alltid på PR och blir failure/cancelled om underliggande image-/Trivy-flöde misslyckas. När ingen relevant image påverkas går workflowen genom en explicit not-applicable-väg i stället för att required-gaten försvinner.
+
 ## Review-enforcement
 
 `.coderabbit.yaml` är repoets versionshanterade tillägg till organisationens CodeRabbit-konfiguration och använder `inheritance: true`.
 
-- `commit_status: true` ger statusen `CodeRabbit`: `pending` under review och `success` först när reviewn är klar.
-- `fail_commit_status: true` gör att reviewfel inte kan maskeras som godkänt.
+- `review_progress: true` använder CodeRabbits kanoniska review-progress-yta.
+- `fail_commit_status: true` gör reviewfel blockerande på den aktiva review-statusytan.
 - `auto_incremental_review: true` gör att varje ny push granskas igen.
+- `auto_pause_after_reviewed_commits: 0` förhindrar att senare HEAD:ar lämnas utan automatisk incremental review efter ett antal commits.
 
-Rulesetet ska kräva `CodeRabbit` från CodeRabbit. Saknad, pending eller failure blockerar merge. Detta är mergegaten; en walkthrough-kommentar eller text som säger att review pågår är inte ett godkännande.
+Legacy-läget `review_progress: false` + `commit_status: true` är inte en tillräcklig mergegate i detta repository. Under PR #372 observerades statusen `CodeRabbit = success` med beskrivningen `Review rate limited` samtidigt som CodeRabbit uttryckligen rapporterade att reviewgränsen var nådd och reviewn inte hade slutförts. En sådan status får därför aldrig vara mergebevis.
+
+Den avsedda CodeRabbit-gaten ska avse exakt aktuell HEAD och endast godkännas när CodeRabbits kanoniska review-progress visar att reviewn är avslutad. En walkthrough-kommentar, `Review queued`, `Review in progress`, `Review rate limited`, failure, saknad status eller review av en äldre HEAD blockerar.
 
 Copilot Code Review är separat från CodeRabbit. `review_on_push` ska vara aktiverat, men Copilot är inte en hard gate eftersom tjänsten kan vara otillgänglig på grund av quota/policy och dess review inte lämnar ett GitHub approval-beslut.
 
@@ -47,7 +53,7 @@ Copilot Code Review är separat från CodeRabbit. `review_on_push` ska vara akti
 
 OSV:s PR-workflow jämför målbranch och PR-head och ska misslyckas när PR:n introducerar nya sårbara beroenden. `scan-pr / osv-scan` är därför required.
 
-Docker/Trivy-workflowen bygger relevant scraper-image. När imagen inte påverkas laddas en explicit tom Trivy-SARIF upp för aktuell HEAD; när den påverkas laddas den faktiska Trivy-analysen upp. Trivy-processen har avsiktligt exit code 0 eftersom låga och medelhöga basimagefynd ska rapporteras utan att stoppa all utveckling. Merge protection ska i stället kräva Trivy-resultatet och blockera nya high/critical-säkerhetsfynd.
+Docker/Trivy-workflowen bygger relevant scraper-image. När imagen inte påverkas laddas en explicit tom Trivy-SARIF upp för aktuell HEAD; när den påverkas laddas den faktiska Trivy-analysen upp. `docker` är required för själva image-/workflowresultatet. Trivy-processen har avsiktligt exit code 0 eftersom låga och medelhöga basimagefynd ska rapporteras utan att stoppa all utveckling; Code Scanning merge protection ska i stället kräva Trivy-resultatet och blockera nya high/critical-säkerhetsfynd.
 
 CodeQL körs genom GitHubs Code Scanning default setup. Merge protection ska kräva en färdig CodeQL-analys och blockera nya säkerhetsfynd från medium och uppåt samt relevanta error/warning-fynd. GitHub Code Quality är en separat, avsedd CodeQL-baserad analys och ska inte tas bort bara för att båda funktionerna använder CodeQL; Code Quality ska vara mergegate för nya warning/error-fynd.
 
