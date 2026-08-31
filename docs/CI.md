@@ -2,13 +2,9 @@
 
 ## Branchflöde
 
-`main` tar bara emot ändringar via pull request. Arbete görs på kortlivade branches; repositoryt har ingen obligatorisk återanvändbar branchpool och använder inte merge queue.
+`main` tar bara emot ändringar via pull request. Arbete görs på kortlivade branches; repositoryt använder inte merge queue.
 
 Öppna en ready PR mot `main` och aktivera auto-merge omedelbart. Live-ruleseten kräver `typecheck`, `python`, lösta review-trådar och squash merge. Direkt merge används bara när det uttryckligen begärts.
-
-Codex-remediation använder körningsunika branches under `automation/codex-issue/`. Seed-filen under `.github/codex-dispatch/` skapar PR-kontext men måste tas bort av Codex innan PR:n kan mergas; required `typecheck` blockerar annars PR:n.
-
-Vanlig CI körs på `pull_request` och på push till `main` där efter-merge-verifiering behövs.
 
 ## Selektiv CI
 
@@ -17,9 +13,9 @@ Vanlig CI körs på `pull_request` och på push till `main` där efter-merge-ver
 - Gemensam CI-/dependency-konfiguration eller okänd påverkan kör båda.
 - Dokumentation och processmetadata behöver normalt inte starta dyra språkjobb.
 
-Required checks filtreras inte bort på workflow-nivå med `paths:`. Ett impact-jobb klassificerar diffen och efterföljande jobb använder job-level `if:`. Routing ska vara fail-open: om påverkan inte kan avgöras säkert körs mer CI.
+Required checks filtreras inte bort på workflow-nivå med `paths:`. Ett impact-jobb klassificerar diffen och efterföljande jobb använder job-level `if:`. Routing är fail-open: om påverkan inte kan avgöras säkert körs mer CI.
 
-Required `typecheck` kör appens tester/typecheck/Wrangler dry-run, produktionsverifierarens Node-test och ett separat Wrangler dry-run av `log-archive` med appens låsta Wrangler-installation. GitHub Actions innehåller ingen produktionsdeploykedja.
+Required `typecheck` kör appens tester, native D1-migrationer mot lokal D1, TypeScript typecheck, Wrangler dry-run, produktionsverifierarens Node-test och separat Wrangler dry-run av `log-archive`. GitHub Actions innehåller ingen produktionsdeploykedja.
 
 ## Cloudflare-owned production deploy
 
@@ -30,18 +26,18 @@ Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Ac
 | `politiker` | `app` | `npm run migrate:production && npm run deploy && npm run verify:production` |
 | `politiker-log-archive` | `log-archive` | `npm run deploy` |
 
-Appens `deploy` är direkt `wrangler deploy --strict --outdir dist`; `log-archive` använder direkt `wrangler deploy --strict`. Det finns ingen repo-lokal Worker-deployorkestrerare och ingen duplicerad Workers Builds branch/SHA-logik. Production branch, root directory, watch paths och kommandosekvens ägs av Cloudflare Workers Builds, som även registrerar buildens Git-metadata.
+Appens `deploy` är direkt `wrangler deploy --strict --outdir dist`; `log-archive` använder direkt `wrangler deploy --strict`. Production branch, root directory, watch paths och kommandosekvens ägs av Cloudflare Workers Builds.
 
-Appen är ensam migrationsägare för D1 `politiker-eu`. `npm run migrate:production` kör den befintliga idempotenta `infra/apply-migrations.sh` före Worker-deploy. Den mekanismen är ett avsiktligt legacy-undantag eftersom den befintliga produktionsdatabasen redan spårar migrationsstate där; byt inte till en annan migrationsmotor utan en explicit state-migreringsplan. `log-archive` använder inte D1 och får aldrig köra appens migrationer.
+Appen är ensam migrationsägare för D1 `politiker-eu`. `npm run migrate:production` kör direkt `wrangler d1 migrations apply politiker-eu --remote`. `infra/migrations/` är den enda migrationskedjan och Wrangler-tabellen `d1_migrations` är den enda migrationsstate som används. Skapa inte en parallell migrationsmotor, schema-snapshot eller state-tabell.
 
 Efter app-deploy kör `npm run verify:production`, som endast verifierar att `https://politiker.denied.se/` svarar HTTP 200. `log-archive` är endast tail-konsument och ska inte få en konstgjord publik health-route.
 
 Workers Builds watch paths ska vara:
 
-- `politiker`: `app/**`, `shared/**`, `infra/migrations/**`, `infra/apply-migrations.sh`, `scripts/verify-production.mjs`
+- `politiker`: `app/**`, `shared/**`, `infra/migrations/**`, `scripts/verify-production.mjs`
 - `politiker-log-archive`: `log-archive/**`
 
-`wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers och övrig versionshanterad Worker-konfiguration. Secrets ligger utanför repositoryt.
+`wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers, required secret names och övrig versionshanterad Worker-konfiguration. Secrets ligger utanför repositoryt.
 
 ## Release
 
