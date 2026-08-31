@@ -75,5 +75,6 @@ if has_table politicians && ! has_native_baseline; then
 fi
 
 # Tomma databaser applicerar hela native kedjan från 0000. Befintliga databaser
-# fortsätter från den seedade baslinjen. Wrangler äger state från denna punkt.
-"${WR[@]}" d1 migrations apply "$DB_NAME" --remote --yes
+# fortsätter från den seedade baslinjen. I CI/CD hoppar Wrangler automatiskt över
+# den interaktiva bekräftelsen, så ingen separat yes-flagga ska anges här.
+"${WR[@]}" d1 migrations apply "$DB_NAME" --remote
