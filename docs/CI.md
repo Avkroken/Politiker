@@ -19,24 +19,29 @@ Vanlig CI körs på `pull_request` och på push till `main` där efter-merge-ver
 
 Required checks filtreras inte bort på workflow-nivå med `paths:`. Ett impact-jobb klassificerar diffen och efterföljande jobb använder job-level `if:`. Routing ska vara fail-open: om påverkan inte kan avgöras säkert körs mer CI.
 
-Required `typecheck` kör appens tester/typecheck/Wrangler dry-run, production-deploy-gardens Node-tester och ett separat Wrangler dry-run av `log-archive` med appens låsta Wrangler-installation.
+Required `typecheck` kör appens tester/typecheck/Wrangler dry-run, produktionsverifierarens Node-test och ett separat Wrangler dry-run av `log-archive` med appens låsta Wrangler-installation. GitHub Actions innehåller ingen produktionsdeploykedja.
 
 ## Cloudflare-owned production deploy
 
-Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Actions validerar men deployar inte produktion.
+Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Actions validerar men deployar inte produktion. Båda produktions-Workers ska ha production branch `main`, tomt build command och avstängda non-production branch builds.
 
 | Worker | Root directory | Deploy command |
 | --- | --- | --- |
-| `politiker` | `app` | `npm run deploy:production` |
-| `politiker-log-archive` | `log-archive` | `npm run deploy:production` |
+| `politiker` | `app` | `npm run migrate:production && npm run deploy && npm run verify:production` |
+| `politiker-log-archive` | `log-archive` | `npm run deploy` |
 
-Båda kommandona går via `scripts/deploy-production.mjs`. I Workers Builds kräver skriptet `WORKERS_CI_BRANCH=main` och en giltig full `WORKERS_CI_COMMIT_SHA`, kör `wrangler deploy --strict` och märker deploymenten med Git-SHA.
+Appens `deploy` är direkt `wrangler deploy --strict --outdir dist`; `log-archive` använder direkt `wrangler deploy --strict`. Det finns ingen repo-lokal Worker-deployorkestrerare och ingen duplicerad Workers Builds branch/SHA-logik. Production branch, root directory, watch paths och kommandosekvens ägs av Cloudflare Workers Builds, som även registrerar buildens Git-metadata.
 
-Appen är ensam migrationsägare för D1 `politiker-eu`: före app-deploy körs den befintliga idempotenta `infra/apply-migrations.sh`. `log-archive` använder inte D1 och får aldrig köra appens migrationer. Efter app-deploy måste `https://politiker.denied.se/` svara HTTP 200. `log-archive` är endast tail-konsument och ska inte få en konstgjord publik health-route.
+Appen är ensam migrationsägare för D1 `politiker-eu`. `npm run migrate:production` kör den befintliga idempotenta `infra/apply-migrations.sh` före Worker-deploy. Den mekanismen är ett avsiktligt legacy-undantag eftersom den befintliga produktionsdatabasen redan spårar migrationsstate där; byt inte till en annan migrationsmotor utan en explicit state-migreringsplan. `log-archive` använder inte D1 och får aldrig köra appens migrationer.
 
-Workers Builds watch paths ska omfatta respektive Worker-root och `scripts/**`. Appens build ska dessutom triggas av `shared/**` och `infra/migrations/**`, eftersom dessa påverkar runtime respektive den pre-deploy-migrationskedja som appen äger.
+Efter app-deploy kör `npm run verify:production`, som endast verifierar att `https://politiker.denied.se/` svarar HTTP 200. `log-archive` är endast tail-konsument och ska inte få en konstgjord publik health-route.
 
-`wrangler.jsonc` är sanningskällan för Worker-bindings, routes, queues, cron, tail consumers och övrig versionshanterad Worker-konfiguration. Secrets ligger utanför repositoryt.
+Workers Builds watch paths ska vara:
+
+- `politiker`: `app/**`, `shared/**`, `infra/migrations/**`, `infra/apply-migrations.sh`, `scripts/verify-production.mjs`
+- `politiker-log-archive`: `log-archive/**`
+
+`wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers och övrig versionshanterad Worker-konfiguration. Secrets ligger utanför repositoryt.
 
 ## Release
 
