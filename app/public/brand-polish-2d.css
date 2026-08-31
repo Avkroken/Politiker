@@ -144,3 +144,62 @@ details.details:has(#area-list) details.details[open]>summary{
 @media(prefers-reduced-motion:reduce){
   #area-groups .choice{transition:none!important}
 }
+
+/* Mobile correction: keep all primary yellow on the Swedish flag hue and put the Stockholm photography above the hero surface instead of behind it. */
+@media(max-width:560px){
+  :root{
+    --accent:#ffcd00;
+    --accent-strong:#ffcd00;
+    --warning:#ffcd00;
+  }
+
+  .button--primary{
+    border-color:#ffcd00;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.12),transparent 42%),
+      #ffcd00;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.30),
+      0 10px 28px rgba(255,205,0,.14),
+      0 1px 0 rgba(0,0,0,.22);
+  }
+  .button--primary:hover{
+    border-color:#ffcd00;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.12),transparent 42%),
+      #ffcd00;
+  }
+  .primary-nav .button[aria-current="page"],
+  .mobile-nav .button[aria-current="page"]{
+    border-color:#ffcd00;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.10),transparent 40%),
+      #ffcd00;
+  }
+
+  .hero{
+    isolation:isolate;
+  }
+  .hero:before{
+    z-index:0;
+    pointer-events:none;
+    background-position:right 43%;
+    background-size:auto 150%;
+    opacity:.94;
+    filter:saturate(1.18) contrast(1.08) brightness(1.08);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,transparent 47%,rgba(0,0,0,.22) 57%,rgba(0,0,0,.84) 69%,#000 79%);
+    mask-image:linear-gradient(90deg,transparent 0%,transparent 47%,rgba(0,0,0,.22) 57%,rgba(0,0,0,.84) 69%,#000 79%);
+  }
+  .hero:after{
+    z-index:1;
+    pointer-events:none;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.028),transparent 15%),
+      linear-gradient(90deg,rgba(1,12,28,.92) 0 47%,rgba(1,12,28,.68) 58%,rgba(1,12,28,.28) 72%,rgba(1,12,28,.04) 94%),
+      radial-gradient(circle at 91% 77%,rgba(255,205,0,.09),transparent 23%);
+  }
+  .hero>*{
+    position:relative;
+    z-index:2;
+  }
+}
