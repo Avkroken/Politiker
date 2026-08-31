@@ -18,6 +18,12 @@ inputs:
       Kategori i code scanning. Måste vara unik per image — annars skriver den
       ena imagens resultat över den andras.
     required: true
+  analysis-ref:
+    description: Git-ref som SARIF-resultatet ska registreras på.
+    required: true
+  analysis-sha:
+    description: Commit-SHA som faktiskt analyserades.
+    required: true
 
 runs:
   using: composite
@@ -61,3 +67,5 @@ runs:
       with:
         sarif_file: trivy-results.sarif
         category: ${{ inputs.category }}
+        ref: ${{ inputs.analysis-ref }}
+        sha: ${{ inputs.analysis-sha }}
