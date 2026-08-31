@@ -19,7 +19,7 @@ Cloudflare D1 är kanonisk runtime-datakälla. Git får inte användas som produ
 
 - Pusha aldrig direkt till `main`.
 - Använd en kortlivad branch och öppna en ready PR till `main`.
-- Aktivera auto-merge omedelbart när PR:n skapats, även medan CI eller review pågår, men endast när live-rulesetet redan verifierats fail-closed för den aktuella mergepolicyn.
+- Aktivera auto-merge först när live-rulesetet är verifierat fail-closed för den aktuella mergepolicyn.
 - Använd inte direkt merge om det inte uttryckligen begärts.
 - Live-rulesetet tillåter endast squash merge.
 - Repositoryt använder inte merge queue och har ingen obligatorisk återanvändbar branchpool.
@@ -30,8 +30,9 @@ Cloudflare D1 är kanonisk runtime-datakälla. Git får inte användas som produ
 För `main` gäller:
 
 - required status check: `CI / required`
+- required status check: `docker`
 - required status check: `scan-pr / osv-scan`
-- required commit status: `CodeRabbit`, producerad av CodeRabbit och avseende PR:ns aktuella HEAD
+- required CodeRabbit-reviewgate ska avse PR:ns aktuella HEAD och komma från CodeRabbits kanoniska review-progress-yta
 - required status checks körs strikt mot aktuell `main`; en inaktuell PR-head får inte mergeas
 - Code Scanning merge protection kräver färdig CodeQL-analys och blockerar nya CodeQL-säkerhetsfynd från medium och uppåt samt relevanta error/warning-fynd
 - Code Scanning merge protection kräver färdig Trivy-analys och blockerar nya high/critical-fynd; lägre basimagefynd rapporteras men är inte mergeblockerande
@@ -41,11 +42,11 @@ För `main` gäller:
 - Copilot Code Review är rådgivande och ska ha `review_on_push` aktiverat så varje ny push kan granskas; Copilot är inte en mergegate
 - squash är enda tillåtna merge-metod
 
-CodeRabbit använder repositorykonfigurationen i `.coderabbit.yaml` med inheritance från organisationen. `commit_status` ska vara aktiv och `fail_commit_status` ska vara aktiv. Statusen `CodeRabbit` får endast räknas som godkänd när den är `success` för den HEAD som faktiskt ska mergas. `pending`, `failure` eller saknad status blockerar merge. Automatisk incremental review ska vara aktiv efter varje ny push.
+CodeRabbit använder repositorykonfigurationen i `.coderabbit.yaml` med inheritance från organisationen. `review_progress` och `fail_commit_status` ska vara aktiva, incremental review ska köras efter varje push och automatisk paus ska vara avstängd. Legacy-läget med `review_progress: false` och `commit_status: true` får inte användas som mergebevis: i PR #372 observerades `success` med beskrivningen `Review rate limited` trots att reviewn inte hade slutförts. CodeRabbit-gaten får därför endast godkännas när den kanoniska review-progress-ytan visar avslutad review för den HEAD som faktiskt ska mergas. Pending, failure, rate limit, saknad status eller en review av en äldre HEAD blockerar merge.
 
 Alla review-kommentarer och trådar ska läsas och utvärderas. Relevanta findings åtgärdas i samma PR. En tråd markeras resolved först när eventuell nödvändig fix är pushad och verifierad.
 
-Efter varje ny commit ska relevant CI, security och review-status kontrolleras igen. När samtliga required gates är godkända och alla relevanta review-trådar är resolved ska den redan armerade auto-merge-funktionen föra PR:n till `main`.
+Efter varje ny commit ska relevant CI, security och review-status kontrolleras igen. När samtliga required gates är godkända och alla relevanta review-trådar är resolved får auto-merge föra PR:n till `main`.
 
 Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, security-state, review-state eller repositoryinställning identifieras. Kringgå aldrig repositoryskydd.
 
@@ -76,7 +77,7 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, security-st
 - `typecheck` blockerar PR:er som fortfarande innehåller `.github/codex-dispatch/issue-*.md`; eftersom `CI / required` kräver `typecheck` får en remediation-seed aldrig nå `main`.
 - `typecheck` ska validera appens tester, lokal D1-migrationskedja, Worker-typer, TypeScript och Wrangler dry-run samt ett separat dry-run av `log-archive`.
 - `.github/workflows/osv-scanner.yml` producerar PR-gaten `scan-pr / osv-scan`; OSV:s PR-workflow ska misslyckas på nya sårbara beroenden.
-- `.github/workflows/docker.yml` bygger relevant image och laddar alltid upp Trivy-SARIF för aktuell HEAD, eller en explicit tom Trivy-analys när image inte berörs. Trivy-fynd verkställs av Code Scanning-regeln, inte av Trivys process-exitkod.
+- `.github/workflows/docker.yml` producerar terminalgaten `docker`. Den bygger relevant image och laddar upp Trivy-SARIF för aktuell HEAD, eller en explicit tom Trivy-analys när image inte berörs. `docker` ska vara required så image-/workflowfel inte kan döljas bakom utebliven SARIF; Trivy-fynd verkställs dessutom av Code Scanning-regeln.
 - `.github/workflows/codex-issue-remediation.yml` skapar en körningsunik remediation-branch, öppnar PR och armerar auto-merge.
 - `.github/workflows/auto-fix-review.yml` får begära Codex-fix för uttryckligen betrodd review-feedback men får inte lösa review-tråden åt implementationen.
 
@@ -90,7 +91,7 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, security-st
 
 ## Verifiering
 
-Granska hela diffen mot `main` före PR. Kör eller verifiera relevant `CI / required`, OSV, CodeQL, Trivy, Code Quality och CodeRabbit-status efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer har lagts till.
+Granska hela diffen mot `main` före PR. Kör eller verifiera relevant `CI / required`, `docker`, OSV, CodeQL, Trivy, Code Quality och CodeRabbit-review för aktuell HEAD efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer har lagts till.
 
 När ändringen påverkar Cloudflare runtime, bindings, secrets, routes, queues, migrationer eller annan live-konfiguration ska den deployade konfigurationen verifieras efter merge. För appändringar innebär det normalt en grön `Workers Builds: politiker` på den mergade `main`-SHA:n där native migration, strict deploy och produktionsverifiering har passerat.
 
