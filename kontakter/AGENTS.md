@@ -1,80 +1,66 @@
 # kontakter/ — AI Agent Guide
 
-Delen av politiker som fyller databasen. Repots gemensamma regler står
-i rot-`CLAUDE.md`; det här dokumentet gäller `kontakter/` och alla sökvägar
-nedan är relativa hit.
+Delen av Politiker som samlar in och underhåller offentliga mottagarkontakter. Repots gemensamma regler står i rot-`AGENTS.md`; det här dokumentet gäller `kontakter/`.
 
-Scraper som hämtar publikt publicerade e-postadresser till förtroendevalda
-(kommunfullmäktige och regionfullmäktige) i Sveriges 290 kommuner och 21
-regioner. Sparar resultatet som VCF-filer (för import till t.ex. iPhone-
-kontakter) och en alfabetiskt sorterad textfil.
+## Arkitektur
 
-## Tech Stack
+Cloudflare D1 är den enda kanoniska runtime-datakällan. `kontakter/` är en dataproducent, inte en Cloudflare-kontrollplan.
 
-- Python 3, Playwright (headless Chromium)
+Det innebär:
+
+- ingen export av live-D1 till Git,
+- inga committade CSV/JSON/SQL-snapshots av produktionsdatabasen,
+- inga GitHub Actions som skriver direkt till produktions-D1,
+- ingen schema-, resurs- eller Worker-provisionering här,
+- D1-skrivande hjälpskript ska använda minsta nödvändiga API-token och endast ändra kontaktdata.
+
+## Tech stack
+
+- Python 3
+- Playwright/headless Chromium för källor som kräver webbläsare
 - `pypdf` för PDF-baserade ledamotslistor
-- Docker / Docker Compose
+- Docker/Docker Compose för den tunga kommun-/regionscrapern
 
-## Dev Commands
+## Struktur
 
-```bash
-cp .env.example .env
-# Justera OUTPUT_DIR/LOG_DIR i .env
-docker compose up
+```text
+scraper/scraper.py             huvudlogik för kommun/region
+scraper/regioner.json          källkonfiguration
+scraper/politiker_common.py    delade normaliseringshjälpare
+scraper/d1.py                  begränsad D1-klient för kontaktdata
+scraper/sync_to_d1.py          kommun/region -> D1
+scraper/backfill_assignments.py organ/nämnder -> D1
+scraper/fetch_*.py             övriga externa källor -> D1
+scraper/quarterly_refresh.sh    orkestrerar hela kontaktuppdateringen
+verify/                        verifieringsverktyg
+resultat/                      lokala scraper-/granskningsartefakter
 ```
 
-## Project Structure
+## D1-konfiguration
 
-```
-scraper/scraper.py       # Huvudlogik — alla scrape_*-funktioner
-scraper/regioner.json    # Regionkonfig (namn/typ/URL per kommun/region) — data, ej kod
-scraper/politiker_common.py # Delade parti-/namnhjälpare (scraper + backfill)
-scraper/d1.py            # Delad Cloudflare D1-klient för alla sync/export/verify-skript
-scraper/Dockerfile       # Bygger scrapern
-scraper/entrypoint.sh
-docker-compose.yml
-UNSUPPORTED_KOMMUNER.md # Kommuner som saknar stöd/känt register
-```
+Skript som behöver D1 använder `scraper/d1.py` (`D1Client`). Kanoniska miljövariabler är:
 
-Alla skript som pratar med D1 (`sync_*`, `fetch_*`, `backfill_*`, `export_d1`,
-`verify_emails`) går via `scraper/d1.py` (`D1Client`). Miljövariabler läses där:
-`CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN_POLITIKER` (alias
-`CLOUDFLARE_API_TOKEN`), `D1_DATABASE_UUID` (alias `D1_DATABASE_ID`).
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN_POLITIKER`
+- `D1_DATABASE_UUID`
+
+Bakåtkompatibla alias får endast finnas så länge de behövs av en faktiskt verifierad körmiljö. Lägg inte till nya alias för att maskera konfigurationsdrift.
 
 ## Datamodell
 
-Varje `scrape_*`-funktion returnerar en `set()` av `(namn, email, parti, roll)`-
-tupler (namn kan vara tom sträng om inget namn gick att extrahera). `main()`
-samlar detta per kommun/region i `alla_people` och skriver:
-- `.vcf` per region + `Alla_regioner.vcf` (mobilimport)
-- `Alla_kommuner_och_regioner.txt` — människoläsbar, svensk sortering (`swedish_key()`)
-- `Alla_kommuner_och_regioner.csv` — **maskinläsbar överföringsform**, det enda
-  format `sync_to_d1.py` läser (.txt:en parsas inte längre). Kolumnen `source`
-  är `pattern-guess` för adresser byggda från ett namnmönster (typ
-  `namnmonster`/`namnlista`), annars `scraped`.
-- `gissade_adresser.txt` — listar just de mönster-gissade adresserna för översyn.
+Varje källa ska normaliseras till minsta användbara mottagardata: namn, e-post, område/nivå, parti när det kan verifieras samt relevant organ-/sakområdeskoppling. Råa administrativa befattningar ska inte byggas upp till egna publika filter.
 
-## Publicerad data
+Scrapern skriver lokala arbetsfiler under `resultat/`. De används för granskning/import och är inte backup eller källa till sanning för produktion.
 
-`data/` innehåller den fullständiga kontaktdatabasen (csv/json/sql), genererad
-ur politikers live-D1 av `export/export_d1.py` och
-`../.github/workflows/export-politiker.yml` (veckovis, auto-mergad PR). Endast
-stabila fält exporteras (inga tidsstämplar) så diffarna inte brusar. VCF
-committas inte längre — scrapern producerar dem fortfarande lokalt.
+## Uppdateringsflöde
 
-## Lägga till kommuner/regioner
+`quarterly_refresh.sh` är den fulla kontaktuppdateringen. Den körs separat från Worker-deploy och ska inte ges rättigheter att ändra Cloudflare-resurser, Worker-konfiguration eller D1-schema.
 
-Lägg till en post i `scraper/regioner.json` med kommunens/regionens
-fullmäktigesida och rätt `"typ"` (`mailto`, `netpublicator`, `troman`,
-`w3d3`, `fmr`, `profilsidor`, `namnmonster`, `pdf`, `namnlista`) beroende på
-hur ledamotslistan är publicerad. `scraper.py` och `backfill_kommun_role_party.py`
-läser båda samma JSON-fil.
+## Konventioner
 
-## Conventions
-
-- Inga inloggningsuppgifter eller hemligheter hanteras — all data är redan
-  offentligt publicerad av kommunerna/regionerna själva
-- Skärp aldrig TLS-validering (`ignore_https_errors` etc.) i den committade
-  `scraper.py` — sådana workarounds hör endast hemma i lokala testkopior
-- Långa körningar (alla 273 poster) bör checkpointa namn+e-post per region,
-  inte bara skriva slutfilen efter att hela listan är klar
+- Committera aldrig hemligheter, tokens eller produktionsdatabassnapshots.
+- Föredra officiella källor och deterministisk normalisering.
+- En scraper ska inte börja provisionera infrastruktur för att lösa ett datafel.
+- Ändringar i D1-schema hör till repots migrationsflöde under `infra/`, inte till Python-skript här.
+- Långa körningar bör checkpointa lokalt per källa/region så de kan återupptas utan att skapa en andra produktionsdatabas.
+- TLS-validering får inte försvagas i committad kod.
