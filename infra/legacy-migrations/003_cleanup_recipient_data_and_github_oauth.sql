@@ -28,7 +28,6 @@ WHERE area_type IN ('kommun', 'region')
     OR LOWER(role) LIKE 'gode män%'
   );
 
--- Normalisera partier till den avsiktliga publika filterlistan.
 UPDATE politicians
 SET party = CASE LOWER(TRIM(party))
   WHEN 's' THEN 'S'
@@ -72,11 +71,9 @@ SET party = NULL
 WHERE party IS NOT NULL
   AND party NOT IN ('S','M','SD','V','C','L','KD','MP','FI','MED','AFS','ÖP','PP');
 
--- Detaljerade roller används inte längre i mottagarurvalet.
 UPDATE politicians SET role = NULL WHERE role IS NOT NULL;
 UPDATE politician_assignments SET role = '' WHERE role <> '';
 
--- Behåll bara kommun-/regionstyrelser och faktiska nämnder.
 DELETE FROM politician_assignments
 WHERE NOT (
   LOWER(TRIM(body)) IN ('kommunstyrelse', 'kommunstyrelsen', 'regionstyrelse', 'regionstyrelsen')
@@ -92,7 +89,6 @@ WHERE NOT (
   )
 );
 
--- Kanonisera styrelser och vanliga singularformer.
 INSERT OR IGNORE INTO politician_assignments
   (politician_id, area_name, body, role, source, last_scraped_at)
 SELECT politician_id, area_name, 'Kommunstyrelsen', role, source, last_scraped_at

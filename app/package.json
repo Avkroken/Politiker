@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --remote",
+    "dev": "wrangler dev",
     "types": "wrangler types",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "typecheck": "wrangler types && tsc --noEmit",
-    "validate": "npm test && node --test ../scripts/verify-production.test.mjs && node --check public/app.js && node --check public/app-send.js && node --check public/letter-import.js && node --check public/letter-editor.js && node --check public/active-letter-import.js && node --check public/app-settings.js && node --check public/app-admin.js && wrangler types && tsc --noEmit && wrangler deploy --dry-run",
+    "validate": "npm test && node --test ../scripts/verify-production.test.mjs && node --check public/app.js && node --check public/app-send.js && node --check public/letter-import.js && node --check public/letter-editor.js && node --check public/active-letter-import.js && node --check public/app-settings.js && node --check public/app-admin.js && bash -n ../infra/migrate-d1-native.sh && wrangler d1 migrations apply politiker-eu --local && wrangler types && tsc --noEmit && wrangler deploy --dry-run",
     "deploy": "wrangler deploy --strict --outdir dist",
-    "migrate:production": "bash ../infra/apply-migrations.sh",
+    "migrate:production": "bash ../infra/migrate-d1-native.sh",
     "verify:production": "node ../scripts/verify-production.mjs",
     "versions:upload": "wrangler versions upload --outdir dist",
     "secret:set-mail-key": "wrangler secret put MAIL_CRED_KEY"

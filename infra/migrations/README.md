@@ -1,7 +1,12 @@
 # D1-migrationer
 
-`infra/schema.sql` är den aktuella baslinjen efter squaschen 2026-08-22.
+`infra/migrations/` är den kanoniska migrationskedjan för `politiker-eu` och hanteras av Wranglers native D1 migrationssystem.
 
-Lägg framtida schemaändringar här som nya numrerade `.sql`-filer. Deploy kör endast filer som inte redan finns i D1-tabellen `schema_migrations`.
+- `0000_current_baseline.sql` skapar en ny databas i aktuellt schema.
+- Senare schemaändringar läggs som nya, sekventiella `.sql`-filer här.
+- Produktionsdeploy kör `wrangler d1 migrations apply politiker-eu --remote` före Worker-deploy.
+- Wrangler lagrar applicerat state i `d1_migrations`; skapa ingen parallell migrationsstate-tabell.
 
-Gamla migrationer före baslinjen är avsiktligt borttagna; deras slutliga schema är inbakat i `infra/schema.sql`.
+För den befintliga produktionsdatabasen finns en engångsbrygga i `infra/migrate-d1-native.sh`. Den kör den isolerade historiska kedjan under `infra/legacy-migrations/`, verifierar slutstrukturen, baselinar `d1_migrations` och lämnar därefter över all migrationshantering till Wrangler. Bryggan ska tas bort när den första verifierade native produktionsdeployen har lyckats.
+
+Nya installationer ska aldrig använda `infra/schema.sql` eller legacy-kedjan; de bootstrapas helt från native migrationerna.

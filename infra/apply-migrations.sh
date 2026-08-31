@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Applicera endast migrationer som tillkommit efter den squashade baslinjen.
-# Nya installationer skapas från infra/schema.sql; befintliga installationer
-# behåller sitt schema och får bara nya filer i infra/migrations/.
+# Transitional compatibility migrator used only by migrate-d1-native.sh while
+# an existing production database still uses schema_migrations. New databases
+# and all future schema changes use Wrangler's native D1 migrations.
 
 set -euo pipefail
 
@@ -15,16 +15,15 @@ $WR d1 execute "$DB_NAME" --remote --yes --command \
   "CREATE TABLE IF NOT EXISTS schema_migrations (filename TEXT PRIMARY KEY, applied_at INTEGER NOT NULL)" >/dev/null
 
 shopt -s nullglob
-migrations=("$REPO_DIR"/infra/migrations/*.sql)
+migrations=("$REPO_DIR"/infra/legacy-migrations/*.sql)
 
 if [ ${#migrations[@]} -eq 0 ]; then
-  echo "Inga nya databasmigrationer."
-  exit 0
+  echo "FEL: legacy migrations saknas under infra/legacy-migrations" >&2
+  exit 1
 fi
 
 for migration in "${migrations[@]}"; do
   filename=$(basename "$migration")
-
   if $WR d1 execute "$DB_NAME" --remote --yes --command \
     "SELECT 'MIGRATION_APPLIED' FROM schema_migrations WHERE filename = '$filename'" 2>/dev/null \
     | grep -Fq "MIGRATION_APPLIED"; then
@@ -34,5 +33,5 @@ for migration in "${migrations[@]}"; do
   $WR d1 execute "$DB_NAME" --remote --yes --file "$migration" >/dev/null
   $WR d1 execute "$DB_NAME" --remote --yes --command \
     "INSERT INTO schema_migrations (filename, applied_at) VALUES ('$filename', $(date +%s))" >/dev/null
-  echo "Applicerat $filename"
+  echo "Applicerat legacy $filename"
 done

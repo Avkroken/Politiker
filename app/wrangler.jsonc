@@ -9,7 +9,13 @@
   "upload_source_maps": true,
   "assets": {"directory":"./public","not_found_handling":"single-page-application","binding":"ASSETS","run_worker_first":["/api/*"]},
   "routes": [{ "pattern": "politiker.denied.se", "custom_domain": true }],
-  "d1_databases": [{ "binding": "DB", "database_name": "politiker-eu", "database_id": "78777055-bf37-4388-86ad-69bdf782e2cd" }],
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "politiker-eu",
+    "database_id": "78777055-bf37-4388-86ad-69bdf782e2cd",
+    "migrations_table": "d1_migrations",
+    "migrations_dir": "../infra/migrations"
+  }],
   "kv_namespaces": [{ "binding": "SESSIONS", "id": "23255cc6e67a4a19b19e5ea67a676b40" }],
   "queues": {"producers":[{"queue":"politiker-send-jobs","binding":"SEND_QUEUE"}],"consumers":[{"queue":"politiker-send-jobs","max_batch_size":10,"max_retries":10,"dead_letter_queue":"politiker-send-jobs-dlq"}]},
   "durable_objects": { "bindings": [{ "name": "RATE_LIMITER", "class_name": "CredentialRateLimiter" }] },
@@ -17,6 +23,7 @@
   "triggers": { "crons": ["* * * * *"] },
   "r2_buckets": [{ "binding": "ATTACHMENTS", "bucket_name": "politiker-attachments" }],
   "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@denied.se"] }],
+  "secrets": { "required": ["MAIL_CRED_KEY", "SYSTEM_SMTP_PASSWORD"] },
   "vars": {
     "SYSTEM_SMTP_HOST":"smtp.mail.me.com","SYSTEM_SMTP_PORT":"587","SYSTEM_SMTP_USER":"nils.anders.eriksson@icloud.com","SYSTEM_FROM_ADDRESS":"noreply@denied.se","FEEDBACK_NOTIFY_EMAIL":"politiker@denied.se","OAUTH_GOOGLE_CLIENT_ID":"1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com","OAUTH_MICROSOFT_CLIENT_ID":"dd6d7bb1-3a2d-46ad-8d4f-12fe09691414"
   }
