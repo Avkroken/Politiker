@@ -5,6 +5,10 @@
 inheritance: true
 
 reviews:
+  # Använd den legacy commit-status som live-rulesetet kan kräva deterministiskt.
+  # CodeRabbits dokumentation säger att commit_status bara används när
+  # review_progress är avstängt.
+  review_progress: false
   # CodeRabbit sätter statusen till pending under review och success när reviewn
   # är klar. Live-rulesetet ska kräva contexten `CodeRabbit`.
   commit_status: true
