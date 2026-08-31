@@ -52,23 +52,25 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, review-stat
 
 - `.github/workflows/ci.yml` producerar required contexts `typecheck` och `python`.
 - Required `typecheck` blockerar alla PR:er som fortfarande innehåller `.github/codex-dispatch/issue-*.md`; en remediation-seed får aldrig nå `main`.
-- Required `typecheck` ska validera både `app` och `log-archive`: appens fulla `npm run validate` samt Wrangler dry-run av tail-konsumenten.
+- Required `typecheck` ska validera både `app` och `log-archive`: appens fulla `npm run validate` samt Wrangler dry-run av tail-konsumenten. CI ska inte innehålla produktionsdeploylogik.
 - `.github/workflows/osv-scanner.yml` och `.github/workflows/docker.yml` är kompletterande säkerhetsverifiering och är inte required contexts i nuvarande ruleset.
 - `.github/workflows/codex-issue-remediation.yml` skapar en körningsunik remediation-branch, öppnar PR och armerar auto-merge direkt.
 - `.github/workflows/auto-fix-review.yml` får begära Codex-fix för uttryckligen betrodd review-feedback men får inte lösa review-tråden åt implementationen.
 - Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Actions ska inte deploya produktion.
-- `app` och `log-archive` ska använda `npm run deploy:production` som Workers Builds deploy command.
-- `scripts/deploy-production.mjs` failar stängt på fel Workers Builds-branch eller ogiltig build-SHA, deployar med `wrangler deploy --strict` och märker deploymenten med Git-SHA.
-- App-Workern är ensam D1-migrationsägare och ska köra `infra/apply-migrations.sh` före production deploy. `log-archive` använder inte D1 och får inte köra dessa migrationer.
-- Efter app-deploy måste huvuddomänen svara HTTP 200. `log-archive` är bara tail-konsument och ska inte exponeras publikt för health-check.
-- Workers Builds watch paths ska omfatta respektive Worker-root och `scripts/**`; appen ska dessutom bevaka relevant `shared/**` och `infra/migrations/**`.
+- Båda produktions-Workers ska ha production branch `main`, tomt build command och avstängda non-production branch builds.
+- `app` ska använda deploy command `npm run migrate:production && npm run deploy && npm run verify:production`.
+- `log-archive` ska använda deploy command `npm run deploy`.
+- Appens `deploy` ska vara direkt `wrangler deploy --strict --outdir dist`; `log-archive` ska använda direkt `wrangler deploy --strict`. Skapa inte repo-lokala Worker-deploywrappers för branchkontroll, Git-SHA-metadata eller annan kontrollplanslogik som Workers Builds redan äger.
+- App-Workern är ensam D1-migrationsägare. `migrate:production` kör den befintliga idempotenta `infra/apply-migrations.sh` före Worker-deploy. Den mekanismen är ett avsiktligt legacy-undantag och får inte ersättas med en annan migrationsmotor utan en explicit plan för befintligt migrationsstate. `log-archive` använder inte D1 och får inte köra migrationerna.
+- `scripts/verify-production.mjs` får endast verifiera att appens huvuddomän svarar HTTP 200 efter deploy. `log-archive` är bara tail-konsument och ska inte exponeras publikt för health-check.
+- Workers Builds watch paths ska vara `app/**`, `shared/**`, `infra/migrations/**`, `infra/apply-migrations.sh` och `scripts/verify-production.mjs` för appen; `log-archive/**` för tail-konsumenten.
 - `wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers och övrig versionshanterad Worker-konfiguration.
 
 ## Verifiering
 
 Granska hela diffen mot `main` före PR. Kör eller verifiera relevanta tester, typecheck, Python-CI och säkerhetsjobb efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer har lagts till.
 
-När ändringen påverkar Cloudflare runtime, bindings, secrets, routes, queues eller annan live-konfiguration ska den deployade konfigurationen verifieras efter ändringen.
+När ändringen påverkar Cloudflare runtime, bindings, secrets, routes, queues eller annan live-konfiguration ska den deployade konfigurationen verifieras efter ändringen. För appändringar innebär det normalt en grön Workers Builds-run på den mergade `main`-SHA:n där migration, strict deploy och produktionsverifiering har passerat.
 
 ## Svarsformat
 
