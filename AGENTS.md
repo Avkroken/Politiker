@@ -32,16 +32,15 @@ För `main` gäller:
 - required status check: `CI / required`
 - required status check: `docker`
 - required status check: `scan-pr / osv-scan`
-- required status check: `CodeRabbit`; statusen ska produceras för PR:ns aktuella HEAD
 - required status checks körs strikt mot aktuell `main`; en inaktuell PR-head får inte mergeas
 - Code Scanning merge protection kräver färdig CodeQL-analys och blockerar nya CodeQL-säkerhetsfynd från medium och uppåt samt relevanta error/warning-fynd
 - Code Scanning merge protection kräver färdig Trivy-analys och blockerar nya high/critical-fynd; lägre basimagefynd rapporteras men är inte mergeblockerande
 - olösta review-trådar blockerar merge
-- 0 mänskliga approvals krävs; review-enforcement sker via explicita bot-/analysgates i stället för ett generellt approval-krav
+- 0 mänskliga approvals krävs; review-enforcement sker via explicita CI-/security-gates och lösta review-trådar i stället för ett generellt approval-krav
 - Copilot Code Review är rådgivande och ska ha `review_on_push` aktiverat så varje ny push kan granskas; Copilot är inte en mergegate
 - squash är enda tillåtna merge-metod
 
-CodeRabbit använder repositorykonfigurationen i `.coderabbit.yaml` med inheritance från organisationen. `review_progress` ska vara avstängt så den legacy statuscontext som rulesetet kräver används deterministiskt; `commit_status` och `fail_commit_status` ska vara aktiva, incremental review ska köras efter varje push och automatisk paus ska vara avstängd. Rulesetet kräver statuscontexten `CodeRabbit` för den commit som faktiskt ska mergas. Pending, failure eller saknad status blockerar merge. I PR #372 observerades på en äldre HEAD `success` med beskrivningen `Review rate limited`; den observationen är skälet till att `fail_commit_status` måste vara aktiv så en review som inte kan slutföras inte får se godkänd ut. En walkthrough-kommentar eller review av en äldre HEAD är inte mergebevis.
+CodeRabbit använder repositorykonfigurationen i `.coderabbit.yaml` med inheritance från organisationen. `review_progress` ska vara avstängt så den legacy statuscontext som används för observation publiceras deterministiskt; `commit_status` och `fail_commit_status` ska vara aktiva, incremental review ska köras efter varje push och automatisk paus ska vara avstängd. CodeRabbit är best effort och dess statuscontext är inte required i rulesetet: pending, failure, rate limit eller saknad status får därför inte ensamt blockera merge. Om CodeRabbit faktiskt lämnar review-kommentarer eller trådar ska de däremot läsas och utvärderas som annan review-feedback, och olösta trådar blockerar genom repositoryts generella thread-resolution-regel. I PR #372 observerades på en äldre HEAD `success` med beskrivningen `Review rate limited`; `fail_commit_status` ska därför vara aktiv så ett sådant läge rapporteras sanningsenligt som fel i stället för falskt success, utan att göra tjänstens tillgänglighet till ett mergekrav.
 
 Alla review-kommentarer och trådar ska läsas och utvärderas. Relevanta findings åtgärdas i samma PR. En tråd markeras resolved först när eventuell nödvändig fix är pushad och verifierad.
 
