@@ -3,8 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { normalizeImportedContacts, normalizePrivateContactInput } from '../src/private-contacts.ts';
-import { parseIncludedRecipient } from '../src/db.ts';
+import { normalizeImportedContacts, normalizePrivateContactInput, parseIncludedRecipient } from '../src/recipient-address.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -16,7 +15,7 @@ test('private contacts normalize email and sanitize display names', () => {
   assert.throws(() => normalizePrivateContactInput({ email: 'inte-en-adress' }), /Ogiltig e-postadress/);
 });
 
-test('private contact imports are account-list safe inputs and deduplicate emails', () => {
+test('private contact imports deduplicate case-insensitive addresses', () => {
   assert.deepEqual(
     normalizeImportedContacts([
       { email: 'ANNA@example.se' },
