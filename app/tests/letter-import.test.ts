@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import "../public/letter-import.js";
 
 type LetterImportTools = {
@@ -43,4 +44,12 @@ test("replacement characters are rejected instead of silently imported", () => {
 test("common UTF-8 mojibake is rejected", () => {
   const input = new TextEncoder().encode("dÃ¥ har systemet");
   assert.throws(() => tools.decodeTextBytes(input), /felkodad/);
+});
+
+test("HTML sanitizer does not return parsed untrusted markup through innerHTML", async () => {
+  const source = await readFile(new URL("../public/letter-import.js", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /return\s+parsed\.body\.innerHTML\b/);
+  assert.match(source, /SAFE_TAGS\.has\(tag\)/);
+  assert.match(source, /map\(serializeSafeNode\)\.join\(''\)/);
+  assert.match(source, /escapeHtmlAttribute\(href\)/);
 });
