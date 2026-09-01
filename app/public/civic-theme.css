@@ -799,6 +799,9 @@ summary:focus-visible{
   .settings-nav{display:flex;overflow-x:auto}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
 
+  /* The overall recipient counter below this section already shows the selection total. */
+  #private-recipients>.notice>strong{display:none}
+
   .auth-scene{min-height:330px;background-position:58% center}
   .auth-scene__inner{padding:52px 0}
   .auth-scene h1{font-size:clamp(2.8rem,14vw,4.2rem)}
