@@ -33,3 +33,10 @@ test('send payload deduplicates public and private recipients case-insensitively
   assert.equal(payload.includeEmails.length, 1);
   assert.equal(payload.includeEmails[0], 'Offentlig mottagare <mixed@example.se>');
 });
+
+test('contact import parser ignores semicolons inside quoted fields', () => {
+  const context: Record<string, unknown> = {};
+  runInNewContext(source, context);
+  const parsed = (context.parseContactText as (text: string) => Array<{ email: string; name: string }>)('"Doe; Jane",jane@example.se');
+  assert.deepEqual(JSON.parse(JSON.stringify(parsed)), [{ email: 'jane@example.se', name: 'Doe; Jane' }]);
+});

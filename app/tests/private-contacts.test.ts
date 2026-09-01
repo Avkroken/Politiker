@@ -35,6 +35,12 @@ test('explicit recipients support both raw addresses and display names', () => {
   assert.equal(parseIncludedRecipient('not-an-email'), null);
 });
 
+test('too long email addresses are rejected instead of truncated', () => {
+  const tooLongEmail = `${'a'.repeat(250)}@e.se`;
+  assert.throws(() => normalizePrivateContactInput({ email: tooLongEmail }), /Ogiltig e-postadress/);
+  assert.equal(parseIncludedRecipient(tooLongEmail), null);
+});
+
 test('private contact schema enforces account ownership on lists, contacts, and membership', () => {
   const migration = readFileSync(join(here, '..', '..', 'infra', 'migrations', '0002_account_private_contacts.sql'), 'utf8');
   assert.match(migration, /account_contact_lists[\s\S]*account_id TEXT NOT NULL REFERENCES accounts\(id\)/);

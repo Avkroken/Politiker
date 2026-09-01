@@ -41,5 +41,4 @@ CREATE TABLE account_contact_list_members (
   FOREIGN KEY(list_id, account_id) REFERENCES account_contact_lists(id, account_id) ON DELETE CASCADE,
   FOREIGN KEY(contact_id, account_id) REFERENCES account_contacts(id, account_id) ON DELETE CASCADE
 );
-CREATE INDEX idx_account_contact_members_list ON account_contact_list_members(account_id, list_id);
 CREATE INDEX idx_account_contact_members_contact ON account_contact_list_members(account_id, contact_id);

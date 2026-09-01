@@ -147,12 +147,16 @@ export async function getRecipientsForAreas(db:D1Database,areaNames:string[],exc
   }
   if(includeEmails.length){
     if(includeEmails.length>10000)throw new Error(`För många explicita mottagare: ${includeEmails.length} (max 10 000)`);
-    const requested=includeEmails.map(parseIncludedRecipient).filter((r):r is {email:string;name:string}=>r!==null),requestedByEmail=new Map(requested.map(r=>[r.email,r]));
-    if(requested.length){
+    const requestedByEmail=new Map<string,{email:string;name:string}>();
+    for(const parsed of includeEmails.map(parseIncludedRecipient).filter((r):r is {email:string;name:string}=>r!==null)){
+      const existing=requestedByEmail.get(parsed.email);
+      if(!existing||(!existing.name&&parsed.name))requestedByEmail.set(parsed.email,parsed);
+    }
+    if(requestedByEmail.size){
       const{results}=await db.prepare(`SELECT name,email,area_name,verification_status FROM politicians WHERE lower(trim(email)) IN (SELECT lower(value) FROM json_each(?))`).bind(JSON.stringify([...requestedByEmail.keys()])).all<{name:string;email:string;area_name:string;verification_status:string|null}>();
       const deadEmails=new Set<string>();
       for(const r of results){const key=r.email.trim().toLocaleLowerCase("sv-SE");if(r.verification_status==='dead'||r.verification_status==='dead_via_send')deadEmails.add(key);else byEmail.set(key,{name:r.name,email:r.email.trim(),area_name:r.area_name});}
-      for(const r of requested)if(!byEmail.has(r.email)&&!deadEmails.has(r.email))byEmail.set(r.email,{name:r.name||r.email,email:r.email,area_name:"Egen mottagare"});
+      for(const r of requestedByEmail.values())if(!byEmail.has(r.email)&&!deadEmails.has(r.email))byEmail.set(r.email,{name:r.name||r.email,email:r.email,area_name:"Egen mottagare"});
     }
   }
   for(const e of excludeEmails)byEmail.delete(e.trim().toLocaleLowerCase("sv-SE"));return[...byEmail.values()];

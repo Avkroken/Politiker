@@ -10,10 +10,13 @@ export interface RecipientAddressInput {
 function cleanText(value: unknown, maxLength: number): string {
   return String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, maxLength);
 }
+function cleanEmail(value: unknown): string {
+  return String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().toLocaleLowerCase("sv-SE");
+}
 
 export function normalizePrivateContactInput(input: RecipientAddressInput): { email: string; name: string } {
-  const email = cleanText(input?.email, 254).toLocaleLowerCase("sv-SE");
-  if (!email || !EMAIL_RE.test(email)) throw new Error("Ogiltig e-postadress");
+  const email = cleanEmail(input?.email);
+  if (!email || email.length > 254 || !EMAIL_RE.test(email)) throw new Error("Ogiltig e-postadress");
   return { email, name: cleanText(input?.name, MAX_NAME_LENGTH) };
 }
 
@@ -33,8 +36,8 @@ export function parseIncludedRecipient(value: string): { email: string; name: st
   const raw = String(value ?? "").trim();
   if (!raw) return null;
   const display = raw.match(/^(.*?)\s*<([^<>]+)>$/);
-  const email = cleanText(display ? display[2] : raw, 254).toLocaleLowerCase("sv-SE");
-  if (!EMAIL_RE.test(email)) return null;
+  const email = cleanEmail(display ? display[2] : raw);
+  if (email.length > 254 || !EMAIL_RE.test(email)) return null;
   const name = display ? cleanText(display[1].replace(/[<>]/g, " "), MAX_NAME_LENGTH) : "";
   return { email, name };
 }
