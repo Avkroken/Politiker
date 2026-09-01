@@ -7,7 +7,6 @@ CREATE TABLE account_contact_lists (
   UNIQUE(account_id, name),
   UNIQUE(id, account_id)
 );
-CREATE INDEX idx_account_contact_lists_account ON account_contact_lists(account_id, name);
 
 CREATE TABLE account_contacts (
   id TEXT PRIMARY KEY,
@@ -19,7 +18,6 @@ CREATE TABLE account_contacts (
   UNIQUE(account_id, email),
   UNIQUE(id, account_id)
 );
-CREATE INDEX idx_account_contacts_account ON account_contacts(account_id, email);
 
 CREATE TRIGGER account_contacts_cap_insert
 BEFORE INSERT ON account_contacts

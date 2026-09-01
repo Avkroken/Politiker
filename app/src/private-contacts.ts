@@ -108,7 +108,7 @@ export async function importPrivateContactList(
       JOIN account_contacts c ON c.account_id = l.account_id
       WHERE l.account_id = ?
         AND l.name = ? COLLATE NOCASE
-        AND lower(c.email) IN (SELECT lower(value) FROM json_each(?))
+        AND c.email IN (SELECT value FROM json_each(?))
     `).bind(accountId, now, accountId, listName, JSON.stringify(emails)));
   }
 
