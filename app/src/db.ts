@@ -27,6 +27,9 @@ export async function deleteAccount(env: Env, accountId: string): Promise<void> 
     env.DB.prepare("DELETE FROM letter_attachments WHERE letter_id IN (SELECT id FROM letters WHERE account_id = ?)").bind(accountId),
     env.DB.prepare("DELETE FROM send_log WHERE account_id = ?").bind(accountId), env.DB.prepare("DELETE FROM send_jobs WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM letters WHERE account_id = ?").bind(accountId), env.DB.prepare("DELETE FROM mail_credentials WHERE account_id = ?").bind(accountId),
+    env.DB.prepare("DELETE FROM account_contact_list_members WHERE account_id = ?").bind(accountId),
+    env.DB.prepare("DELETE FROM account_contact_lists WHERE account_id = ?").bind(accountId),
+    env.DB.prepare("DELETE FROM account_contacts WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM oauth_identities WHERE account_id = ?").bind(accountId), env.DB.prepare("DELETE FROM api_keys WHERE account_id = ?").bind(accountId),
     env.DB.prepare("UPDATE feedback SET account_id = NULL WHERE account_id = ?").bind(accountId), env.DB.prepare("UPDATE worker_errors SET account_id = NULL WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM accounts WHERE id = ?").bind(accountId),
@@ -85,6 +88,7 @@ const MEDIA_TERMS:Record<string,string[]>={
   "nyhetsredaktion":["nyhetsredaktion","redaktionsledning"],
 };
 const GENERIC_MEDIA_LOCALS=new Set(["tips","tipsa","redaktionen"]);
+const INCLUDED_EMAIL_RE=/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 function policySql(keys:string[]):{sql:string;params:string[]}{
   const terms=[...new Set(keys.flatMap(k=>POLICY_TERMS[k]??[]))]; if(!terms.length)return{sql:"0",params:[]};
   return{sql:`(${terms.map(()=>"LOWER(a.body) LIKE ?").join(" OR ")})`,params:terms.map(t=>`%${t}%`)};
@@ -94,6 +98,12 @@ function mediaCategoryMatch(role:string|null,email:string,keys:string[]):boolean
   if(GENERIC_MEDIA_LOCALS.has(local))return false;
   const hay=(role??"").toLocaleLowerCase("sv-SE");
   return keys.some(key=>(MEDIA_TERMS[key]??[]).some(term=>hay.includes(term)));
+}
+export function parseIncludedRecipient(value:string):{email:string;name:string}|null{
+  const raw=String(value??"").trim();if(!raw)return null;
+  const display=raw.match(/^(.*?)\s*<([^<>]+)>$/);let email=display?display[2].trim():raw,name=display?display[1].trim():"";
+  email=email.toLocaleLowerCase("sv-SE");if(email.length>254||!INCLUDED_EMAIL_RE.test(email))return null;
+  name=name.replace(/[\u0000-\u001f\u007f<>]/g," ").trim().slice(0,160);return{email,name};
 }
 
 export async function getRecipientsForAreas(db:D1Database,areaNames:string[],excludeParties:string[]=[],excludeEmails:string[]=[],includeRoles:string[]=[],includeEmails:string[]=[]){
@@ -141,7 +151,10 @@ export async function getRecipientsForAreas(db:D1Database,areaNames:string[],exc
     const allowed=new Set(mediaRows.filter(r=>mediaCategoryMatch(r.role,r.email,mediaKeys)).map(r=>r.email.trim().toLocaleLowerCase("sv-SE")));
     for(const r of mediaRows){const key=r.email.trim().toLocaleLowerCase("sv-SE");if(!allowed.has(key))byEmail.delete(key);}
   }
-  if(includeEmails.length){const{results}=await db.prepare(`SELECT name,email,area_name FROM politicians WHERE email IN (SELECT value FROM json_each(?)) AND (verification_status IS NULL OR verification_status NOT IN ('dead','dead_via_send'))`).bind(JSON.stringify(includeEmails)).all<{name:string;email:string;area_name:string}>();for(const r of results)byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"),{...r,email:r.email.trim()});}
+  if(includeEmails.length){
+    const requested=includeEmails.slice(0,10000).map(parseIncludedRecipient).filter((r):r is {email:string;name:string}=>r!==null),requestedByEmail=new Map(requested.map(r=>[r.email,r]));
+    if(requested.length){const{results}=await db.prepare(`SELECT name,email,area_name FROM politicians WHERE lower(trim(email)) IN (SELECT lower(value) FROM json_each(?)) AND (verification_status IS NULL OR verification_status NOT IN ('dead','dead_via_send'))`).bind(JSON.stringify([...requestedByEmail.keys()])).all<{name:string;email:string;area_name:string}>();for(const r of results)byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"),{...r,email:r.email.trim()});for(const r of requested)if(!byEmail.has(r.email))byEmail.set(r.email,{name:r.name||r.email,email:r.email,area_name:"Egen mottagare"});}
+  }
   for(const e of excludeEmails)byEmail.delete(e.trim().toLocaleLowerCase("sv-SE"));return[...byEmail.values()];
 }
 
