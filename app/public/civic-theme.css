@@ -34,7 +34,7 @@
   --danger:#f07983;
   --success:#63c89a;
   --warning:#fecc02;
-  --font:"Source Sans 3 Variable","Source Sans 3",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font:"Source Sans 3 Variable","Source Sans 3",system-ui,-apple-system,blinkmacsystemfont,"Segoe UI",sans-serif;
   --r-sm:4px;
   --r-md:5px;
   --r-lg:5px;
@@ -56,7 +56,7 @@ body{
   font-family:var(--font);
   font-size:16px;
   font-synthesis:none;
-  text-rendering:optimizeLegibility;
+  text-rendering:optimizelegibility;
   -webkit-font-smoothing:antialiased;
 }
 
