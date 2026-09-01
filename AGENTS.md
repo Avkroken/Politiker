@@ -37,6 +37,17 @@ Live-konfigurationen är sanningskällan. För `main` gäller bland annat:
 
 Efter varje ny commit ska relevant CI, security och review-status kontrolleras igen. Kringgå aldrig repositoryskydd.
 
+## CodeRabbit
+
+- Anta aldrig att CodeRabbit är rate-limitad enbart för att en review dröjer eller saknas.
+- Kontrollera aktuell reviewkvot med PR-kommandot `@coderabbitai rate limit` innan rate limit anges som blockerare. `@coderabbitai reviews remaining?` kan användas som alternativ. Själva kvotkontrollen ska inte räknas som en review.
+- Använd `@coderabbitai review` för en ny review och `@coderabbitai full review` när en fullständig omgranskning uttryckligen behövs. Undvik onödiga manuella review-triggers eftersom incremental reviews och manuella reviews förbrukar reviewkvot.
+- `@coderabbitai configuration` används för att kontrollera den faktiskt upplösta konfigurationen när arv eller UI-inställningar gör den effektiva konfigurationen oklar.
+- För delad organisationspolicy ska central CodeRabbit-konfiguration i `Avkroken/coderabbit/.coderabbit.yaml` föredras när den finns. Repositoryts `.coderabbit.yaml` ska behålla `inheritance: true` och i första hand innehålla repo-specifika tillägg eller undantag.
+- CodeRabbit Global Overrides används endast för organisationskrav som inte ska kunna kringgås av repositorykonfiguration.
+- Vid felsökning ska effektiv konfiguration och live-resultat vägas högre än antaganden om vad `.coderabbit.yaml` ensam innebär.
+- En CodeRabbit-review är rådgivande tills GitHub faktiskt visar vilket review-beslut och vilka trådar som lämnats på aktuell HEAD. Läs alltid aktuella CodeRabbit-trådar efter att CI blivit grön innan PR:n betraktas som klar.
+
 ## Cloudflare-kontrollplan
 
 - `app/wrangler.jsonc` är source of truth för versionshanterad Worker-konfiguration.
