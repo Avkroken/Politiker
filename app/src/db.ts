@@ -99,6 +99,18 @@ function mediaCategoryMatch(role:string|null,email:string,keys:string[]):boolean
   const hay=(role??"").toLocaleLowerCase("sv-SE");
   return keys.some(key=>(MEDIA_TERMS[key]??[]).some(term=>hay.includes(term)));
 }
+const MAX_EXPLICIT_EMAIL_BIND_BYTES=1_500_000;
+function explicitEmailJsonChunks(values:string[]):string[]{
+  const encoder=new TextEncoder(),chunks:string[]=[],current:string[]=[];
+  let bytes=2;
+  for(const value of values){
+    const valueBytes=encoder.encode(JSON.stringify(value)).byteLength,additional=valueBytes+(current.length?1:0);
+    if(current.length&&bytes+additional>MAX_EXPLICIT_EMAIL_BIND_BYTES){chunks.push(JSON.stringify(current));current.length=0;bytes=2;}
+    const commaBytes=current.length?1:0;current.push(value);bytes+=valueBytes+commaBytes;
+  }
+  if(current.length)chunks.push(JSON.stringify(current));
+  return chunks;
+}
 
 export async function getRecipientsForAreas(db:D1Database,areaNames:string[],excludeParties:string[]=[],excludeEmails:string[]=[],includeRoles:string[]=[],includeEmails:string[]=[]){
   const policyKeys=includeRoles.filter(k=>k.startsWith(POLICY_PREFIX)).map(k=>k.slice(POLICY_PREFIX.length));
@@ -153,9 +165,11 @@ export async function getRecipientsForAreas(db:D1Database,areaNames:string[],exc
       if(!existing||(!existing.name&&parsed.name))requestedByEmail.set(parsed.email,parsed);
     }
     if(requestedByEmail.size){
-      const{results}=await db.prepare(`SELECT name,email,area_name,verification_status FROM politicians WHERE lower(trim(email)) IN (SELECT lower(value) FROM json_each(?))`).bind(JSON.stringify([...requestedByEmail.keys()])).all<{name:string;email:string;area_name:string;verification_status:string|null}>();
       const deadEmails=new Set<string>();
-      for(const r of results){const key=r.email.trim().toLocaleLowerCase("sv-SE");if(r.verification_status==='dead'||r.verification_status==='dead_via_send')deadEmails.add(key);else byEmail.set(key,{name:r.name,email:r.email.trim(),area_name:r.area_name});}
+      for(const emailJson of explicitEmailJsonChunks([...requestedByEmail.keys()])){
+        const{results}=await db.prepare(`SELECT name,email,area_name,verification_status FROM politicians WHERE lower(trim(email)) IN (SELECT lower(value) FROM json_each(?))`).bind(emailJson).all<{name:string;email:string;area_name:string;verification_status:string|null}>();
+        for(const r of results){const key=r.email.trim().toLocaleLowerCase("sv-SE");if(r.verification_status==='dead'||r.verification_status==='dead_via_send')deadEmails.add(key);else byEmail.set(key,{name:r.name,email:r.email.trim(),area_name:r.area_name});}
+      }
       for(const r of requestedByEmail.values())if(!byEmail.has(r.email)&&!deadEmails.has(r.email))byEmail.set(r.email,{name:r.name||r.email,email:r.email,area_name:"Egen mottagare"});
     }
   }
