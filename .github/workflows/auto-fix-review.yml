@@ -9,8 +9,8 @@ name: Auto-fix trusted review feedback
 # kommaseparerad lista med ytterligare betrodda bot-login.
 #
 # Identitet: en kommentar skriven av github-actions[bot] via GITHUB_TOKEN
-# plockas inte alltid upp av andra botar. Konfigurera därför samma App-identitet
-# som security-alert-snapshot använder:
+# plockas inte alltid upp av andra botar. Konfigurera därför den betrodda
+# Gamnacken App-identiteten som används för repositoryautomation:
 #   repository variable GAMNACKEN_ID
 #   repository secret   GAMNACKEN_PEMKEY
 
