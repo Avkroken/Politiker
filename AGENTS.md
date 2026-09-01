@@ -48,6 +48,16 @@ Efter varje ny commit ska relevant CI, security och review-status kontrolleras i
 - Vid felsökning ska effektiv konfiguration och live-resultat vägas högre än antaganden om vad `.coderabbit.yaml` ensam innebär.
 - En CodeRabbit-review är rådgivande tills GitHub faktiskt visar vilket review-beslut och vilka trådar som lämnats på aktuell HEAD. Läs alltid aktuella CodeRabbit-trådar efter att CI blivit grön innan PR:n betraktas som klar.
 
+## GitHub-native säkerhetsremediation
+
+- GitHubs native säkerhetsfunktioner ska föredras framför repositoryägda workflows eller botkedjor som duplicerar samma funktion.
+- Code Scanning-alerts får spåras genom GitHubs native länkning till nya eller befintliga Issues. Bygg inte ett eget alert→Issue-system enbart för att spegla Code Scanning-data.
+- Copilot Autofix och, när tillgängligt, agentic autofix får användas för Code Scanning-alerts. En PR som skapas av GitHub/Copilot går alltid genom samma branch protection, CI, security, approval och review-thread-gates som andra PR:er.
+- Dependabot security updates och Dependabot auto-triage rules är förstahandsvalet för sårbara beroenden. Undvik egna workflows som pollar Dependabot-alerts eller skapar motsvarande fix-PR:er.
+- Repositoryägda workflows får inte lagra kopior av säkerhetsalert-state, poll:a GitHubs säkerhets-API för att skapa egna remediationköer eller använda reviewkommentarer som en egen AI-agentorkestrering.
+- Metadataautomation för befintliga Issues/PR:er, till exempel assignee eller labels, är tillåten med minsta nödvändiga behörighet så länge den inte ändrar kod, branches, reviewbeslut eller merge-state.
+- Om en hemmasnickrad automation duplicerar en GitHub-native funktion ska den avvecklas. Undantag kräver ett konkret, dokumenterat gap som GitHubs native funktion inte täcker.
+
 ## Cloudflare-kontrollplan
 
 - `app/wrangler.jsonc` är source of truth för versionshanterad Worker-konfiguration.
@@ -70,7 +80,7 @@ Efter varje ny commit ska relevant CI, security och review-status kontrolleras i
 - `.github/workflows/docker.yml` producerar `docker`, bygger `kontakter/scraper` och laddar upp Trivy-SARIF.
 - `.github/workflows/osv-scanner.yml` är repositoryts egen OSV-definition och producerar `scan-pr / osv-scan`.
 - `.github/workflows/release.yml` skapar GitHub Releases från `main`; den är separat från PR-CI.
-- Repositoryts workflows får inte skapa eller uppdatera pull requests eller branches, arma eller genomföra merge, automatisera review, delegera arbete till AI-agenter eller lagra säkerhetsalert-snapshots.
+- Repositoryts workflows får inte skapa branches eller remediation-PR:er, arma eller genomföra merge, automatisera reviewbeslut, delegera remediation till AI-agenter eller lagra säkerhetsalert-snapshots. Metadataändringar på befintliga Issues/PR:er är tillåtna enligt avsnittet ovan.
 - Security alerts hanteras av GitHubs native säkerhetsfunktioner. Kodändringar går genom repositoryts vanliga PR-gates.
 - GitHub Actions ska pinnas till full commit-SHA.
 
