@@ -36,7 +36,21 @@ Workflowen använder inte en repositoryspecifik impact-router. Det betyder att r
 
 `.github/workflows/osv-scanner.yml` är repositoryts egen OSV-definition. PR-jobbet producerar `scan-pr / osv-scan`; `main`/schedule/manual används för kompletterande rapportering.
 
-GitHub Actions deployar inte Cloudflare-produktion och skapar/uppdaterar inte branches eller PR:er, armerar inte auto-merge och delegerar inte remediation.
+GitHub Actions deployar inte Cloudflare-produktion, skapar inte branches eller remediation-PR:er, armerar inte auto-merge och delegerar inte remediation. Metadataautomation på befintliga Issues/PR:er får användas med minsta nödvändiga behörighet.
+
+## GitHub-native säkerhetsremediation
+
+Repositoryt ska använda GitHubs native säkerhetsfunktioner före egna automationskedjor:
+
+- Code Scanning-alerts spåras vid behov genom GitHubs native länkning till nya eller befintliga Issues.
+- Copilot Autofix och agentic autofix får användas när GitHub erbjuder dem för alertet. PR:er som skapas den vägen går genom exakt samma merge-gates som andra PR:er.
+- Dependabot security updates och Dependabot auto-triage rules används för sårbara beroenden i stället för egna alert-pollers eller egna fix-PR-workflows.
+- Repositoryt ska inte lagra egna säkerhetsalert-snapshots eller bygga en separat remediationkö ovanpå GitHub Security.
+- En repositoryägd automation som duplicerar en GitHub-native säkerhetsfunktion ska tas bort om det inte finns ett dokumenterat funktionsgap.
+
+Den tidigare `.github/workflows/auto-fix-review.yml` avvecklas därför. Den kopplade betrodd bot-review till ett eget App-tokenflöde som postade `@codex address that feedback`; den funktionen ersätts av GitHubs native säkerhetsremediation och vanlig explicit reviewhantering.
+
+Code Scanning alert→Issue-länkning är en spårningsfunktion, inte en extra security gate. Alert- och Issue-state synkroniseras inte automatiskt, så en länkad Issue stängs först när den vanliga verifieringen visar att arbetet är klart.
 
 ## Cloudflare-owned production deploy
 
