@@ -105,4 +105,9 @@
   .page--narrow .auth-brand p{
     color:#dce7f3;
   }
+
+  /* The overall recipient counter below this section already shows the selection total. */
+  #private-recipients>.notice>strong{
+    display:none;
+  }
 }
