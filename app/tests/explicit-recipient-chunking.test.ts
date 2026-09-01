@@ -32,7 +32,8 @@ test('explicit recipient lookup chunks 10,000 long addresses below the D1 bind l
   for (const chunk of chunks) {
     assert.ok(encoder.encode(chunk).byteLength <= 1_500_000, 'each JSON binding must stay below the conservative cap');
   }
-  assert.deepEqual(chunks.flatMap(chunk => JSON.parse(chunk) as string[]), values);
+  const reconstructed = Array.from(chunks, chunk => JSON.parse(chunk) as string[]).flat();
+  assert.deepEqual(reconstructed, values);
   assert.match(dbSource, /for\(const emailJson of explicitEmailJsonChunks\(\[\.\.\.requestedByEmail\.keys\(\)\]\)\)/);
   assert.match(dbSource, /\.bind\(emailJson\)\.all/);
 });
