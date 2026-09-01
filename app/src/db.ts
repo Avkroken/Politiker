@@ -146,7 +146,8 @@ export async function getRecipientsForAreas(db:D1Database,areaNames:string[],exc
     for(const r of mediaRows){const key=r.email.trim().toLocaleLowerCase("sv-SE");if(!allowed.has(key))byEmail.delete(key);}
   }
   if(includeEmails.length){
-    const requested=includeEmails.slice(0,10000).map(parseIncludedRecipient).filter((r):r is {email:string;name:string}=>r!==null),requestedByEmail=new Map(requested.map(r=>[r.email,r]));
+    if(includeEmails.length>10000)throw new Error(`För många explicita mottagare: ${includeEmails.length} (max 10 000)`);
+    const requested=includeEmails.map(parseIncludedRecipient).filter((r):r is {email:string;name:string}=>r!==null),requestedByEmail=new Map(requested.map(r=>[r.email,r]));
     if(requested.length){
       const{results}=await db.prepare(`SELECT name,email,area_name,verification_status FROM politicians WHERE lower(trim(email)) IN (SELECT lower(value) FROM json_each(?))`).bind(JSON.stringify([...requestedByEmail.keys()])).all<{name:string;email:string;area_name:string;verification_status:string|null}>();
       const deadEmails=new Set<string>();
