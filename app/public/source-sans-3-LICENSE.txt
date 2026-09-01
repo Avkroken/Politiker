@@ -1,4 +1,4 @@
-Google Inc.
+Copyright 2010-2024 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'. All Rights Reserved. Source is a trademark of Adobe in the United States and/or other countries.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
@@ -27,7 +27,7 @@ to any document created using the fonts or their derivatives.
 
 DEFINITIONS
 "Font Software" refers to the set of files released by the Copyright
-Holder(s) under this license and clearly marked as such. This may
+Holder(s) and clearly marked as such. This may
 include source files, build scripts and documentation.
 
 "Reserved Font Name" refers to any names specified as such after the
