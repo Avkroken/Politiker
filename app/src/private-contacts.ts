@@ -68,6 +68,7 @@ export async function importPrivateContactList(
   const listName = normalizeListName(input?.name);
   const contacts = normalizeImportedContacts(input?.contacts);
   const now = Date.now();
+  const listId = randomId();
   const statements: D1PreparedStatement[] = [];
 
   for (let i = 0; i < contacts.length; i += 200) {
@@ -88,7 +89,7 @@ export async function importPrivateContactList(
     ON CONFLICT(account_id, name) DO UPDATE SET
       name = excluded.name,
       updated_at = excluded.updated_at
-  `).bind(randomId(), accountId, listName, now, now));
+  `).bind(listId, accountId, listName, now, now));
 
   statements.push(env.DB.prepare(`
     DELETE FROM account_contact_list_members
@@ -113,7 +114,11 @@ export async function importPrivateContactList(
   }
 
   await env.DB.batch(statements);
-  return listPrivateContacts(env, accountId);
+  const importedList = await env.DB.prepare("SELECT id FROM account_contact_lists WHERE account_id = ? AND name = ? COLLATE NOCASE")
+    .bind(accountId, listName).first<{ id: string }>();
+  if (!importedList) throw new Error("Den sparade listan kunde inte läsas tillbaka");
+  const data = await listPrivateContacts(env, accountId);
+  return { ...data, importedListId: importedList.id };
 }
 
 export async function deletePrivateContactList(env: Env, accountId: string, listId: string): Promise<void> {
