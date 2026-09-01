@@ -23,7 +23,7 @@ Cloudflare D1 är kanonisk runtime-datakälla. Git får inte användas som produ
 - Använd inte direkt merge om det inte uttryckligen begärts.
 - Live-rulesetet tillåter endast squash merge.
 - Repositoryt använder inte merge queue och har ingen obligatorisk återanvändbar branchpool.
-- Codex-remediation använder körningsunika branches under `automation/codex-issue/`.
+- Central säkerhetsremediation använder körningsunika branches under `automation/codex-issue/` endast när GitHubs inbyggda remediation inte kan hantera alerten.
 
 ## Merge-gates
 
@@ -76,7 +76,7 @@ Om auto-merge inte sker ska den konkreta blockeraren i live-ruleset, security-st
 - `typecheck` ska validera appens tester, lokal D1-migrationskedja, Worker-typer, TypeScript och Wrangler dry-run samt ett separat dry-run av `log-archive`.
 - `.github/workflows/osv-scanner.yml` producerar PR-gaten `scan-pr / osv-scan`; OSV:s PR-workflow ska misslyckas på nya sårbara beroenden.
 - `.github/workflows/docker.yml` producerar terminalgaten `docker`. Den bygger relevant image och laddar upp Trivy-SARIF för aktuell HEAD, eller en explicit tom Trivy-analys när image inte berörs. `docker` ska vara required så image-/workflowfel inte kan döljas bakom utebliven SARIF; Trivy-fynd verkställs dessutom av Code Scanning-regeln.
-- `.github/workflows/codex-issue-remediation.yml` skapar en körningsunik remediation-branch, öppnar PR och kan armera auto-merge först när repositoryts live-ruleset har verifierats som den fail-closed mergepolicy som beskrivs ovan; workflowen ska inte duplicera rulesetet med en egen policytolk.
+- Security alerts hanteras centralt av organisationens Skvallerbyttan-flöde. GitHubs inbyggda Dependabot security updates och Copilot-agent används först när de kan hantera alerten; endast återstående fall går via Skvallerbyttans centrala Codex-fallback. Repositoryt ska inte ha en egen schemalagd Code Scanning-snapshot eller en egen security-remediation-writer.
 - `.github/workflows/auto-fix-review.yml` får begära Codex-fix för uttryckligen betrodd review-feedback men får inte lösa review-tråden åt implementationen.
 
 ## Säkerhet
