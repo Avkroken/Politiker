@@ -21,6 +21,19 @@ CREATE TABLE account_contacts (
 );
 CREATE INDEX idx_account_contacts_account ON account_contacts(account_id, email);
 
+CREATE TRIGGER account_contacts_cap_insert
+BEFORE INSERT ON account_contacts
+WHEN NOT EXISTS (
+  SELECT 1 FROM account_contacts
+  WHERE account_id = NEW.account_id AND email = NEW.email COLLATE NOCASE
+)
+AND (
+  SELECT COUNT(*) FROM account_contacts WHERE account_id = NEW.account_id
+) >= 10000
+BEGIN
+  SELECT RAISE(ABORT, 'Kontot kan ha högst 10000 sparade mottagare');
+END;
+
 CREATE TABLE account_contact_list_members (
   account_id TEXT NOT NULL,
   list_id TEXT NOT NULL,
