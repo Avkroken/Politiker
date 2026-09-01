@@ -1,6 +1,7 @@
 import { randomId } from "../../shared/crypto";
 import { canonicalRole } from "./roles";
 import { isIrrelevantRecipientRole } from "./recipient-roles";
+import { parseIncludedRecipient } from "./recipient-address";
 import type { EmailSendBinding } from "../../shared/types";
 
 export interface Env {
@@ -88,7 +89,6 @@ const MEDIA_TERMS:Record<string,string[]>={
   "nyhetsredaktion":["nyhetsredaktion","redaktionsledning"],
 };
 const GENERIC_MEDIA_LOCALS=new Set(["tips","tipsa","redaktionen"]);
-const INCLUDED_EMAIL_RE=/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 function policySql(keys:string[]):{sql:string;params:string[]}{
   const terms=[...new Set(keys.flatMap(k=>POLICY_TERMS[k]??[]))]; if(!terms.length)return{sql:"0",params:[]};
   return{sql:`(${terms.map(()=>"LOWER(a.body) LIKE ?").join(" OR ")})`,params:terms.map(t=>`%${t}%`)};
@@ -98,12 +98,6 @@ function mediaCategoryMatch(role:string|null,email:string,keys:string[]):boolean
   if(GENERIC_MEDIA_LOCALS.has(local))return false;
   const hay=(role??"").toLocaleLowerCase("sv-SE");
   return keys.some(key=>(MEDIA_TERMS[key]??[]).some(term=>hay.includes(term)));
-}
-export function parseIncludedRecipient(value:string):{email:string;name:string}|null{
-  const raw=String(value??"").trim();if(!raw)return null;
-  const display=raw.match(/^(.*?)\s*<([^<>]+)>$/);let email=display?display[2].trim():raw,name=display?display[1].trim():"";
-  email=email.toLocaleLowerCase("sv-SE");if(email.length>254||!INCLUDED_EMAIL_RE.test(email))return null;
-  name=name.replace(/[\u0000-\u001f\u007f<>]/g," ").trim().slice(0,160);return{email,name};
 }
 
 export async function getRecipientsForAreas(db:D1Database,areaNames:string[],excludeParties:string[]=[],excludeEmails:string[]=[],includeRoles:string[]=[],includeEmails:string[]=[]){
