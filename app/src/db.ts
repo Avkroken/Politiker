@@ -1,6 +1,7 @@
 import { randomId } from "../../shared/crypto";
 import { canonicalRole } from "./roles";
 import { isIrrelevantRecipientRole } from "./recipient-roles";
+import { parseIncludedRecipient } from "./recipient-address";
 import type { EmailSendBinding } from "../../shared/types";
 
 export interface Env {
@@ -27,6 +28,9 @@ export async function deleteAccount(env: Env, accountId: string): Promise<void> 
     env.DB.prepare("DELETE FROM letter_attachments WHERE letter_id IN (SELECT id FROM letters WHERE account_id = ?)").bind(accountId),
     env.DB.prepare("DELETE FROM send_log WHERE account_id = ?").bind(accountId), env.DB.prepare("DELETE FROM send_jobs WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM letters WHERE account_id = ?").bind(accountId), env.DB.prepare("DELETE FROM mail_credentials WHERE account_id = ?").bind(accountId),
+    env.DB.prepare("DELETE FROM account_contact_list_members WHERE account_id = ?").bind(accountId),
+    env.DB.prepare("DELETE FROM account_contact_lists WHERE account_id = ?").bind(accountId),
+    env.DB.prepare("DELETE FROM account_contacts WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM oauth_identities WHERE account_id = ?").bind(accountId), env.DB.prepare("DELETE FROM api_keys WHERE account_id = ?").bind(accountId),
     env.DB.prepare("UPDATE feedback SET account_id = NULL WHERE account_id = ?").bind(accountId), env.DB.prepare("UPDATE worker_errors SET account_id = NULL WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM accounts WHERE id = ?").bind(accountId),
@@ -95,6 +99,18 @@ function mediaCategoryMatch(role:string|null,email:string,keys:string[]):boolean
   const hay=(role??"").toLocaleLowerCase("sv-SE");
   return keys.some(key=>(MEDIA_TERMS[key]??[]).some(term=>hay.includes(term)));
 }
+const MAX_EXPLICIT_EMAIL_BIND_BYTES=1_500_000;
+function explicitEmailJsonChunks(values:string[]):string[]{
+  const encoder=new TextEncoder(),chunks:string[]=[],current:string[]=[];
+  let bytes=2;
+  for(const value of values){
+    const valueBytes=encoder.encode(JSON.stringify(value)).byteLength,additional=valueBytes+(current.length?1:0);
+    if(current.length&&bytes+additional>MAX_EXPLICIT_EMAIL_BIND_BYTES){chunks.push(JSON.stringify(current));current.length=0;bytes=2;}
+    const commaBytes=current.length?1:0;current.push(value);bytes+=valueBytes+commaBytes;
+  }
+  if(current.length)chunks.push(JSON.stringify(current));
+  return chunks;
+}
 
 export async function getRecipientsForAreas(db:D1Database,areaNames:string[],excludeParties:string[]=[],excludeEmails:string[]=[],includeRoles:string[]=[],includeEmails:string[]=[]){
   const policyKeys=includeRoles.filter(k=>k.startsWith(POLICY_PREFIX)).map(k=>k.slice(POLICY_PREFIX.length));
@@ -141,7 +157,22 @@ export async function getRecipientsForAreas(db:D1Database,areaNames:string[],exc
     const allowed=new Set(mediaRows.filter(r=>mediaCategoryMatch(r.role,r.email,mediaKeys)).map(r=>r.email.trim().toLocaleLowerCase("sv-SE")));
     for(const r of mediaRows){const key=r.email.trim().toLocaleLowerCase("sv-SE");if(!allowed.has(key))byEmail.delete(key);}
   }
-  if(includeEmails.length){const{results}=await db.prepare(`SELECT name,email,area_name FROM politicians WHERE email IN (SELECT value FROM json_each(?)) AND (verification_status IS NULL OR verification_status NOT IN ('dead','dead_via_send'))`).bind(JSON.stringify(includeEmails)).all<{name:string;email:string;area_name:string}>();for(const r of results)byEmail.set(r.email.trim().toLocaleLowerCase("sv-SE"),{...r,email:r.email.trim()});}
+  if(includeEmails.length){
+    if(includeEmails.length>10000)throw new Error(`För många explicita mottagare: ${includeEmails.length} (max 10 000)`);
+    const requestedByEmail=new Map<string,{email:string;name:string}>();
+    for(const parsed of includeEmails.map(parseIncludedRecipient).filter((r):r is {email:string;name:string}=>r!==null)){
+      const existing=requestedByEmail.get(parsed.email);
+      if(!existing||(!existing.name&&parsed.name))requestedByEmail.set(parsed.email,parsed);
+    }
+    if(requestedByEmail.size){
+      const deadEmails=new Set<string>();
+      for(const emailJson of explicitEmailJsonChunks([...requestedByEmail.keys()])){
+        const{results}=await db.prepare(`SELECT name,email,area_name,verification_status FROM politicians WHERE lower(trim(email)) IN (SELECT lower(value) FROM json_each(?))`).bind(emailJson).all<{name:string;email:string;area_name:string;verification_status:string|null}>();
+        for(const r of results){const key=r.email.trim().toLocaleLowerCase("sv-SE");if(r.verification_status==='dead'||r.verification_status==='dead_via_send')deadEmails.add(key);else byEmail.set(key,{name:r.name,email:r.email.trim(),area_name:r.area_name});}
+      }
+      for(const r of requestedByEmail.values())if(!byEmail.has(r.email)&&!deadEmails.has(r.email))byEmail.set(r.email,{name:r.name||r.email,email:r.email,area_name:"Egen mottagare"});
+    }
+  }
   for(const e of excludeEmails)byEmail.delete(e.trim().toLocaleLowerCase("sv-SE"));return[...byEmail.values()];
 }
 

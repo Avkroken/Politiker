@@ -10,6 +10,10 @@ import {
   updateMailCredentialCapPct, PROVIDER_PRESETS, getCeiling, MICROSOFT_GRAPH_DAILY_LIMIT,
 } from "./mail-credentials";
 import { listAreas, listParties, listRoles, searchPoliticiansInAreas, getRecipientsForAreas, deleteAccount } from "./db";
+import {
+  deletePrivateContact, deletePrivateContactList, importPrivateContactList, listPrivateContacts, savePrivateContact,
+  type PrivateContactInput,
+} from "./private-contacts";
 import { createAndEnqueueSendJob, enqueuePendingUserSendJobs, getSendJobsForAccount, updateSendJobRate } from "./send";
 import { submitFeedback, reportClientError } from "./feedback";
 import { processAttachments, type AttachmentInput } from "./attachments";
@@ -103,6 +107,11 @@ const AUTHED_ROUTES: RouteDef[] = [
   { method: "GET", rx: /^\/api\/parties$/, h: async c => json(await listParties(c.env.DB)) },
   { method: "GET", rx: /^\/api\/roles$/, h: async c => json(await listRoles(c.env.DB)) },
   { method: "GET", rx: /^\/api\/politicians\/search$/, h: async c => { const areaNames=c.url.searchParams.getAll("areaName"),q=c.url.searchParams.get("q")??""; if(q.length<2)return json([]); return json(await searchPoliticiansInAreas(c.env.DB,areaNames,q)); } },
+  { method: "GET", rx: /^\/api\/private-contacts$/, h: async c => json(await listPrivateContacts(c.env,c.accountId)) },
+  { method: "POST", rx: /^\/api\/private-contacts$/, h: async c => json(await savePrivateContact(c.env,c.accountId,await c.req.json<PrivateContactInput>())) },
+  { method: "DELETE", rx: /^\/api\/private-contacts\/([^/]+)$/, h: async (c,m) => { await deletePrivateContact(c.env,c.accountId,m[1]); return json({ok:true}); } },
+  { method: "POST", rx: /^\/api\/private-contact-lists\/import$/, h: async c => json(await importPrivateContactList(c.env,c.accountId,await c.req.json<{name:string;contacts:PrivateContactInput[]}>())) },
+  { method: "DELETE", rx: /^\/api\/private-contact-lists\/([^/]+)$/, h: async (c,m) => { await deletePrivateContactList(c.env,c.accountId,m[1]); return json({ok:true}); } },
   { method: "GET", rx: /^\/api\/mail-credentials$/, h: async c => json(await listMailCredentials(c.env,c.accountId)) },
   { method: "GET", rx: /^\/api\/provider-ceilings$/, h: async c => { const providers=[...Object.keys(PROVIDER_PRESETS),"microsoft_graph"]; const result:Record<string,{providerDailyLimit:number|null;ceiling:number|null}>={}; for(const p of providers)result[p]={providerDailyLimit:p==="microsoft_graph"?MICROSOFT_GRAPH_DAILY_LIMIT:PROVIDER_PRESETS[p].providerDailyLimit,ceiling:getCeiling(p)}; return json(result); } },
   { method: "POST", rx: /^\/api\/mail-credentials$/, h: async c => json(await addMailCredential(c.env,c.accountId,await c.req.json<Parameters<typeof addMailCredential>[2]>())) },
