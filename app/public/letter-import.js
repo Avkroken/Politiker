@@ -51,6 +51,10 @@
     return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  function escapeHtmlAttribute(value){
+    return escapeHtmlText(value).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
   function textToHtml(text){
     validateText(text);
     const normalized=String(text).replace(/\r\n?/g,'\n').trim();
@@ -67,6 +71,17 @@
     return /^(?:https?:|mailto:)/i.test(href)?href:null;
   }
 
+  function serializeSafeNode(node){
+    if(node.nodeType===3)return escapeHtmlText(node.nodeValue||'');
+    if(node.nodeType!==1)return'';
+    const tag=String(node.tagName||'').toLowerCase();
+    if(!SAFE_TAGS.has(tag))return[...node.childNodes].map(serializeSafeNode).join('');
+    const href=tag==='a'?safeHref(node.getAttribute('href')):null;
+    const attrs=href?` href="${escapeHtmlAttribute(href)}" rel="noopener noreferrer"`:'';
+    if(tag==='br')return'<br>';
+    return`<${tag}${attrs}>${[...node.childNodes].map(serializeSafeNode).join('')}</${tag}>`;
+  }
+
   function sanitizeHtml(html,{validate=true}={}){
     requireDom();
     const parsed=new DOMParser().parseFromString(String(html||''),'text/html');
@@ -79,7 +94,7 @@
       if(tag==='a'&&href){el.setAttribute('href',href);el.setAttribute('rel','noopener noreferrer')}
     }
     if(validate)validateText(parsed.body.textContent||'');
-    return parsed.body.innerHTML;
+    return[...parsed.body.childNodes].map(serializeSafeNode).join('');
   }
 
   function htmlToText(html,{validate=true}={}){
