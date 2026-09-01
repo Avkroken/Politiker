@@ -1,16 +1,11 @@
 import { randomId } from "../../shared/crypto";
 import type { Env } from "./db";
+import { normalizeImportedContacts, normalizePrivateContactInput, type RecipientAddressInput } from "./recipient-address";
 
-const MAX_IMPORT_CONTACTS = 5_000;
 const MAX_ACCOUNT_CONTACTS = 10_000;
-const MAX_NAME_LENGTH = 160;
 const MAX_LIST_NAME_LENGTH = 120;
-const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 
-export interface PrivateContactInput {
-  email: string;
-  name?: string;
-}
+export type PrivateContactInput = RecipientAddressInput;
 
 export interface PrivateContactRow {
   id: string;
@@ -20,30 +15,8 @@ export interface PrivateContactRow {
   updated_at: number;
 }
 
-function cleanText(value: unknown, maxLength: number): string {
-  return String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, maxLength);
-}
-
-export function normalizePrivateContactInput(input: PrivateContactInput): { email: string; name: string } {
-  const email = cleanText(input?.email, 254).toLocaleLowerCase("sv-SE");
-  if (!email || !EMAIL_RE.test(email)) throw new Error("Ogiltig e-postadress");
-  return { email, name: cleanText(input?.name, MAX_NAME_LENGTH) };
-}
-
-export function normalizeImportedContacts(inputs: PrivateContactInput[]): Array<{ email: string; name: string }> {
-  if (!Array.isArray(inputs) || inputs.length === 0) throw new Error("Importen innehåller inga mottagare");
-  if (inputs.length > MAX_IMPORT_CONTACTS) throw new Error(`Högst ${MAX_IMPORT_CONTACTS} mottagare kan importeras åt gången`);
-  const deduped = new Map<string, { email: string; name: string }>();
-  for (const input of inputs) {
-    const normalized = normalizePrivateContactInput(input);
-    const existing = deduped.get(normalized.email);
-    if (!existing || (!existing.name && normalized.name)) deduped.set(normalized.email, normalized);
-  }
-  return [...deduped.values()];
-}
-
 function normalizeListName(value: unknown): string {
-  const name = cleanText(value, MAX_LIST_NAME_LENGTH);
+  const name = String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, MAX_LIST_NAME_LENGTH);
   if (!name) throw new Error("Listnamn krävs");
   return name;
 }
