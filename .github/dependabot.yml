@@ -6,8 +6,7 @@ updates:
       # En Worker kvar sedan app, sender, campaign och healthcheck slogs ihop.
       - "/app"
     schedule:
-      interval: "weekly"
-      day: "wednesday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Stockholm"
     groups:
@@ -18,8 +17,7 @@ updates:
     assignees: ["blixten85"]
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "wednesday"
+      interval: "daily"
       time: "04:00"
       timezone: "Europe/Stockholm"
     groups:
@@ -30,14 +28,14 @@ updates:
   # politiker-kontakter. Egna requirements.txt per katalog.
   # kontakter/scraper/Dockerfile. Basimagen är den enda källan till nästan
   # alla Trivy-fynd, så utan den här posten rapporteras fynd som ingen
-  # åtgärdar. Dependabot bumpar inom samma taggfamilj (-noble), inte över
-  # Ubuntu-generationer — det byter man för hand.
+  # åtgärdar. Playwright publicerar inte en rullande :latest-tag och imagen
+  # måste matcha projektets Playwright-version, så distro-suffixet är ett
+  # explicit kompatibilitetsval medan Dependabot sköter versionsbumpen.
   - package-ecosystem: "docker"
     assignees: ["blixten85"]
     directory: "/kontakter/scraper"
     schedule:
-      interval: "weekly"
-      day: "tuesday"
+      interval: "daily"
       time: "00:20"
       timezone: "Europe/Stockholm"
 
@@ -47,8 +45,7 @@ updates:
       - "/kontakter/scraper"
       - "/kontakter/verify"
     schedule:
-      interval: "weekly"
-      day: "wednesday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Stockholm"
     groups:
