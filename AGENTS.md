@@ -66,6 +66,19 @@ Efter varje ny commit ska relevant CI, required workflow, Code Quality, security
 - Metadataautomation för befintliga Issues/PR:er, till exempel assignee eller labels, är tillåten med minsta nödvändiga behörighet så länge den inte ändrar kod, branches, reviewbeslut eller merge-state.
 - Om en hemmasnickrad automation duplicerar en GitHub-native funktion ska den avvecklas. Undantag kräver ett konkret, dokumenterat gap som GitHubs native funktion inte täcker.
 
+## Metadata-only AI triage exception
+
+Repositoryägaren har uttryckligen godkänt metadata-only issue triage via GitHub Agentic Workflows. Detta är klassificering, inte security remediation eller coding-agent delegation.
+
+- `.github/workflows/metadata-routing.yml` får endast anropa Avkrokens centrala deterministiska metadata-routing för assignee och labels.
+- `.github/workflows/issue-classification.yml` får endast trigga på öppnade/återöppnade issues och anropa den SHA-pinnade centrala `issue-classification.lock.yml`.
+- AI-delen får läsa det triggande issuet och read-only repositorykontext som behövs för klassificering.
+- `gh-aw` safe outputs får endast lägga till exakt en `difficulty:*` och en `security:*` label från den centrala allowlisten.
+- Workflowen får inte kommentera, assigna coding agents, skapa/ändra branches eller PR:er, reviewa, mergea, deploya eller utföra/föreslå remediation.
+- Copilot-auth får komma från organization billing eller GitHub Actions-secreten `COPILOT_GITHUB_TOKEN`. Credentialvärden får aldrig committas, loggas eller kopieras till dokumentation.
+
+Detta undantag ändrar inte GitHub-native remediationpolicyn eller övriga förbud mot agentorkestrering, branch/PR-mutation, review och merge.
+
 ## Cloudflare-kontrollplan
 
 - `app/wrangler.jsonc` är source of truth för versionshanterad Worker-konfiguration.
@@ -89,7 +102,7 @@ Efter varje ny commit ska relevant CI, required workflow, Code Quality, security
 - `.github/workflows/osv-scanner.yml` är repositoryts egen OSV-definition och producerar `scan-pr / osv-scan`.
 - Organisationens `main`-ruleset kräver dessutom den centrala workflow-definitionen `Avkroken/Regelverket/.github/workflows/osv-scanner.yml`; den centrala workflow-gaten och repositoryts egen OSV-definition ska inte blandas ihop.
 - `.github/workflows/release.yml` skapar GitHub Releases från `main`; den är separat från PR-CI.
-- Repositoryts workflows får inte skapa branches eller remediation-PR:er, arma eller genomföra merge, automatisera reviewbeslut, delegera remediation till AI-agenter eller lagra säkerhetsalert-snapshots. Metadataändringar på befintliga Issues/PR:er är tillåtna enligt avsnittet ovan.
+- Repositoryts workflows får inte skapa branches eller remediation-PR:er, arma eller genomföra merge, automatisera reviewbeslut, delegera remediation till AI-agenter eller lagra säkerhetsalert-snapshots. Metadataändringar på befintliga Issues/PR:er och det uttryckliga metadata-only AI-triageundantaget ovan är tillåtna så länge de inte ändrar kod, branches, reviewbeslut eller merge-state.
 - Security alerts hanteras av GitHubs native säkerhetsfunktioner. Kodändringar går genom repositoryts vanliga PR-gates.
 - GitHub Actions ska pinnas till full commit-SHA.
 
