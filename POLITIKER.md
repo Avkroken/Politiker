@@ -1,6 +1,6 @@
 # POLITIKER.md
 
-Repository-specific instructions for `Avkroken/Politiker`. These instructions supplement the canonical Avkroken policy in `Avkroken/.github/AGENTS.md`.
+This is the repository governance document for `Avkroken/Politiker`. Binding AI coding-agent policy is defined only in `Avkroken/.github/AGENTS.md`. This document records repository-specific technical contracts, invariants, validation requirements, and operational context required by that policy; it must not define, supplement, narrow, or override agent policy.
 
 ## Repository architecture
 
