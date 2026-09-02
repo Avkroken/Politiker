@@ -69,6 +69,21 @@ npm run validate
 
 Python-delen verifieras separat av repositoryts CI.
 
+## Bidrag och merge-policy
+
+Ändringar görs på kortlivade branches och går via pull request till `main`. Live GitHub-rulesets är verkställande sanning om dokumentation och faktisk enforcement skiljer sig.
+
+För `main` gäller för närvarande:
+
+- `0` formella approvals krävs,
+- alla relevanta review-trådar måste vara lösta,
+- `CI / required`, `docker` och `scan-pr / osv-scan` måste passera på en branch som är uppdaterad mot senaste `main`,
+- CodeQL och Trivy Code Scanning måste uppfylla organisationens aktiva säkerhetströsklar,
+- automatiserade reviewfynd är rådgivande men relevanta fynd ska utvärderas och åtgärdas före merge,
+- endast squash merge är tillåtet och ruleseten har inga bypass actors.
+
+Kontrollera alltid live-ruleseten och aktuell PR-status före merge; en äldre grön körning räcker inte efter en ny commit eller ändrad base.
+
 ## Produktion
 
 Arbete görs på kortlivade branches och går via PR till `main`. GitHub Actions validerar kod och säkerhet men deployar inte produktion.
