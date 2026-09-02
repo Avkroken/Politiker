@@ -10,13 +10,14 @@ Organisationens aktiva rulesets är verkställande sanning. Vid senaste live-ver
 - `docker`;
 - `scan-pr / osv-scan`;
 - strict required status checks mot aktuell `main`;
-- 1 approval;
-- stale approvals avfärdas efter push;
-- last-push approval från någon annan än senaste pushern;
+- 0 formella approvals;
+- stale reviews avfärdas efter push;
 - resolved review threads;
 - CodeQL Code Scanning protection (`medium_or_higher` security alerts, `errors_and_warnings` alerts);
 - Trivy Code Scanning protection för `high_or_higher` security alerts;
 - squash merge, utan bypass actors.
+
+Direkt merge är tillåten när den aktuella uppgiften redan omfattar merge eller när en stående mergeinstruktion finns. Den får bara göras efter full kontroll av aktuell HEAD: latest-base/mergeability, samtliga required CI- och security-gates, aktuella reviews och review-trådar. När CI blivit grön ska reviews och review-trådar läsas igen före merge eftersom botfeedback kan komma sent.
 
 Copilot Code Review och CodeRabbit är rådgivande. Faktiska relevanta findings ska hanteras, men quota/rate-limit/tillfälligt tjänstefel är inte i sig en required status check.
 

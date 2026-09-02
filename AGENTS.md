@@ -19,23 +19,31 @@ Cloudflare D1 är kanonisk runtime-datakälla. Git får inte användas som produ
 - Pusha aldrig direkt till `main`.
 - Använd en kortlivad branch och öppna en ready PR till `main`.
 - Aktivera auto-merge först när live-rulesetet är verifierat fail-closed för den aktuella mergepolicyn.
-- Använd inte direkt merge om det inte uttryckligen begärts.
+- Direkt merge är tillåten när uppgiften omfattar att färdigställa eller merga PR:er, eller när användaren har gett en stående mergeinstruktion. Fråga inte om nytt mergegodkännande för varje PR i samma uppgift.
+- Direkt merge får endast ske efter full kontroll av aktuell HEAD: latest-base/mergeability, samtliga required CI-, workflow-, Code Quality- och security-gates, aktuella reviews, review-trådar samt eventuell ny feedback som kommit efter att CI blivit grön. Grön delstatus eller enbart `mergeable: true` räcker aldrig.
+- Om någon required gate misslyckas, väntar eller saknas, eller om relevant review-feedback är olöst, ska PR:n inte mergas förrän problemet är åtgärdat eller den externa blockeraren är verifierad.
 - Endast squash merge är tillåtet.
 
 ## Merge-gates
 
 Live-konfigurationen är sanningskällan. För `main` gäller bland annat:
 
-- required `CI / required`, `docker` och `scan-pr / osv-scan`
-- strict latest-base-verifiering
-- en approval krävs; stale reviews avvisas efter push och den senaste pushen måste godkännas av någon annan
+- required status checks `CI / required`, `docker` och `scan-pr / osv-scan`
+- organisationens required workflow `Avkroken/Regelverket/.github/workflows/osv-scanner.yml`
+- strict latest-base-verifiering för required status checks
+- 0 formella approvals krävs; `require_last_push_approval` är avstängd
+- stale approvals/reviews avfärdas efter push, men detta skapar ingen approval-gate när required approval count är 0
+- GitHubs extra approval för unattributed Copilot-PR:er har ingen effekt när required approval count är 0
 - olösta review-trådar blockerar merge
-- CodeQL merge protection enligt org-rulesetet
-- Trivy Code Scanning blockerar high/critical enligt org-rulesetet
-- Copilot och CodeRabbit är rådgivande, men faktiska relevanta findings ska utvärderas och åtgärdas
+- Copilot Code Review begärs automatiskt på nya pushar och även på draft-PR:er; detta är automatisk review-begäran, inte en formell approval-gate
+- Code Quality blockerar från severity `warnings`
+- CodeQL merge protection blockerar security alerts från `medium_or_higher` samt kvalitetsalerts på `errors_and_warnings`
+- Trivy Code Scanning blockerar security alerts från `high_or_higher`; vanliga alerts har threshold `none`
+- CodeRabbit är rådgivande; relevanta findings från både Copilot och CodeRabbit ska ändå utvärderas och åtgärdas när de är giltiga
+- deletion och non-fast-forward är blockerade på default branch
 - inga bypass actors
 
-Efter varje ny commit ska relevant CI, security och review-status kontrolleras igen. Kringgå aldrig repositoryskydd.
+Efter varje ny commit ska relevant CI, required workflow, Code Quality, security och review-status kontrolleras igen. När CI blivit grön ska aktuella reviews och review-trådar läsas en gång till innan merge, eftersom botfeedback kan komma sent. Kringgå aldrig repositoryskydd.
 
 ## CodeRabbit
 
@@ -52,7 +60,7 @@ Efter varje ny commit ska relevant CI, security och review-status kontrolleras i
 
 - GitHubs native säkerhetsfunktioner ska föredras framför repositoryägda workflows eller botkedjor som duplicerar samma funktion.
 - Code Scanning-alerts får spåras genom GitHubs native länkning till nya eller befintliga Issues. Bygg inte ett eget alert→Issue-system enbart för att spegla Code Scanning-data.
-- Copilot Autofix och, när tillgängligt, agentic autofix får användas för Code Scanning-alerts. En PR som skapas av GitHub/Copilot går alltid genom samma branch protection, CI, security, approval och review-thread-gates som andra PR:er.
+- Copilot Autofix och, när tillgängligt, agentic autofix får användas för Code Scanning-alerts. En PR som skapas av GitHub/Copilot går alltid genom samma pull-request-, required status/workflow-, Code Quality-, code-scanning- och review-thread-gates som andra PR:er. Nuvarande live-ruleset kräver ingen separat formell approval.
 - Dependabot security updates och Dependabot auto-triage rules är förstahandsvalet för sårbara beroenden. Undvik egna workflows som pollar Dependabot-alerts eller skapar motsvarande fix-PR:er.
 - Repositoryägda workflows får inte lagra kopior av säkerhetsalert-state, poll:a GitHubs säkerhets-API för att skapa egna remediationköer eller använda reviewkommentarer som en egen AI-agentorkestrering.
 - Metadataautomation för befintliga Issues/PR:er, till exempel assignee eller labels, är tillåten med minsta nödvändiga behörighet så länge den inte ändrar kod, branches, reviewbeslut eller merge-state.
@@ -79,6 +87,7 @@ Efter varje ny commit ska relevant CI, security och review-status kontrolleras i
 - `.github/workflows/ci.yml` producerar `CI / required` och verifierar app/log-archive samt Pythonverktygen under `kontakter/`.
 - `.github/workflows/docker.yml` producerar `docker`, bygger `kontakter/scraper` och laddar upp Trivy-SARIF.
 - `.github/workflows/osv-scanner.yml` är repositoryts egen OSV-definition och producerar `scan-pr / osv-scan`.
+- Organisationens `main`-ruleset kräver dessutom den centrala workflow-definitionen `Avkroken/Regelverket/.github/workflows/osv-scanner.yml`; den centrala workflow-gaten och repositoryts egen OSV-definition ska inte blandas ihop.
 - `.github/workflows/release.yml` skapar GitHub Releases från `main`; den är separat från PR-CI.
 - Repositoryts workflows får inte skapa branches eller remediation-PR:er, arma eller genomföra merge, automatisera reviewbeslut, delegera remediation till AI-agenter eller lagra säkerhetsalert-snapshots. Metadataändringar på befintliga Issues/PR:er är tillåtna enligt avsnittet ovan.
 - Security alerts hanteras av GitHubs native säkerhetsfunktioner. Kodändringar går genom repositoryts vanliga PR-gates.
@@ -92,7 +101,7 @@ Efter varje ny commit ska relevant CI, security och review-status kontrolleras i
 
 ## Verifiering
 
-Granska hela diffen mot `main` före PR. Kör relevanta tester och verifiera required CI/security samt review-state för aktuell HEAD efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer lagts till.
+Granska hela diffen mot `main` före PR. Kör relevanta tester och verifiera required CI/workflow, Code Quality, security samt review-state för aktuell HEAD efter varje push. Kontrollera att inga secrets, credentials, debugrester eller oavsiktliga genererade filer lagts till.
 
 ## Svarsformat
 
@@ -100,7 +109,7 @@ Granska hela diffen mot `main` före PR. Kör relevanta tester och verifiera req
 
 ## Definition of done
 
-En PR-baserad uppgift är klar först när implementationen är färdig, diffen självgranskad, all review-feedback utvärderad, samtliga required CI/security/review-gates gäller aktuell HEAD, relevanta review-trådar är resolved och PR:n har mergats av normal repositorypolicy eller är kvar därför att en verifierad extern gate väntar.
+En PR-baserad uppgift är klar först när implementationen är färdig, diffen självgranskad, all review-feedback utvärderad, samtliga required CI/workflow-, Code Quality- och security-gates gäller aktuell HEAD, aktuell review-state är kontrollerad, relevanta review-trådar är resolved och PR:n har mergats av normal repositorypolicy eller är kvar därför att en verifierad extern gate väntar.
 
 ## PR-scope efter öppning
 
