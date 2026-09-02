@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#010c1c">
+  <meta name="theme-color" content="#000f20">
   <meta name="color-scheme" content="dark">
   <title>FAQ – PolitikerKontakt</title>
   <meta name="description" content="Vanliga frågor om PolitikerKontakt, integritet, utskick och projektet.">
@@ -14,26 +14,27 @@
   <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png">
   <link rel="stylesheet" href="/nocturne.css">
   <link rel="stylesheet" href="/politiker.css">
-  <link rel="stylesheet" href="/brand-theme.css">
-  <link rel="stylesheet" href="/brand-polish-2c.css">
+  <link rel="stylesheet" href="/civic-theme.css">
 </head>
 <body>
+  <a class="skip-link" href="#faq-main">Hoppa till innehållet</a>
+  <div class="service-band">
+    <div class="service-band__inner">
+      <span>Svensk demokratitjänst</span>
+      <span>Oberoende · partipolitiskt neutral · inte en myndighet</span>
+    </div>
+  </div>
   <header class="site-header">
     <div class="site-header__inner">
       <a class="brand" href="/" aria-label="PolitikerKontakt – startsida">
-        <span class="brand__lockup" aria-hidden="true">
-          <img class="brand__mark" src="/brand-mark.png" alt="">
-          <span class="brand__wordmark">
-            <span class="brand__word brand__word--politiker">POLITIKER</span>
-            <span class="brand__word brand__word--kontakt">KONTAKT</span>
-          </span>
-        </span>
+        <img class="brand__logo" src="/brand-logo.svg" alt="PolitikerKontakt">
       </a>
-      <a class="button button--quiet faq-home-link" href="/">Till startsidan</a>
+      <nav class="primary-nav" aria-label="Huvudnavigering"></nav>
+      <div class="header-actions"><a class="button button--secondary faq-home-link" href="/">Till startsidan</a></div>
     </div>
   </header>
 
-  <main class="page page--narrow">
+  <main id="faq-main" class="page page--narrow" tabindex="-1">
     <div class="stack">
       <header class="page-head">
         <div class="card__eyebrow">PolitikerKontakt</div>
@@ -56,7 +57,7 @@
         <p>Kontaktuppgifterna sammanställs från offentliga källor. Uppgifter kan ändras, så kontrollera gärna mottagaren om ett meddelande studsar eller verkar inaktuellt.</p>
       </details>
 
-      <details class="details">
+      <details class="details" id="integritet">
         <summary>Hur hanteras personlig integritet?</summary>
         <div class="stack">
           <div><h3>Dataminimering</h3><p>Ett konto kräver i grunden en e-postadress. Tjänsten behöver inte namn, personnummer, bostadsadress eller telefonnummer för att fungera.</p></div>
@@ -73,7 +74,7 @@
 
       <details class="details">
         <summary>Är källkoden öppen?</summary>
-        <p>Ja. Projektets källkod finns öppet på <a href="https://github.com/blixten85/politiker" rel="noopener noreferrer">GitHub</a>.</p>
+        <p>Ja. Projektets källkod finns öppet på <a href="https://github.com/Avkroken/Politiker" rel="noopener noreferrer">GitHub</a>.</p>
       </details>
 
       <details class="details">
