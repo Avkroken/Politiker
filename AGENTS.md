@@ -19,7 +19,9 @@ Cloudflare D1 är kanonisk runtime-datakälla. Git får inte användas som produ
 - Pusha aldrig direkt till `main`.
 - Använd en kortlivad branch och öppna en ready PR till `main`.
 - Aktivera auto-merge först när live-rulesetet är verifierat fail-closed för den aktuella mergepolicyn.
-- Använd inte direkt merge om det inte uttryckligen begärts.
+- Direkt merge är tillåten när uppgiften omfattar att färdigställa eller merga PR:er, eller när användaren har gett en stående mergeinstruktion. Fråga inte om nytt mergegodkännande för varje PR i samma uppgift.
+- Direkt merge får endast ske efter full kontroll av aktuell HEAD: latest-base/mergeability, samtliga required CI- och security-gates, aktuella reviews, review-trådar samt eventuell ny feedback som kommit efter att CI blev grön. Grön delstatus eller enbart `mergeable: true` räcker aldrig.
+- Om någon required gate misslyckas, väntar eller saknas, eller om relevant review-feedback är olöst, ska PR:n inte mergas förrän problemet är åtgärdat eller den externa blockeraren är verifierad.
 - Endast squash merge är tillåtet.
 
 ## Merge-gates
@@ -28,14 +30,14 @@ Live-konfigurationen är sanningskällan. För `main` gäller bland annat:
 
 - required `CI / required`, `docker` och `scan-pr / osv-scan`
 - strict latest-base-verifiering
-- en approval krävs; stale reviews avvisas efter push och den senaste pushen måste godkännas av någon annan
+- 0 formella approvals krävs enligt nuvarande live-ruleset; stale reviews avvisas efter push
 - olösta review-trådar blockerar merge
 - CodeQL merge protection enligt org-rulesetet
 - Trivy Code Scanning blockerar high/critical enligt org-rulesetet
 - Copilot och CodeRabbit är rådgivande, men faktiska relevanta findings ska utvärderas och åtgärdas
 - inga bypass actors
 
-Efter varje ny commit ska relevant CI, security och review-status kontrolleras igen. Kringgå aldrig repositoryskydd.
+Efter varje ny commit ska relevant CI, security och review-status kontrolleras igen. När CI blivit grön ska aktuella reviews och review-trådar läsas en gång till innan merge, eftersom botfeedback kan komma sent. Kringgå aldrig repositoryskydd.
 
 ## CodeRabbit
 
