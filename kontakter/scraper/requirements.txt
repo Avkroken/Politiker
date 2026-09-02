@@ -1,5 +1,5 @@
 playwright>=1.62.0
-pypdf>=6.16.1
+pypdf>=6.16.2
 requests>=2.34.2
 # Transitiv via requests, som bara kräver idna>=2.5,<4 och därför inte
 # hindrar en sårbar version. Golvet här stänger PYSEC-2026-215 /
