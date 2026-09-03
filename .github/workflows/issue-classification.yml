@@ -50,13 +50,14 @@ jobs:
 
           difficulty_count="$(printf '%s\n' "${labels[@]}" | grep -Ec '^difficulty:(low|medium|high)$' || true)"
           security_count="$(printf '%s\n' "${labels[@]}" | grep -Ec '^security:(critical|high|medium|low|none)$' || true)"
+          classification_count="$(printf '%s\n' "${labels[@]}" | grep -Ec '^classification:' || true)"
 
           if printf '%s\n' "${labels[@]}" | grep -Eq '^triage:(pending|invalid)$'; then
             echo "Classification routing ended in pending or invalid state" >&2
             exit 1
           fi
 
-          if [[ "$difficulty_count" != "1" || "$security_count" != "1" ]]; then
-            echo "Expected exactly one canonical difficulty and security label" >&2
+          if [[ "$difficulty_count" != "1" || "$security_count" != "1" || "$classification_count" != "0" ]]; then
+            echo "Expected exactly one canonical difficulty and security label and no temporary classification labels" >&2
             exit 1
           fi
