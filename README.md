@@ -69,26 +69,13 @@ npm run validate
 
 Python-delen verifieras separat av repositoryts CI.
 
-## Bidrag och merge-policy
+## Bidrag
 
-Ändringar görs på kortlivade branches och går via pull request till `main`. Live GitHub-rulesets är verkställande sanning om dokumentation och faktisk enforcement skiljer sig.
-
-För `main` gäller för närvarande:
-
-- `0` formella approvals krävs;
-- alla relevanta review-trådar måste vara lösta;
-- `CI / required`, `docker` och `scan-pr / osv-scan` måste passera på en branch som är uppdaterad mot senaste `main`;
-- CodeQL och Trivy Code Scanning måste uppfylla organisationens aktiva säkerhetströsklar;
-- automatiserade reviewfynd är rådgivande men relevanta fynd ska utvärderas och åtgärdas före merge;
-- endast squash merge är tillåtet och ruleseten har inga bypass actors.
-
-Direkt merge är tillåten när en uppgift redan omfattar merge eller när en stående mergeinstruktion finns. Den får endast göras efter full kontroll av aktuell HEAD, inklusive latest-base/mergeability, samtliga required CI- och security-gates, aktuella reviews och review-trådar. När CI blivit grön ska reviews och review-trådar kontrolleras igen eftersom botfeedback kan komma sent.
+Ändringar går via pull request till `main`. Det aktuella CI-, merge-queue- och deploykontraktet finns i `docs/CI.md`.
 
 ## Produktion
 
-Arbete görs på kortlivade branches och går via PR till `main`. GitHub Actions validerar kod och säkerhet men deployar inte produktion.
-
-Cloudflare Workers Builds äger produktionsdeploy från `main`:
+GitHub Actions validerar kod och säkerhet men deployar inte produktion. Cloudflare Workers Builds äger produktionsdeploy från `main`:
 
 | Worker | Root directory | Deploy command |
 | --- | --- | --- |
