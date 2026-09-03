@@ -8,9 +8,26 @@ on:
 permissions: {}
 
 jobs:
+  gamnacken_config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      client_id: ${{ steps.config.outputs.client_id }}
+    steps:
+      - name: Resolve Gamnacken client ID
+        id: config
+        env:
+          CLIENT_ID: ${{ vars.GAMNACKEN_CLIENT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLIENT_ID"
+          printf 'client_id=%s\n' "$CLIENT_ID" >> "$GITHUB_OUTPUT"
+
   release:
+    needs: gamnacken_config
     uses: Avkroken/.github/.github/workflows/release-please.yml@49d4bd4e80df25135c9726872183565341d1f0c1
     with:
-      app-client-id: ${{ vars.GAMNACKEN_CLIENT_ID }}
+      app-client-id: ${{ needs.gamnacken_config.outputs.client_id }}
     secrets:
       app-private-key: ${{ secrets.GAMNACKEN_PRIVATE_KEY }}
