@@ -5,9 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   release:
-    uses: Avkroken/.github/.github/workflows/auto-release.yml@dc58997bf1b5731683c53b78dfb9f5b1254a937e
+    uses: Avkroken/.github/.github/workflows/release-please.yml@49d4bd4e80df25135c9726872183565341d1f0c1
+    with:
+      app-client-id: ${{ vars.GAMNACKEN_CLIENT_ID }}
+    secrets:
+      app-private-key: ${{ secrets.GAMNACKEN_PRIVATE_KEY }}

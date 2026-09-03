@@ -86,7 +86,8 @@ Backward-compatible aliases may remain only while required by a verified runtime
 
 - `.github/workflows/ci.yml` owns `CI / required` and verifies app/log-archive plus Python tooling under `kontakter/`.
 - `.github/workflows/docker.yml` owns `docker`, builds `kontakter/scraper` and uploads Trivy SARIF.
-- `.github/workflows/release.yml` invokes the pinned reusable auto-release workflow from `Avkroken/.github`, creates GitHub Releases from `main`, and remains separate from pull-request CI.
+- `.github/workflows/release.yml` invokes the pinned Release Please workflow from `Avkroken/.github`. Changes accumulate in a Release PR that passes normal checks and merge queue; only the merged Release PR creates and publishes the next GitHub Release.
+- `release-please-config.json`, `.release-please-manifest.json` and `version.txt` are the repository release-version contract. `.github/release-components.json` lists the two first-party Workers shown in release notes.
 - Pin third-party GitHub Actions to full commit SHAs.
 
 ## Application security invariants
