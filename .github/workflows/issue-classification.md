@@ -32,7 +32,6 @@ safe-outputs:
     target: triggering
     create-if-missing: true
     issues: true
-    pull-requests: false
   missing-tool:
     create-issue: false
   missing-data:
