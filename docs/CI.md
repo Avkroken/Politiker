@@ -34,4 +34,10 @@ Workers Builds watch paths:
 
 ## Release
 
-`.github/workflows/release.yml` väljer exakta stabila `vX.Y.Z`-taggar som versionsbas. Nästa version bestäms av commits sedan senaste stabila tagg: breaking/`!`/`major:` → major, `feat:`/`minor:` → minor, `fix:`/`perf:`/`patch:` → patch. Övriga commits skapar ingen ny release.
+`.github/workflows/release.yml` anropar den SHA-pinnade centrala Release Please-workflowen i `Avkroken/.github` på push till `main` och manuellt via `workflow_dispatch`.
+
+Release Please håller en Release PR uppdaterad från Conventional Commits. `feat:` ger normalt minor, `fix:` patch och breaking changes major. Release PR:n går genom samma CI, reviews, rulesets och merge queue som annan kod; automationen begär bara native auto-merge och bypassar inget.
+
+`release-please-config.json`, `.release-please-manifest.json` och `version.txt` håller repositoryts stabila SemVer-version. Den första migrerade basversionen är den redan publicerade `v0.8.13`.
+
+När Release PR:n mergas skapas först en draft release. Innan publicering kompletterar den centrala workflowen Release Please-changelogen med en kort separat lista över dependency-bumpar och, via `.github/release-components.json`, en tabell över förstapartsprogrammen `politiker` och `politiker-log-archive`. Fullständiga dependency-listor hör inte hemma i release notes.
