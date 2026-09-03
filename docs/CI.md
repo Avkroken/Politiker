@@ -1,59 +1,22 @@
 # CI, deploy och release
 
-## Branchflöde och live merge-policy
+## Required CI
 
-`main` tar bara emot ändringar via pull request och endast squash merge är tillåtet. Arbete görs på kortlivade branches; repositoryt använder inte merge queue.
+Repositoryts required status checks är `CI / required` och `docker`.
 
-Organisationens aktiva rulesets är verkställande sanning. Vid senaste live-verifieringen krävs:
+`.github/workflows/ci.yml` producerar `CI / required` och verifierar appens låsta Node-beroenden, `npm run validate`, Wrangler dry-run för `log-archive` samt Python-koden under `kontakter/`.
 
-- `CI / required`;
-- `docker`;
-- `scan-pr / osv-scan`;
-- strict required status checks mot aktuell `main`;
-- 0 formella approvals;
-- stale reviews avfärdas efter push;
-- resolved review threads;
-- CodeQL Code Scanning protection (`medium_or_higher` security alerts, `errors_and_warnings` alerts);
-- Trivy Code Scanning protection för `high_or_higher` security alerts;
-- squash merge, utan bypass actors.
+`.github/workflows/docker.yml` producerar `docker`, bygger `kontakter/scraper`, kör Trivy och laddar SARIF till GitHub Code Scanning. Organisationens Trivy-ruleset blockerar security alerts från High och uppåt.
 
-Direkt merge är tillåten när den aktuella uppgiften redan omfattar merge eller när en stående mergeinstruktion finns. Den får bara göras efter full kontroll av aktuell HEAD: latest-base/mergeability, samtliga required CI- och security-gates, aktuella reviews och review-trådar. När CI blivit grön ska reviews och review-trådar läsas igen före merge eftersom botfeedback kan komma sent.
+Organisationens `main`-ruleset kräver dessutom den centrala OSV-workflowen från `Avkroken/.github`. På vanliga pull requests kör den `scan-pr`; i merge queue kör den `scan-merge-group`. `scan-pr / osv-scan` är inte en separat organization-level required status check.
 
-Copilot Code Review och CodeRabbit är rådgivande. Faktiska relevanta findings ska hanteras, men quota/rate-limit/tillfälligt tjänstefel är inte i sig en required status check.
+CodeQL merge protection, review-thread resolution, squash-only och övriga gemensamma merge-regler hanteras centralt av organisationens aktiva rulesets. Repositoryt använder merge queue.
 
-Org-rulesetet `main` refererar fortfarande till Regelverkets `.github/workflows/osv-scanner.yml` som central required workflow. Det är organisationsnivå och måste ändras separat när den centrala OSV-kopplingen tas bort.
+## Security automation
 
-## Repository-CI
+GitHubs native Code Scanning, Copilot Autofix och Dependabot-funktioner ska användas före repositoryspecifika remediationkedjor. Repository-CI ska inte skapa remediation-branches eller PR:er, lagra egna säkerhetsalert-snapshots eller bygga en separat remediationkö.
 
-`.github/workflows/ci.yml` producerar `CI / required` och kör repositoryts faktiska verifiering direkt på varje PR:
-
-- appens låsta Node-beroenden och `npm run validate`;
-- separat Wrangler dry-run för `log-archive`;
-- Python-beroenden under `kontakter/`, compileall och tester när testkatalog finns.
-
-Workflowen använder inte en repositoryspecifik impact-router. Det betyder att required-gaten verifierar båda huvudsakliga kodytorna på varje PR i stället för att försöka klassificera diffen.
-
-`.github/workflows/docker.yml` producerar `docker`. Den bygger `kontakter/scraper` på varje PR/run, kör Trivy vulnerability scanning och laddar SARIF till Code Scanning. Trivy-processen har exit code 0; mergeblockering av nya High/Critical-fynd verkställs av organisationens Trivy Code Scanning-ruleset. Workflowen använder alltså inte längre en konstgjord tom-SARIF-väg för opåverkade PR:er.
-
-`.github/workflows/osv-scanner.yml` är repositoryts egen OSV-definition. PR-jobbet producerar `scan-pr / osv-scan`; `main`/schedule/manual används för kompletterande rapportering.
-
-GitHub Actions deployar inte Cloudflare-produktion, skapar inte branches eller remediation-PR:er, armerar inte auto-merge och delegerar inte remediation. Metadataautomation på befintliga Issues/PR:er får användas med minsta nödvändiga behörighet.
-
-## GitHub-native säkerhetsremediation
-
-Repositoryt ska använda GitHubs native säkerhetsfunktioner före egna automationskedjor:
-
-- Code Scanning-alerts spåras vid behov genom GitHubs native länkning till nya eller befintliga Issues.
-- Copilot Autofix och agentic autofix får användas när GitHub erbjuder dem för alertet. PR:er som skapas den vägen går genom exakt samma merge-gates som andra PR:er.
-- Dependabot security updates och Dependabot auto-triage rules används för sårbara beroenden i stället för egna alert-pollers eller egna fix-PR-workflows.
-- Repositoryt ska inte lagra egna säkerhetsalert-snapshots eller bygga en separat remediationkö ovanpå GitHub Security.
-- En repositoryägd automation som duplicerar en GitHub-native säkerhetsfunktion ska tas bort om det inte finns ett dokumenterat funktionsgap.
-
-Den tidigare `.github/workflows/auto-fix-review.yml` avvecklas därför. Den kopplade betrodd bot-review till ett eget App-tokenflöde som postade `@codex address that feedback`; den funktionen ersätts av GitHubs native säkerhetsremediation och vanlig explicit reviewhantering.
-
-Code Scanning alert→Issue-länkning är en spårningsfunktion, inte en extra security gate. Alert- och Issue-state synkroniseras inte automatiskt, så en länkad Issue stängs först när den vanliga verifieringen visar att arbetet är klart.
-
-## Cloudflare-owned production deploy
+## Production deploy
 
 Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Actions validerar men deployar inte produktion.
 
@@ -62,24 +25,13 @@ Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Ac
 | `politiker` | `app` | `npm run migrate:production && npm run deploy && npm run verify:production` |
 | `politiker-log-archive` | `log-archive` | `npm run deploy` |
 
-Appens `deploy` är direkt `wrangler deploy --strict --outdir dist`; `log-archive` använder direkt `wrangler deploy --strict`. Appen är ensam migrationsägare för D1 `politiker-eu`, och `infra/migrations/` med Wranglers `d1_migrations` är den enda migrationskedjan/state-modellen.
+Appen är ensam migrationsägare för D1 `politiker-eu`. `infra/migrations/` tillsammans med Wranglers `d1_migrations` är den enda migrationskedjan. `wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers, required secret names och övrig versionshanterad Worker-konfiguration.
 
-Efter app-deploy kör `npm run verify:production`, som endast verifierar att `https://politiker.denied.se/` svarar HTTP 200. `log-archive` är en tail-konsument och behöver ingen konstgjord publik health-route.
+Workers Builds watch paths:
 
-Workers Builds watch paths ska vara:
-
-- `politiker`: `app/**`, `shared/**`, `infra/migrations/**`, `scripts/verify-production.mjs`;
-- `politiker-log-archive`: `log-archive/**`.
-
-`wrangler.jsonc` är source of truth för Worker-bindings, routes, queues, cron, tail consumers, required secret names och övrig versionshanterad Worker-konfiguration. Secrets ligger utanför repositoryt.
+- `politiker`: `app/**`, `shared/**`, `infra/migrations/**`, `scripts/verify-production.mjs`
+- `politiker-log-archive`: `log-archive/**`
 
 ## Release
 
-`.github/workflows/release.yml` serialiserar releasekörningar och väljer endast exakta stabila `vX.Y.Z`-taggar som versionsbas. Nästa version bestäms från commitmeddelanden sedan senaste stabila taggen:
-
-- breaking change, `!` eller `major:` → major;
-- `feat:` eller `minor:` → minor;
-- `fix:`, `perf:` eller `patch:` → patch;
-- övriga commits skapar ingen ny release.
-
-Releasen riktas mot den aktuella `main`-SHA:n och skapas med GitHubs genererade release notes.
+`.github/workflows/release.yml` väljer exakta stabila `vX.Y.Z`-taggar som versionsbas. Nästa version bestäms av commits sedan senaste stabila tagg: breaking/`!`/`major:` → major, `feat:`/`minor:` → minor, `fix:`/`perf:`/`patch:` → patch. Övriga commits skapar ingen ny release.
