@@ -4,6 +4,13 @@ import { test } from "node:test";
 
 const css = readFileSync(new URL("../public/civic-polish.css", import.meta.url), "utf8");
 
+function ruleSelectors(source: string): string[] {
+  return [...source.matchAll(/(?:^|[{}])\s*([^@{}][^{}]*?)\{/g)]
+    .flatMap((match) => match[1].split(","))
+    .map((selector) => selector.replace(/\/\*[\s\S]*?\*\//g, "").trim())
+    .filter(Boolean);
+}
+
 test("uses the Tre Kronor inspired navy and yellow palette tokens", () => {
   assert.match(css, /--bg-soft:#15244d;/i);
   assert.match(css, /--surface-3:#2d5d8d;/i);
@@ -30,7 +37,7 @@ test("disabled primary actions use the same dark neutral surface as other disabl
 test("plain links use the current Swedish yellow without overriding button anchors", () => {
   assert.match(css, /a:not\(\.button\)\{\s*color:var\(--accent\);\s*\}/s);
   assert.match(css, /a:not\(\.button\):hover\{\s*color:var\(--accent-strong\);\s*\}/s);
-  assert.doesNotMatch(css, /^[ \t]*a[ \t]*\{/m);
+  assert.equal(ruleSelectors(css).includes("a"), false, "bare anchor selectors must not override button anchors");
 });
 
 test("Safari autofill keeps inputs on the navy theme", () => {
