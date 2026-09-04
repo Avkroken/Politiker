@@ -27,6 +27,33 @@ body{
     var(--bg-soft);
 }
 
+a{
+  color:var(--accent);
+}
+
+a:hover{
+  color:var(--accent-strong);
+}
+
+/* Safari/iOS kan annars lägga en ljusgul AutoFill-yta ovanpå det mörka temat. */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--text);
+  caret-color:var(--text);
+  -webkit-box-shadow:0 0 0 1000px var(--bg-soft) inset;
+  box-shadow:0 0 0 1000px var(--bg-soft) inset;
+  border-color:var(--line-bright);
+  transition:background-color 999999s ease-out 0s;
+}
+
+.input:autofill{
+  -webkit-text-fill-color:var(--text);
+  caret-color:var(--text);
+  box-shadow:0 0 0 1000px var(--bg-soft) inset;
+  border-color:var(--line-bright);
+}
+
 /*
  * Marinblå ytor bär den visuella identiteten. Gult används som tydlig accent
  * och primär åtgärdsfärg; vanlig brödtext förblir ljus för läsbarhet.
@@ -57,8 +84,27 @@ body{
   opacity:1;
   color:var(--faint);
   border-color:var(--line);
-  background:var(--surface-2);
+  background:var(--bg);
   box-shadow:none;
+}
+
+.compose-use-file:not(:disabled){
+  color:var(--accent);
+  border-color:var(--accent);
+  background:var(--bg);
+}
+
+.compose-use-file:not(:disabled):hover{
+  color:var(--bg-soft);
+  border-color:var(--accent-strong);
+  background:var(--accent-strong);
+}
+
+.compose-use-file:disabled{
+  opacity:1;
+  color:var(--faint);
+  border-color:var(--line);
+  background:var(--bg);
 }
 
 .details[open]>summary,
