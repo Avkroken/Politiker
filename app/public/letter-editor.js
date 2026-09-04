@@ -156,23 +156,15 @@
     };
   }
 
-  function visibleJobError(job){
-    const error=String(job.last_error||'');
-    if(!error)return '';
-    const active=['pending','queued','sending'].includes(job.status);
-    const staleSmtpAuth=/^(?:Servern accepterade inte AUTH LOGIN|Användarnamn accepterades inte|Inloggning misslyckades)\b/i.test(error);
-    return active&&staleSmtpAuth?'':error;
-  }
-
   renderJobs=async function(root){
     root.innerHTML=`<div class="page">${pageHead('Utskick','Status, takt och åtgärder för dina utskick.')}<div id="jobs" class="list"></div></div>`;
     try{await Promise.all([ensureJobs(),ensureCredentials()])}catch(error){$('#jobs').innerHTML=`<div class="notice notice--error">${esc(error instanceof Error?error.message:String(error))}</div>`;return}
     const host=$('#jobs');
     if(!state.jobs.length){host.innerHTML='<div class="card empty">Inga utskick ännu.</div>';return}
     for(const job of state.jobs){
-      const sent=Number(job.sent_count||0),failed=Number(job.bounce_count||job.failed_count||0),total=Number(job.total_recipients||0),pct=total?Math.min(1,(sent+failed)/total):0,card=document.createElement('article'),visibleError=visibleJobError(job);
+      const sent=Number(job.sent_count||0),failed=Number(job.bounce_count||job.failed_count||0),total=Number(job.total_recipients||0),pct=total?Math.min(1,(sent+failed)/total):0,card=document.createElement('article');
       card.className='card';
-      card.innerHTML=`<div class="row row--between"><span class="badge ${statusClass(job.status)}">${esc(statusLabel(job.status))}</span><span class="card__meta">${fmtDate(job.created_at)}</span></div>${job.subject?`<div class="card__title section">${esc(job.subject)}</div>`:''}<div class="kpis section"><div class="kpi"><strong>${num(sent)}</strong><span>Skickade</span></div><div class="kpi"><strong>${num(failed)}</strong><span>Misslyckade</span></div><div class="kpi"><strong>${num(Math.max(0,total-sent-failed))}</strong><span>Kvar</span></div></div><progress class="progress section" max="1" value="${pct}">${Math.round(pct*100)}%</progress>${visibleError?`<div class="notice notice--error section">${esc(visibleError)}</div>`:''}<div class="row actions section"></div>`;
+      card.innerHTML=`<div class="row row--between"><span class="badge ${statusClass(job.status)}">${esc(statusLabel(job.status))}</span><span class="card__meta">${fmtDate(job.created_at)}</span></div>${job.subject?`<div class="card__title section">${esc(job.subject)}</div>`:''}<div class="kpis section"><div class="kpi"><strong>${num(sent)}</strong><span>Skickade</span></div><div class="kpi"><strong>${num(failed)}</strong><span>Misslyckade</span></div><div class="kpi"><strong>${num(Math.max(0,total-sent-failed))}</strong><span>Kvar</span></div></div><progress class="progress section" max="1" value="${pct}">${Math.round(pct*100)}%</progress>${job.last_error?`<div class="notice notice--error section">${esc(job.last_error)}</div>`:''}<div class="row actions section"></div>`;
       const actions=$('.actions',card);
       if(['pending','queued','sending'].includes(job.status))actions.append(button('Redigera brev','secondary',()=>openLetterEditor(job)),button('Ändra takt','secondary',()=>openRate(job)),button('Avbryt','danger',()=>jobAction(job,'cancel')));
       else actions.append(button('Ta bort','secondary',()=>jobAction(job,'delete')));
