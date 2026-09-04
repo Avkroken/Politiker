@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import { Script, createContext } from "node:vm";
 import { test } from "node:test";
 
+const source = readFileSync(new URL("../public/private-recipient-polish.js", import.meta.url), "utf8");
+
 function loadParser(): (text: string) => { email: string; name: string }[] {
-  const source = readFileSync(new URL("../public/private-recipient-polish.js", import.meta.url), "utf8");
   const context = createContext({});
   new Script(source).runInContext(context);
   return context.parseContactText as (text: string) => { email: string; name: string }[];
@@ -42,4 +43,9 @@ test("ignores surrounding prose but requires at least one valid address", () => 
     { email: "anna@example.se", name: "" },
   ]);
   assert.throws(() => parse("Här finns inga adresser"), /inga giltiga e-postadresser/i);
+});
+
+test("clarifies the document import action and gives it a dedicated style hook", () => {
+  assert.match(source, /useFile\.textContent='Använd vald fil som brevtext'/);
+  assert.match(source, /useFile\.classList\.add\('compose-use-file'\)/);
 });

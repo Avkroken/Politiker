@@ -154,7 +154,10 @@
     globalThis.renderCompose=function(...args){
       const result=originalRenderCompose.apply(this,args);
       const useFile=document.querySelector('#use-file');
-      if(useFile)useFile.textContent='Använd i brevet';
+      if(useFile){
+        useFile.textContent='Använd vald fil som brevtext';
+        useFile.classList.add('compose-use-file');
+      }
       return result;
     };
   }

@@ -18,13 +18,30 @@ test("active primary actions use navy text and a restrained yellow glow", () => 
   assert.match(match[1], /box-shadow:[^;]*var\(--accent-glow\)/);
 });
 
-test("disabled primary actions are neutral instead of faded yellow", () => {
+test("disabled primary actions use the same dark neutral surface as other disabled actions", () => {
   const match = css.match(/\.button--primary:disabled,\s*\.button--primary:disabled:hover\{([^}]*)\}/s);
   assert.ok(match, "disabled primary button rule must exist");
   assert.match(match[1], /opacity:1;/);
-  assert.match(match[1], /background:var\(--surface-2\);/);
+  assert.match(match[1], /background:var\(--bg\);/);
   assert.match(match[1], /box-shadow:none;/);
   assert.doesNotMatch(match[1], /background:[^;]*var\(--accent\)/);
+});
+
+test("plain links use the current Swedish yellow instead of the older light accent", () => {
+  assert.match(css, /a\{\s*color:var\(--accent\);\s*\}/s);
+  assert.match(css, /a:hover\{\s*color:var\(--accent-strong\);\s*\}/s);
+});
+
+test("Safari autofill keeps inputs on the navy theme", () => {
+  const match = css.match(/\.input:-webkit-autofill,[\s\S]*?\{([^}]*)\}/);
+  assert.ok(match, "Safari autofill rule must exist");
+  assert.match(match[1], /-webkit-text-fill-color:var\(--text\);/);
+  assert.match(match[1], /-webkit-box-shadow:0 0 0 1000px var\(--bg-soft\) inset;/);
+});
+
+test("document import action stays legible while disabled and becomes a yellow action when enabled", () => {
+  assert.match(css, /\.compose-use-file:not\(:disabled\)\{[^}]*color:var\(--accent\);[^}]*border-color:var\(--accent\);/s);
+  assert.match(css, /\.compose-use-file:disabled\{[^}]*opacity:1;[^}]*background:var\(--bg\);/s);
 });
 
 test("open details use the yellow accent and subtle glow", () => {
