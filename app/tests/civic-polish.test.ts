@@ -37,7 +37,10 @@ test("disabled primary actions use the same dark neutral surface as other disabl
 test("plain links use the current Swedish yellow without overriding button anchors", () => {
   assert.match(css, /a:not\(\.button\)\{\s*color:var\(--accent\);\s*\}/s);
   assert.match(css, /a:not\(\.button\):hover\{\s*color:var\(--accent-strong\);\s*\}/s);
-  assert.equal(ruleSelectors(css).includes("a"), false, "bare anchor selectors must not override button anchors");
+  const unsafeAnchors = ruleSelectors(css).filter((selector) =>
+    /^a(?:$|:|\[)/.test(selector) && !selector.startsWith("a:not(.button)"),
+  );
+  assert.deepEqual(unsafeAnchors, [], "generic anchor states must not override button anchors");
 });
 
 test("Safari autofill keeps inputs on the navy theme", () => {
