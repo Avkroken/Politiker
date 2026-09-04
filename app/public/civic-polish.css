@@ -27,18 +27,17 @@ body{
     var(--bg-soft);
 }
 
-a{
+a:not(.button){
   color:var(--accent);
 }
 
-a:hover{
+a:not(.button):hover{
   color:var(--accent-strong);
 }
 
 /* Safari/iOS kan annars lägga en ljusgul AutoFill-yta ovanpå det mörka temat. */
 .input:-webkit-autofill,
-.input:-webkit-autofill:hover,
-.input:-webkit-autofill:focus{
+.input:-webkit-autofill:hover{
   -webkit-text-fill-color:var(--text);
   caret-color:var(--text);
   -webkit-box-shadow:0 0 0 1000px var(--bg-soft) inset;
@@ -47,11 +46,27 @@ a:hover{
   transition:background-color 999999s ease-out 0s;
 }
 
+.input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--text);
+  caret-color:var(--text);
+  -webkit-box-shadow:0 0 0 1000px var(--bg-soft) inset,0 0 0 2px rgba(255,215,13,.14);
+  box-shadow:0 0 0 1000px var(--bg-soft) inset,0 0 0 2px rgba(255,215,13,.14);
+  border-color:var(--accent);
+  transition:background-color 999999s ease-out 0s;
+}
+
 .input:autofill{
   -webkit-text-fill-color:var(--text);
   caret-color:var(--text);
   box-shadow:0 0 0 1000px var(--bg-soft) inset;
   border-color:var(--line-bright);
+}
+
+.input:autofill:focus{
+  -webkit-text-fill-color:var(--text);
+  caret-color:var(--text);
+  box-shadow:0 0 0 1000px var(--bg-soft) inset,0 0 0 2px rgba(255,215,13,.14);
+  border-color:var(--accent);
 }
 
 /*
