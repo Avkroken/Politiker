@@ -30,7 +30,7 @@ test("disabled primary actions use the same dark neutral surface as other disabl
 test("plain links use the current Swedish yellow without overriding button anchors", () => {
   assert.match(css, /a:not\(\.button\)\{\s*color:var\(--accent\);\s*\}/s);
   assert.match(css, /a:not\(\.button\):hover\{\s*color:var\(--accent-strong\);\s*\}/s);
-  assert.doesNotMatch(css, /(?:^|\n)a\{\s*color:/s);
+  assert.doesNotMatch(css, /(?:^|\n)\s*a\s*\{\s*color:/s);
 });
 
 test("Safari autofill keeps inputs on the navy theme", () => {
