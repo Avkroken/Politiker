@@ -10,6 +10,11 @@ test("FAQ integrity deep link has a target and loads the hash handler", () => {
   assert.match(html, /<script src="\/faq\.js" defer><\/script>/);
 });
 
+test("FAQ uses the shared civic polish and navy browser theme", () => {
+  assert.match(html, /<meta name="theme-color" content="#08122f">/i);
+  assert.match(html, /<link rel="stylesheet" href="\/civic-polish\.css">/);
+});
+
 test("FAQ hash handler opens targeted details on load and hash changes", () => {
   assert.match(script, /target instanceof HTMLDetailsElement/);
   assert.match(script, /target\.open = true/);
