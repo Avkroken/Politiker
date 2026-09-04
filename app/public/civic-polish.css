@@ -9,6 +9,29 @@
   --r-lg:18px;
 }
 
+/*
+ * Använd samma svenska gul/blå palett i två kontrastlägen:
+ * gul yta med djupblå text för primära åtgärder, och blå yta med gula accenter
+ * för valda/öppna ytor. Exakt flaggblå på exakt flagggul ger för låg kontrast
+ * för normalstor knapptext, därför används den djupare bakgrundsblå som textfärg.
+ */
+.button--primary:not(:disabled){
+  color:var(--bg-soft);
+}
+
+.button--primary:disabled,
+.button--primary:disabled:hover{
+  opacity:1;
+  color:var(--faint);
+  border-color:var(--line);
+  background:var(--surface-2);
+  box-shadow:none;
+}
+
+.details[open]>summary{
+  color:var(--accent);
+}
+
 .private-entry-grid{
   grid-template-columns:1fr;
 }
@@ -25,7 +48,7 @@
 
 .private-import-details>summary{
   min-height:58px;
-  color:var(--accent-strong);
+  color:var(--accent);
   font-size:1.05rem;
 }
 
