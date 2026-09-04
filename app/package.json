@@ -7,7 +7,7 @@
     "types": "wrangler types",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "typecheck": "wrangler types && tsc --noEmit",
-    "validate": "npm test && node --test ../scripts/verify-production.test.mjs && node --check public/app.js && node --check public/app-send.js && node --check public/private-recipient-polish.js && node --check public/faq.js && node --check public/letter-import.js && node --check public/letter-editor.js && node --check public/active-letter-import.js && node --check public/app-settings.js && node --check public/app-admin.js && wrangler d1 migrations apply politiker-eu --local && wrangler types && tsc --noEmit && wrangler deploy --dry-run",
+    "validate": "npm test && node --test ../scripts/verify-production.test.mjs && node --check public/app.js && node --check public/app-send.js && node --check public/private-recipient-polish.js && node --check public/auth-autofill.js && node --check public/faq.js && node --check public/letter-import.js && node --check public/letter-editor.js && node --check public/active-letter-import.js && node --check public/app-settings.js && node --check public/app-admin.js && wrangler d1 migrations apply politiker-eu --local && wrangler types && tsc --noEmit && wrangler deploy --dry-run",
     "deploy": "wrangler deploy --strict --outdir dist",
     "migrate:production": "wrangler d1 migrations apply politiker-eu --remote",
     "verify:production": "node ../scripts/verify-production.mjs",
