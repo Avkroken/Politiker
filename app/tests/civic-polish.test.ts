@@ -27,16 +27,24 @@ test("disabled primary actions use the same dark neutral surface as other disabl
   assert.doesNotMatch(match[1], /background:[^;]*var\(--accent\)/);
 });
 
-test("plain links use the current Swedish yellow instead of the older light accent", () => {
-  assert.match(css, /a\{\s*color:var\(--accent\);\s*\}/s);
-  assert.match(css, /a:hover\{\s*color:var\(--accent-strong\);\s*\}/s);
+test("plain links use the current Swedish yellow without overriding button anchors", () => {
+  assert.match(css, /a:not\(\.button\)\{\s*color:var\(--accent\);\s*\}/s);
+  assert.match(css, /a:not\(\.button\):hover\{\s*color:var\(--accent-strong\);\s*\}/s);
+  assert.doesNotMatch(css, /(?:^|\n)a\{\s*color:/s);
 });
 
 test("Safari autofill keeps inputs on the navy theme", () => {
-  const match = css.match(/\.input:-webkit-autofill,[\s\S]*?\{([^}]*)\}/);
+  const match = css.match(/\.input:-webkit-autofill,\s*\.input:-webkit-autofill:hover\{([^}]*)\}/s);
   assert.ok(match, "Safari autofill rule must exist");
   assert.match(match[1], /-webkit-text-fill-color:var\(--text\);/);
   assert.match(match[1], /-webkit-box-shadow:0 0 0 1000px var\(--bg-soft\) inset;/);
+});
+
+test("focused Safari autofill inputs keep a visible yellow focus ring", () => {
+  const match = css.match(/\.input:-webkit-autofill:focus\{([^}]*)\}/s);
+  assert.ok(match, "focused Safari autofill rule must exist");
+  assert.match(match[1], /border-color:var\(--accent\);/);
+  assert.match(match[1], /-webkit-box-shadow:[^;]*inset,[^;]*rgba\(255,215,13,\.14\)/);
 });
 
 test("document import action stays legible while disabled and becomes a yellow action when enabled", () => {
