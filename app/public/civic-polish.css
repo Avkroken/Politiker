@@ -1,22 +1,55 @@
 :root{
-  /* Riksarkivets digitala rekommendation för PMS 116 C. */
-  --accent:#ffcd00;
-  --warning:#ffcd00;
-  /* Behåll den svenska blå som redan används i civic-temat. */
-  --accent-blue:#006aa7;
+  /* Tre Kronor-inspirerad marin bas med Svenska Ishockeyförbundets nuvarande webbgula accent. */
+  --bg:#08122f;
+  --bg-soft:#15244d;
+  --surface:#1b315f;
+  --surface-2:#234775;
+  --surface-3:#2d5d8d;
+  --text:#f7fbff;
+  --muted:#cad8e9;
+  --faint:#9fb5cf;
+  --line:#416b96;
+  --line-bright:#73a6ce;
+  --accent:#ffd70d;
+  --accent-strong:#ffe36a;
+  --accent-blue:#2d5d8d;
+  --accent-blue-strong:#73a6ce;
+  --warning:#ffd70d;
+  --accent-glow:rgba(255,215,13,.22);
   --r-sm:8px;
   --r-md:12px;
   --r-lg:18px;
 }
 
+body{
+  background:
+    radial-gradient(900px 500px at 85% -8%,rgba(45,93,141,.28),transparent 66%),
+    var(--bg-soft);
+}
+
 /*
- * Använd samma svenska gul/blå palett i två kontrastlägen:
- * gul yta med djupblå text för primära åtgärder, och blå yta med gula accenter
- * för valda/öppna ytor. Exakt flaggblå på exakt flagggul ger för låg kontrast
- * för normalstor knapptext, därför används den djupare bakgrundsblå som textfärg.
+ * Marinblå ytor bär den visuella identiteten. Gult används som tydlig accent
+ * och primär åtgärdsfärg; vanlig brödtext förblir ljus för läsbarhet.
  */
 .button--primary:not(:disabled){
   color:var(--bg-soft);
+  box-shadow:0 0 0 1px rgba(255,215,13,.08),0 0 22px var(--accent-glow);
+}
+
+.button--primary:not(:disabled):hover{
+  color:var(--bg-soft);
+  box-shadow:0 0 0 1px rgba(255,227,106,.16),0 0 28px rgba(255,215,13,.28);
+}
+
+.button--secondary:not(:disabled){
+  color:var(--accent);
+  border-color:var(--line-bright);
+}
+
+.button--secondary:not(:disabled):hover{
+  color:var(--accent);
+  border-color:var(--accent);
+  background:var(--surface-2);
 }
 
 .button--primary:disabled,
@@ -28,7 +61,14 @@
   box-shadow:none;
 }
 
-.details[open]>summary{
+.details[open]>summary,
+.private-import-details>summary{
+  color:var(--accent);
+  text-shadow:0 0 14px rgba(255,215,13,.14);
+}
+
+.card__eyebrow,
+.section-eyebrow{
   color:var(--accent);
 }
 
@@ -48,7 +88,6 @@
 
 .private-import-details>summary{
   min-height:58px;
-  color:var(--accent);
   font-size:1.05rem;
 }
 
