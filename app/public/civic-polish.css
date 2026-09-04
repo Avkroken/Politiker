@@ -19,6 +19,9 @@
   --r-sm:8px;
   --r-md:12px;
   --r-lg:18px;
+  --font-mobile-meta:.8rem;
+  --font-mobile-secondary:.875rem;
+  --font-mobile-emphasis:.9rem;
 }
 
 body{
@@ -176,6 +179,25 @@ a:not(.button):hover{
 }
 
 @media(max-width:520px){
+  /* Mobilens sekundärtext ska ha en konsekvent läsbar miniminivå. */
+  .service-band__inner span:last-child,
+  .hero-proof__item small{
+    font-size:var(--font-mobile-secondary);
+    line-height:1.3;
+  }
+
+  .hero-proof__item strong{
+    font-size:var(--font-mobile-emphasis);
+    line-height:1.2;
+  }
+
+  .card__eyebrow,
+  .level-card__copy small,
+  .table th{
+    font-size:var(--font-mobile-meta);
+    line-height:1.3;
+  }
+
   #private-recipients .card{
     padding:22px 18px;
   }
