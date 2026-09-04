@@ -1,0 +1,59 @@
+:root{
+  /* Riksarkivets digitala rekommendation för PMS 116 C. */
+  --accent:#ffcd00;
+  --warning:#ffcd00;
+  /* Behåll den svenska blå som redan används i civic-temat. */
+  --accent-blue:#006aa7;
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:18px;
+}
+
+.private-entry-grid{
+  grid-template-columns:1fr;
+}
+
+.private-entry-grid>.card,
+.private-entry-grid>.details{
+  width:100%;
+}
+
+.private-import-details{
+  padding:0 18px 18px;
+  background:var(--surface);
+}
+
+.private-import-details>summary{
+  min-height:58px;
+  color:var(--accent-strong);
+  font-size:1.05rem;
+}
+
+.private-import-body{
+  padding-top:4px;
+}
+
+.private-import-hint{
+  margin:0;
+  max-width:68ch;
+}
+
+.private-import-details textarea.input{
+  min-height:140px;
+}
+
+@media(max-width:520px){
+  #private-recipients .card{
+    padding:22px 18px;
+  }
+
+  .private-entry-grid .row{
+    display:grid;
+    grid-template-columns:1fr;
+    align-items:stretch;
+  }
+
+  .private-entry-grid .button{
+    width:100%;
+  }
+}
