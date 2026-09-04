@@ -31,7 +31,7 @@
       ?globalThis.splitContactLine(line)
       :line.split(/[\t;,]/).map(x=>x.trim());
     const emailColumn=split.findIndex(value=>String(value).toLowerCase().includes(email));
-    if(emailColumn>=0){
+    if(emailColumn>=0&&split.length>1){
       for(let distance=1;distance<split.length;distance++){
         for(const index of [emailColumn-distance,emailColumn+distance]){
           if(index<0||index>=split.length)continue;
@@ -41,15 +41,7 @@
         }
       }
     }
-
-    const remainder=cleanImportedName(
-      line
-        .replace(new RegExp(EMAIL_SOURCE,'i'),' ')
-        .replace(/\bmailto:\s*/i,' ')
-        .replace(/[()[\]{}]/g,' '),
-    );
-    if(!remainder||remainder.includes('@')||/^(?:namn|name|e-?post|email|mail)$/i.test(remainder))return'';
-    return remainder;
+    return'';
   }
 
   function parseFlexibleContactText(text){
