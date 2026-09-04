@@ -39,7 +39,7 @@ test("extracts several addresses from the same line and deduplicates them", () =
 test("ignores surrounding prose but requires at least one valid address", () => {
   const parse = loadParser();
   assert.deepEqual(plain(parse("Lokala journalister\nKontakta anna@example.se först.")), [
-    { email: "anna@example.se", name: "Kontakta först." },
+    { email: "anna@example.se", name: "" },
   ]);
   assert.throws(() => parse("Här finns inga adresser"), /inga giltiga e-postadresser/i);
 });
