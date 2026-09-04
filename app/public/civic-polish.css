@@ -94,6 +94,16 @@ a:not(.button):hover{
   background:var(--surface-2);
 }
 
+/* Inställningsflikar är valda lägen, inte CTA-knappar. På iOS kan :hover
+ * ligga kvar efter tryck; behåll därför samma accentgula yta även då. */
+.settings-nav .button--primary:not(:disabled),
+.settings-nav .button--primary:not(:disabled):hover{
+  color:var(--bg-soft);
+  border-color:var(--accent);
+  background:var(--accent);
+  box-shadow:none;
+}
+
 .button--primary:disabled,
 .button--primary:disabled:hover{
   opacity:1;
