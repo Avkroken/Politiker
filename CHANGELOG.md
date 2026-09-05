@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3](https://github.com/Avkroken/Politiker/compare/v0.9.2...v0.9.3) (2026-09-05)
+
+
+### Fixes
+
+* dölj inaktuellt SMTP-authfel under aktivt utskick ([#425](https://github.com/Avkroken/Politiker/issues/425)) ([a99c833](https://github.com/Avkroken/Politiker/commit/a99c83336b4e9eb9d73f9c4fb79a3137e9189886))
+
 ## [0.9.2](https://github.com/Avkroken/Politiker/compare/v0.9.1...v0.9.2) (2026-09-05)
 
 
