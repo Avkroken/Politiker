@@ -1,15 +1,15 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-# CodeRabbit är rådgivande. Kör inte automatiska review-rundor eller
-# blockerande commit-statusar som förbrukar begränsad review-kvot.
 inheritance: true
 
+# CodeRabbit reviews are dispatched by Avkroken's label-driven review router.
+# Keep local overrides limited to the router contract; organization settings own
+# shared review/status behavior.
 reviews:
-  review_progress: false
-  commit_status: false
-  fail_commit_status: false
   auto_review:
     enabled: false
     auto_incremental_review: false
     auto_pause_after_reviewed_commits: 0
-    drafts: false
+    drafts: true
+    labels:
+      - review:coderabbit
