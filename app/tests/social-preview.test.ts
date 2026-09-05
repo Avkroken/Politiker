@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+const headers = readFileSync(new URL("../public/_headers", import.meta.url), "utf8");
 const manifest = JSON.parse(
   readFileSync(new URL("../public/site.webmanifest", import.meta.url), "utf8"),
 ) as {
@@ -24,6 +25,17 @@ test("publishes broad link-preview metadata with absolute image URLs", () => {
   assert.ok(html.includes(`<meta name="twitter:image" content="${imageUrl}">`));
   assert.match(html, /<meta name="twitter:image:alt" content="PolitikerKontakt – nå politiker direkt">/);
   assert.match(html, /max-image-preview:large/);
+});
+
+test("allows public preview images and favicons to load cross-origin", () => {
+  assert.match(
+    headers,
+    /\/og-image\.png\r?\n\s*! Cross-Origin-Resource-Policy\r?\n\s*Access-Control-Allow-Origin: \*/,
+  );
+  assert.match(
+    headers,
+    /\/favicon\*\r?\n\s*! Cross-Origin-Resource-Policy\r?\n\s*Access-Control-Allow-Origin: \*/,
+  );
 });
 
 test("publishes a manifest backed by the existing app icons", () => {

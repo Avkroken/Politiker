@@ -8,3 +8,11 @@
   Origin-Agent-Cluster: ?1
   X-Permitted-Cross-Domain-Policies: none
   Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+/og-image.png
+  ! Cross-Origin-Resource-Policy
+  Access-Control-Allow-Origin: *
+
+/favicon*
+  ! Cross-Origin-Resource-Policy
+  Access-Control-Allow-Origin: *
