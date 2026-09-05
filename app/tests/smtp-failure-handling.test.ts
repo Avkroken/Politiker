@@ -15,13 +15,13 @@ test("SMTP authentication failures are account-scoped, not recipient bounces", (
 });
 
 test("active jobs hide stale SMTP authentication diagnostics", () => {
-  assert.equal(
-    visibleSendJobError("sending", "Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed"),
-    null,
-  );
+  const error = "Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed";
+  for (const status of ["pending", "queued", "sending"]) {
+    assert.equal(visibleSendJobError(status, error), null);
+  }
 });
 
-test("stopped jobs still show SMTP authentication diagnostics", () => {
+test("aborted jobs still show SMTP authentication diagnostics", () => {
   const error = "Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed";
   assert.equal(visibleSendJobError("aborted", error), error);
 });
