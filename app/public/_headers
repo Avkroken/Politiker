@@ -13,6 +13,10 @@
   ! Cross-Origin-Resource-Policy
   Access-Control-Allow-Origin: *
 
+/civic-hero.png
+  ! Cross-Origin-Resource-Policy
+  Access-Control-Allow-Origin: *
+
 /favicon*
   ! Cross-Origin-Resource-Policy
   Access-Control-Allow-Origin: *
