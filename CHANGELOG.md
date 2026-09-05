@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/Avkroken/Politiker/compare/v0.9.1...v0.9.2) (2026-09-05)
+
+
+### Fixes
+
+* allow preview images cross-origin ([#429](https://github.com/Avkroken/Politiker/issues/429)) ([7eed02f](https://github.com/Avkroken/Politiker/commit/7eed02f882bd78e942652ceef27d674994d1296c))
+
 ## [0.9.1](https://github.com/Avkroken/Politiker/compare/v0.9.0...v0.9.1) (2026-09-05)
 
 
