@@ -30,11 +30,11 @@ test("publishes broad link-preview metadata with absolute image URLs", () => {
 test("allows public preview images and favicons to load cross-origin", () => {
   assert.match(
     headers,
-    /\/og-image\.png\n  ! Cross-Origin-Resource-Policy\n  Access-Control-Allow-Origin: \*/,
+    /\/og-image\.png\r?\n\s*! Cross-Origin-Resource-Policy\r?\n\s*Access-Control-Allow-Origin: \*/,
   );
   assert.match(
     headers,
-    /\/favicon\*\n  ! Cross-Origin-Resource-Policy\n  Access-Control-Allow-Origin: \*/,
+    /\/favicon\*\r?\n\s*! Cross-Origin-Resource-Policy\r?\n\s*Access-Control-Allow-Origin: \*/,
   );
 });
 
