@@ -3,6 +3,7 @@ import { getRecipientsForAreas, countSentToday, countSentTodayForCredential, get
 import type { Env } from "./db";
 import type { SendJobMessage } from "../../shared/types";
 import { decryptLetterData, encryptLetterData } from "./letter-privacy";
+import { visibleSendJobError } from "../../shared/smtp-failure";
 
 const STAGE_CHUNK_SIZE = 500;
 const MAX_LETTER_HTML_BYTES = 1024 * 1024;
@@ -405,7 +406,7 @@ export async function getSendJobsForAccount(env: Env, accountId: string) {
         letter_html = null;
       }
     }
-    return { ...job, letter_html };
+    return { ...job, last_error: visibleSendJobError(row.status, row.last_error), letter_html };
   }));
 }
 

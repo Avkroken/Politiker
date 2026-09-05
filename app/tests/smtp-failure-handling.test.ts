@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   isPermanentRecipientSmtpFailure,
   isSmtpAuthenticationFailure,
+  visibleSendJobError,
 } from "../../shared/smtp-failure.ts";
 
 const queueSource = readFileSync(new URL("../src/send-queue.ts", import.meta.url), "utf8");
@@ -11,6 +12,23 @@ const queueSource = readFileSync(new URL("../src/send-queue.ts", import.meta.url
 test("SMTP authentication failures are account-scoped, not recipient bounces", () => {
   assert.equal(isSmtpAuthenticationFailure(new Error("Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed")), true);
   assert.equal(isSmtpAuthenticationFailure(new Error("RCPT TO nekades (550): 550 5.1.1 User unknown")), false);
+});
+
+test("active jobs hide stale SMTP authentication diagnostics", () => {
+  const error = "Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed";
+  for (const status of ["pending", "queued", "sending"]) {
+    assert.equal(visibleSendJobError(status, error), null);
+  }
+});
+
+test("aborted jobs still show SMTP authentication diagnostics", () => {
+  const error = "Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed";
+  assert.equal(visibleSendJobError("aborted", error), error);
+});
+
+test("active jobs still show non-authentication send errors", () => {
+  const error = "RCPT TO nekades (550): 550 5.1.1 User unknown";
+  assert.equal(visibleSendJobError("sending", error), error);
 });
 
 test("only permanent recipient rejections mark an address as dead", () => {

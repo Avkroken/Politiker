@@ -6,6 +6,12 @@ export function isSmtpAuthenticationFailure(error: unknown): boolean {
   return /^(?:Servern accepterade inte AUTH LOGIN|Användarnamn accepterades inte|Inloggning misslyckades)\b/i.test(errorMessage(error));
 }
 
+export function visibleSendJobError(status: string, error: string | null | undefined): string | null {
+  if (!error) return null;
+  const active = status === "pending" || status === "queued" || status === "sending";
+  return active && isSmtpAuthenticationFailure(error) ? null : error;
+}
+
 export function isPermanentRecipientSmtpFailure(error: unknown): boolean {
   const message = errorMessage(error);
   if (!/^RCPT TO nekades\b/i.test(message)) return false;
