@@ -127,7 +127,7 @@ async function baseAppEnvForRequest(req: Request, env: Env, primaryEnv: Env, bea
   if (!authenticated) return primaryEnv;
 
   const bookmark = d1SessionBookmark(primaryEnv);
-  return withD1Session(env, bookmark ?? "first-unconstrained");
+  return withD1Session(primaryEnv, bookmark ?? "first-unconstrained");
 }
 
 async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
