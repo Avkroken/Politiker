@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/Avkroken/Politiker/compare/v0.9.3...v0.10.0) (2026-09-05)
+
+
+### Features
+
+* use D1 sessions for read replication ([#435](https://github.com/Avkroken/Politiker/issues/435)) ([b24eb0d](https://github.com/Avkroken/Politiker/commit/b24eb0d7ee7c3330955bc0bce15efb303b1502c8))
+
+
+### Fixes
+
+* use cache-busted hero image for Apple link previews ([#432](https://github.com/Avkroken/Politiker/issues/432)) ([82f2e9f](https://github.com/Avkroken/Politiker/commit/82f2e9fe9c6ef18c9abf9ccaeb91b9e65ed4be1e))
+
 ## [0.9.3](https://github.com/Avkroken/Politiker/compare/v0.9.2...v0.9.3) (2026-09-05)
 
 
