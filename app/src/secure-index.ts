@@ -167,7 +167,7 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
 
 export default {
   fetch: secureFetch,
-  queue: (batch, env, ctx) => baseApp.queue(batch, withD1Session(env, "first-primary"), ctx),
+  queue: (batch, env) => baseApp.queue(batch, withD1Session(env, "first-primary")),
   scheduled: async (event: ScheduledController, env: Env, ctx: ExecutionContext) => {
     env = withD1Session(env, "first-primary");
     ctx.waitUntil(pruneVisits(env));
