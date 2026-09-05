@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/Avkroken/Politiker/compare/v0.9.0...v0.9.1) (2026-09-05)
+
+
+### Fixes
+
+* improve link preview compatibility ([#427](https://github.com/Avkroken/Politiker/issues/427)) ([ac6d926](https://github.com/Avkroken/Politiker/commit/ac6d926bb15dc1f5e5807d35f226aa91cbeafea3))
+
 ## [0.9.0](https://github.com/Avkroken/Politiker/compare/v0.8.13...v0.9.0) (2026-09-04)
 
 
