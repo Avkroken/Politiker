@@ -1,0 +1,22 @@
+{
+  "name": "PolitikerKontakt",
+  "short_name": "PolitikerKontakt",
+  "description": "Kontakta folkvalda direkt från ditt eget e-postkonto.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "browser",
+  "background_color": "#08122f",
+  "theme_color": "#08122f",
+  "icons": [
+    {
+      "src": "/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
