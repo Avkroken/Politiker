@@ -1,5 +1,7 @@
 import baseApp from "./index";
 import { getSessionContext, writeSession } from "./auth";
+import { getAccountFromApiKey } from "./api-keys";
+import { d1ReplicaEligibleRequest, d1SessionBookmark, withD1Session } from "./d1-session";
 import { pruneVisits } from "./visits";
 import type { Env } from "./db";
 import type { SendJobMessage } from "../../shared/types";
@@ -113,18 +115,34 @@ function withSecurityHeaders(response: Response, pathname: string): Response {
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
+async function baseAppEnvForRequest(req: Request, env: Env, primaryEnv: Env, bearer: boolean): Promise<Env> {
+  const pathname = new URL(req.url).pathname;
+  if (!d1ReplicaEligibleRequest(req.method, pathname)) return primaryEnv;
+
+  let authenticated = Boolean((await getSessionContext(primaryEnv, getCookie(req, "session")))?.account);
+  if (!authenticated && bearer) {
+    const token = req.headers.get("Authorization")?.slice("Bearer ".length) ?? "";
+    authenticated = Boolean(await getAccountFromApiKey(primaryEnv, token));
+  }
+  if (!authenticated) return primaryEnv;
+
+  const bookmark = d1SessionBookmark(primaryEnv);
+  return withD1Session(primaryEnv, bookmark ?? "first-unconstrained");
+}
+
 async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(req.url);
+  const primaryEnv = withD1Session(env, "first-primary");
   const bearer = req.headers.get("Authorization")?.startsWith("Bearer ") === true;
   if (isCrossSiteMutation(req, url, bearer)) {
     return withSecurityHeaders(json({ error: "Cross-site-begäran blockerad" }, 403), url.pathname);
   }
   if (bearer && url.pathname.startsWith("/api/") && !apiKeyRouteAllowed(req.method, url.pathname)) {
-    const session = await getSessionContext(env, getCookie(req, "session"));
+    const session = await getSessionContext(primaryEnv, getCookie(req, "session"));
     if (!session) return withSecurityHeaders(json({ error: "API-nyckeln saknar behörighet för den här operationen" }, 403), url.pathname);
   }
   if (needsFreshSession(req.method, url.pathname)) {
-    const session = await getSessionContext(env, getCookie(req, "session"));
+    const session = await getSessionContext(primaryEnv, getCookie(req, "session"));
     if (!session) return withSecurityHeaders(json({ error: "Den här säkerhetsändringen kräver en vanlig webbsession" }, 403), url.pathname);
     if (Date.now() - session.authenticatedAt > FRESH_AUTH_MS) return withSecurityHeaders(json({ error: "Logga ut och in igen innan du ändrar kontots säkerhetsinställningar" }, 403), url.pathname);
   }
@@ -132,7 +150,7 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
     const maxBytes = url.pathname === "/api/feedback" ? 64 * 1024 : 32 * 1024;
     const contentLength = Number(req.headers.get("Content-Length") ?? 0);
     if (Number.isFinite(contentLength) && contentLength > maxBytes) return withSecurityHeaders(json({ error: "För stor begäran" }, 413), url.pathname);
-    if (!(await allowPublicWrite(req, env, url.pathname))) return withSecurityHeaders(json({ error: "För många anrop — försök igen senare" }, 429), url.pathname);
+    if (!(await allowPublicWrite(req, primaryEnv, url.pathname))) return withSecurityHeaders(json({ error: "För många anrop — försök igen senare" }, 429), url.pathname);
   }
   if (req.method === "POST" && url.pathname === "/api/send") {
     const contentLength = Number(req.headers.get("Content-Length") ?? 0);
@@ -140,16 +158,18 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
       return withSecurityHeaders(json({ error: "Utskicket innehåller för mycket data" }, 413), url.pathname);
     }
   }
-  const response = await baseApp.fetch(req, env, ctx);
-  try { await upgradeOAuthSession(req, env, response); }
+  const appEnv = await baseAppEnvForRequest(req, env, primaryEnv, bearer);
+  const response = await baseApp.fetch(req, appEnv, ctx);
+  try { await upgradeOAuthSession(req, primaryEnv, response); }
   catch { return withSecurityHeaders(json({ error: "Kontot kunde inte skapa en giltig session" }, 403), url.pathname); }
   return withSecurityHeaders(response, url.pathname);
 }
 
 export default {
   fetch: secureFetch,
-  queue: baseApp.queue,
+  queue: (batch, env) => baseApp.queue(batch, withD1Session(env, "first-primary")),
   scheduled: async (event: ScheduledController, env: Env, ctx: ExecutionContext) => {
+    env = withD1Session(env, "first-primary");
     ctx.waitUntil(pruneVisits(env));
     await baseApp.scheduled(event, env, ctx);
     await protectStoredLetterData(env);
