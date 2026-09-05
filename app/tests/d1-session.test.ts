@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { d1ReplicaEligibleRequest, d1SessionBookmark, withD1Session } from "../src/d1-session";
+import { d1ReplicaEligibleRequest, d1SessionBookmark, withD1Session } from "../src/d1-session.ts";
 
 test("recipient metadata reads are replica eligible", () => {
   assert.equal(d1ReplicaEligibleRequest("GET", "/api/areas"), true);
