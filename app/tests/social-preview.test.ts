@@ -11,16 +11,16 @@ const manifest = JSON.parse(
   icons: Array<{ src: string; sizes: string; type: string }>;
 };
 
-test("publishes broad link-preview metadata with absolute image URLs", () => {
-  const imageUrl = "https://politiker.denied.se/og-image.png";
+test("publishes broad link-preview metadata with an absolute cache-busted image URL", () => {
+  const imageUrl = "https://politiker.denied.se/civic-hero.png?preview=20260905";
 
   assert.match(html, /<link rel="canonical" href="https:\/\/politiker\.denied\.se\/">/);
   assert.ok(html.includes(`<link rel="image_src" href="${imageUrl}">`));
   assert.ok(html.includes(`<meta itemprop="image" content="${imageUrl}">`));
   assert.ok(html.includes(`<meta property="og:image" content="${imageUrl}">`));
+  assert.ok(html.includes(`<meta property="og:image:url" content="${imageUrl}">`));
   assert.ok(html.includes(`<meta property="og:image:secure_url" content="${imageUrl}">`));
-  assert.match(html, /<meta property="og:image:width" content="1200">/);
-  assert.match(html, /<meta property="og:image:height" content="630">/);
+  assert.match(html, /<meta property="og:image:type" content="image\/png">/);
   assert.match(html, /<meta name="twitter:card" content="summary_large_image">/);
   assert.ok(html.includes(`<meta name="twitter:image" content="${imageUrl}">`));
   assert.match(html, /<meta name="twitter:image:alt" content="PolitikerKontakt – nå politiker direkt">/);
@@ -30,7 +30,7 @@ test("publishes broad link-preview metadata with absolute image URLs", () => {
 test("allows public preview images and favicons to load cross-origin", () => {
   assert.match(
     headers,
-    /\/og-image\.png\r?\n\s*! Cross-Origin-Resource-Policy\r?\n\s*Access-Control-Allow-Origin: \*/,
+    /\/civic-hero\.png\r?\n\s*! Cross-Origin-Resource-Policy\r?\n\s*Access-Control-Allow-Origin: \*/,
   );
   assert.match(
     headers,
