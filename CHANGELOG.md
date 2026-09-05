@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/Avkroken/Politiker/compare/v0.10.0...v0.10.1) (2026-09-05)
+
+
+### Documentation
+
+* rename governance file to REPO.md ([#438](https://github.com/Avkroken/Politiker/issues/438)) ([8d276f9](https://github.com/Avkroken/Politiker/commit/8d276f9c7bda65f90ef42822914f1354212f42a4))
+
 ## [0.10.0](https://github.com/Avkroken/Politiker/compare/v0.9.3...v0.10.0) (2026-09-05)
 
 
