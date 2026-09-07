@@ -6,7 +6,7 @@
 
 `.github/workflows/docker-image.yml` producerar `Docker Image CI / build` och bygger `kontakter/scraper` med repositoryts Dockerfile.
 
-`.github/workflows/codeql.yml` kör GitHubs standardflöde för CodeQL-analys av `javascript-typescript`.
+GitHub Code Scanning default setup hanterar CodeQL-analysen. Repositoryt har därför ingen lokal `codeql.yml`, vilket undviker konflikt mellan default setup och avancerad CodeQL-konfiguration.
 
 `.github/workflows/dependency-review.yml` kör GitHubs standardflöde för dependency review på pull requests.
 
