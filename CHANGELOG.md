@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.5](https://github.com/Avkroken/Politiker/compare/v0.10.4...v0.10.5) (2026-09-07)
+
+
+### Documentation
+
+* document repository governance ([86f87c9](https://github.com/Avkroken/Politiker/commit/86f87c9ead2c79ad2d7e0b3f8cbf7deed21956a8))
+* dokumentera repository-styrning ([#456](https://github.com/Avkroken/Politiker/issues/456)) ([86f87c9](https://github.com/Avkroken/Politiker/commit/86f87c9ead2c79ad2d7e0b3f8cbf7deed21956a8))
+
 ## [0.10.4](https://github.com/Avkroken/Politiker/compare/v0.10.3...v0.10.4) (2026-09-06)
 
 
