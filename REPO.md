@@ -18,6 +18,14 @@
 - Kontaktdata-verktyg ska använda minsta nödvändiga behörighet.
 - TLS-validering får inte försvagas.
 
+## GitHub-styrning
+
+- Kanonisk arbets- och reviewpolicy finns i `Avkroken/.github/AGENTS.md`.
+- `main` skyddas av det ärvda organisationsrulesetet `main` och repo-rulesetet `required-ci`.
+- Required checks på `main` är `CI / required` och `docker`.
+- `dev` är integrationsgren när ett aktivt `dev-pilot`-ruleset finns. Lägg endast required status checks på `dev` när workflows bevisligen producerar exakt de check-namnen för PR mot `dev`.
+- Organisationens CodeRabbit-UI är baslinje. Repository-lokal `.coderabbit.yaml` ska endast användas för uttryckligen repo-specifika overrides.
+
 ## Validering
 
 Kör relevanta Worker- och Python-tester för berörd del. Validera migreringar och Wrangler-konfiguration när de ändras.
