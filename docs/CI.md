@@ -2,9 +2,13 @@
 
 ## CI
 
-`.github/workflows/ci.yml` producerar `CI / required` och verifierar appens låsta Node-beroenden, `npm run validate`, Wrangler dry-run för `log-archive` samt Python-koden under `kontakter/`.
+`.github/workflows/node.js.yml` producerar `Node.js CI / build (24.x)` och kör `npm ci`, eventuell build (`npm run build --if-present`) samt tester (`npm test`) i `app/`.
 
-`.github/workflows/docker.yml` producerar `docker`, bygger `kontakter/scraper`, kör Trivy och laddar SARIF till GitHub Code Scanning.
+`.github/workflows/docker-image.yml` producerar `Docker Image CI / build` och bygger `kontakter/scraper` med repositoryts Dockerfile.
+
+`.github/workflows/codeql.yml` kör GitHubs standardflöde för CodeQL-analys av `javascript-typescript`.
+
+`.github/workflows/dependency-review.yml` kör GitHubs standardflöde för dependency review på pull requests.
 
 ## Production deploy
 
@@ -24,10 +28,8 @@ Workers Builds watch paths:
 
 ## Release
 
-`.github/workflows/release.yml` anropar den centrala Release Please-workflowen i `Avkroken/.github` på push till `main` och manuellt via `workflow_dispatch`.
+Ingen repository-lokal `release.yml` används nu. Tidigare release-please-workflow togs bort och har ingen direkt GitHub-standardmall i `actions/starter-workflows`.
 
-Release Please håller en Release PR uppdaterad från Conventional Commits. `feat:` ger normalt minor, `fix:` patch och breaking changes major.
+`release-please-config.json`, `.release-please-manifest.json` och `version.txt` finns kvar som versionsmetadata, men utan lokal release-workflow körs ingen release-automation från GitHub Actions i detta repo.
 
-`release-please-config.json`, `.release-please-manifest.json` och `version.txt` håller repositoryts stabila SemVer-version. Den första migrerade basversionen är den redan publicerade `v0.8.13`.
-
-När Release PR:n mergas skapas först en draft release. Innan publicering kompletterar den centrala workflowen Release Please-changelogen med en kort separat lista över dependency-bumpar och, via `.github/release-components.json`, en tabell över förstapartsprogrammen `politiker` och `politiker-log-archive`. Fullständiga dependency-listor hör inte hemma i release notes.
+Dependabot-konfigurationen ligger i `.github/dependabot.yml` och hanterar uppdateringar för npm, GitHub Actions, Docker och pip.
