@@ -13,3 +13,8 @@ __pycache__/
 kontakter/output/
 kontakter/vcf/
 kontakter/logs/
+app/coverage/
+app/lcov.info
+kontakter/coverage.xml
+kontakter/.coverage
+.coverage
