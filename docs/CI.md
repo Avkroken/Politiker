@@ -14,6 +14,24 @@ GitHub Code Scanning default setup hanterar CodeQL. Därför finns ingen lokal `
 
 Dependabot ligger i `.github/dependabot.yml` och uppdaterar npm, GitHub Actions, Docker och pip veckovis.
 
+## Branch-regler (`main`)
+
+Repo-rulesetet finns i `.github/rulesets/required-ci-main.json` och matchar CI-checksen ovan.
+
+- Required checks:
+  - `Node.js CI / build (24.x)`
+  - `Docker Image CI / build`
+  - `Dependency review / dependency-review`
+- Kräver uppdaterad branch mot base innan merge (`strict_required_status_checks_policy: true`)
+- Kräver minst 1 godkänd review
+- Ogiltigförklarar gamla approvals vid ny push
+- Kräver att review-trådar är lösta innan merge
+- Blockerar force-push
+- Blockerar branch-radering
+- Kräver signerade commits
+
+Aktivering/ändring av ruleset i GitHub UI görs manuellt med repo-admin-behörighet.
+
 ## Production deploy
 
 Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Actions validerar men deployar inte produktion.
