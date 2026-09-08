@@ -6,6 +6,10 @@
 
 `.github/workflows/docker.yml` producerar `docker`, bygger `kontakter/scraper`, kör Trivy och laddar SARIF till GitHub Code Scanning.
 
+## Kodtäckning
+
+`.github/workflows/github-coverage.yml` kör `app`-testerna med `c8` (Cobertura via `npm run test:coverage`) och `kontakter`-testerna med `pytest-cov` (`--cov --cov-report=xml`), och laddar upp båda rapporterna via `actions/upload-code-coverage`. Konfigurationen ligger i `app/.c8rc.json` respektive `kontakter/pyproject.toml`, så samma täckning kan köras lokalt.
+
 ## Production deploy
 
 Cloudflare Workers Builds äger normal produktionsdeploy från `main`; GitHub Actions validerar men deployar inte produktion.

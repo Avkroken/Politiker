@@ -1,0 +1,4 @@
+{
+  "reporter": ["text", "cobertura"],
+  "reports-dir": "coverage"
+}
