@@ -31,5 +31,19 @@ jobs:
           cache: "npm"
           cache-dependency-path: app/package-lock.json
       - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test
+      - run: npm run validate
+
+  log-archive:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: log-archive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+      - run: npm install
+      - run: node --check src/index.js
+      - run: npx wrangler deploy --dry-run

@@ -21,7 +21,13 @@
             "context": "Node.js CI / build (24.x)"
           },
           {
+            "context": "Node.js CI / log-archive"
+          },
+          {
             "context": "Docker Image CI / build"
+          },
+          {
+            "context": "Docker Image CI / python-tests"
           },
           {
             "context": "Dependency review / dependency-review"

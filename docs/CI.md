@@ -5,9 +5,13 @@
 Förrådet använder bara officiella GitHub-startermallar för CI-workflows:
 
 - `.github/workflows/node.js.yml` → `Node.js CI / build (24.x)`  
-  Anpassning: kör i `app/` och använder `app/package-lock.json` för cache.
+  Anpassning: kör `npm run validate` i `app/` och använder `app/package-lock.json` för cache.
+- `.github/workflows/node.js.yml` → `Node.js CI / log-archive`  
+  Anpassning: installerar `log-archive`-beroenden, kontrollerar syntax och kör `wrangler deploy --dry-run`.
 - `.github/workflows/docker-image.yml` → `Docker Image CI / build`  
   Anpassning: bygger `kontakter/scraper` med `kontakter/scraper/Dockerfile`.
+- `.github/workflows/docker-image.yml` → `Docker Image CI / python-tests`  
+  Anpassning: installerar Python-krav för `kontakter` och kör `pytest kontakter/tests`.
 - `.github/workflows/dependency-review.yml` → `Dependency review / dependency-review`
 
 GitHub Code Scanning default setup hanterar CodeQL. Därför finns ingen lokal `codeql.yml`.
@@ -20,7 +24,9 @@ Repo-rulesetet finns i `.github/rulesets/required-ci-main.json` och matchar CI-c
 
 - Required checks:
   - `Node.js CI / build (24.x)`
+  - `Node.js CI / log-archive`
   - `Docker Image CI / build`
+  - `Docker Image CI / python-tests`
   - `Dependency review / dependency-review`
 - Kräver uppdaterad branch mot base innan merge (`strict_required_status_checks_policy: true`)
 - Kräver minst 1 godkänd review
