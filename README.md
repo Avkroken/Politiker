@@ -67,15 +67,13 @@ cd app
 npm run validate
 ```
 
-Python-delen verifieras separat av repositoryts CI.
-
 ## Bidrag
 
 Ändringar går via pull request till `main`. Det aktuella CI-, merge-queue- och deploykontraktet finns i `docs/CI.md`.
 
 ## Produktion
 
-GitHub Actions validerar kod och säkerhet men deployar inte produktion. Cloudflare Workers Builds äger produktionsdeploy från `main`:
+Cloudflare Workers Builds äger produktionsdeploy från `main`:
 
 | Worker | Root directory | Deploy command |
 | --- | --- | --- |
