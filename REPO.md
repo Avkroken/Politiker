@@ -22,7 +22,7 @@
 
 - Kanonisk arbets- och reviewpolicy finns i `Avkroken/.github/AGENTS.md`.
 - `main` skyddas av det ärvda organisationsrulesetet `main` och repo-rulesetet `required-ci`.
-- Required checks på `main` är `Node.js CI / build (24.x)`, `Node.js CI / log-archive`, `Docker Image CI / build`, `Docker Image CI / python-tests` och `Dependency review / dependency-review`.
+- Required checks på `main` är `Node.js CI / build`, `Node.js CI / log-archive`, `Docker Image CI / build`, `Docker Image CI / python-tests` och `Dependency review / dependency-review`.
 - Repo-rulesetet `required-ci` kräver dessutom uppdaterad branch mot base, minst en approval, lösta review-trådar, signerade commits samt blockerar force-push och branch-radering.
 - CI-workflows i detta repo ska vara officiella GitHub-startermallar, med endast nödvändig repoanpassning.
 - `dev` är integrationsgren när ett aktivt `dev-pilot`-ruleset finns. Lägg endast required status checks på `dev` när workflows bevisligen producerar exakt de check-namnen för PR mot `dev`.

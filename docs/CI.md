@@ -4,7 +4,7 @@
 
 Förrådet använder bara officiella GitHub-startermallar för CI-workflows:
 
-- `.github/workflows/node.js.yml` → `Node.js CI / build (24.x)`  
+- `.github/workflows/node.js.yml` → `Node.js CI / build`  
   Anpassning: kör `npm run validate` i `app/` och använder `app/package-lock.json` för cache.
 - `.github/workflows/node.js.yml` → `Node.js CI / log-archive`  
   Anpassning: installerar `log-archive`-beroenden, kontrollerar syntax och kör `wrangler deploy --dry-run`.
@@ -23,7 +23,7 @@ Dependabot ligger i `.github/dependabot.yml` och uppdaterar npm (`/app`, `/log-a
 Repo-rulesetet finns i `.github/rulesets/required-ci-main.json` och matchar CI-checksen ovan.
 
 - Required checks:
-  - `Node.js CI / build (24.x)`
+  - `Node.js CI / build`
   - `Node.js CI / log-archive`
   - `Docker Image CI / build`
   - `Docker Image CI / python-tests`

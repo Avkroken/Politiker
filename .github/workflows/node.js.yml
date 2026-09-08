@@ -15,19 +15,15 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [24.x]
-        # Matchar repoets låsta Node-version.
     defaults:
       run:
         working-directory: app
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 24.x
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 24.x
           cache: "npm"
           cache-dependency-path: app/package-lock.json
       - run: npm ci

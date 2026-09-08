@@ -18,7 +18,7 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
-            "context": "Node.js CI / build (24.x)"
+            "context": "Node.js CI / build"
           },
           {
             "context": "Node.js CI / log-archive"
