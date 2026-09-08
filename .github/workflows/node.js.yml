@@ -44,6 +44,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24.x
-      - run: npm install
+          cache: "npm"
+          cache-dependency-path: log-archive/package-lock.json
+      - run: npm ci
       - run: node --check src/index.js
       - run: npx wrangler deploy --dry-run
