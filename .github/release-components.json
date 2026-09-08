@@ -1,6 +1,0 @@
-{
-  "components": [
-    { "name": "politiker", "source": "release" },
-    { "name": "politiker-log-archive", "source": "release" }
-  ]
-}
