@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible problem in Politiker.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for helping improve Politiker. Do not include passwords, tokens, or personal email credentials.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest reliable sequence that reproduces the problem.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Web application
+        - Politician contact data
+        - Email sending
+        - Authentication
+        - Import or export
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      description: For example, Firefox 142 on Android 16.
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional details
+      description: Add relevant logs or screenshots after removing personal and sensitive information.
