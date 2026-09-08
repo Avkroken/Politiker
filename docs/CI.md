@@ -12,7 +12,7 @@ Förrådet använder bara officiella GitHub-startermallar för CI-workflows:
 
 GitHub Code Scanning default setup hanterar CodeQL. Därför finns ingen lokal `codeql.yml`.
 
-Dependabot ligger i `.github/dependabot.yml` och uppdaterar npm, GitHub Actions, Docker och pip veckovis.
+Dependabot ligger i `.github/dependabot.yml` och uppdaterar npm (`/app`, `/log-archive`), GitHub Actions, Docker och pip veckovis.
 
 ## Branch-regler (`main`)
 
