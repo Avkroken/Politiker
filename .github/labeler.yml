@@ -1,0 +1,34 @@
+app:
+  - changed-files:
+      - any-glob-to-any-file: app/**
+
+python:
+  - changed-files:
+      - any-glob-to-any-file: kontakter/**
+
+shared:
+  - changed-files:
+      - any-glob-to-any-file: shared/**
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - infra/**
+          - log-archive/**
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/package.json"
+          - "**/package-lock.json"
+          - "**/requirements*.txt"
+          - "**/Dockerfile"
+
+github_actions:
+  - changed-files:
+      - any-glob-to-any-file: .github/**
