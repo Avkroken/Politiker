@@ -2,13 +2,17 @@
 
 ## CI
 
-`.github/workflows/node.js.yml` producerar `Node.js CI / build (24.x)` och kör `npm ci`, eventuell build (`npm run build --if-present`) samt tester (`npm test`) i `app/`.
+Förrådet använder bara officiella GitHub-startermallar för CI-workflows:
 
-`.github/workflows/docker-image.yml` producerar `Docker Image CI / build` och bygger `kontakter/scraper` med repositoryts Dockerfile.
+- `.github/workflows/node.js.yml` → `Node.js CI / build (24.x)`  
+  Anpassning: kör i `app/` och använder `app/package-lock.json` för cache.
+- `.github/workflows/docker-image.yml` → `Docker Image CI / build`  
+  Anpassning: bygger `kontakter/scraper` med `kontakter/scraper/Dockerfile`.
+- `.github/workflows/dependency-review.yml` → `Dependency review / dependency-review`
 
-GitHub Code Scanning default setup hanterar CodeQL-analysen. Repositoryt har därför ingen lokal `codeql.yml`, vilket undviker konflikt mellan default setup och avancerad CodeQL-konfiguration.
+GitHub Code Scanning default setup hanterar CodeQL. Därför finns ingen lokal `codeql.yml`.
 
-`.github/workflows/dependency-review.yml` kör GitHubs standardflöde för dependency review på pull requests.
+Dependabot ligger i `.github/dependabot.yml` och uppdaterar npm, GitHub Actions, Docker och pip veckovis.
 
 ## Production deploy
 
@@ -28,8 +32,6 @@ Workers Builds watch paths:
 
 ## Release
 
-Ingen repository-lokal `release.yml` används nu. Tidigare release-please-workflow togs bort och har ingen direkt GitHub-standardmall i `actions/starter-workflows`.
+Ingen lokal `release.yml` används. Det finns ingen direkt startermall som ersätter repoets tidigare release-please-flöde.
 
 `release-please-config.json`, `.release-please-manifest.json` och `version.txt` finns kvar som versionsmetadata, men utan lokal release-workflow körs ingen release-automation från GitHub Actions i detta repo.
-
-Dependabot-konfigurationen ligger i `.github/dependabot.yml` och hanterar uppdateringar för npm, GitHub Actions, Docker och pip.

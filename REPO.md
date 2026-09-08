@@ -23,6 +23,7 @@
 - Kanonisk arbets- och reviewpolicy finns i `Avkroken/.github/AGENTS.md`.
 - `main` skyddas av det ärvda organisationsrulesetet `main` och repo-rulesetet `required-ci`.
 - Required checks på `main` är `Node.js CI / build (24.x)`, `Docker Image CI / build` och `Dependency review / dependency-review`.
+- CI-workflows i detta repo ska vara officiella GitHub-startermallar, med endast nödvändig repoanpassning.
 - `dev` är integrationsgren när ett aktivt `dev-pilot`-ruleset finns. Lägg endast required status checks på `dev` när workflows bevisligen producerar exakt de check-namnen för PR mot `dev`.
 - Organisationens CodeRabbit-UI är baslinje. Repository-lokal `.coderabbit.yaml` ska endast användas för uttryckligen repo-specifika overrides.
 
