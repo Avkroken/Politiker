@@ -84,7 +84,10 @@
 
   function sanitizeHtml(html,{validate=true}={}){
     requireDom();
-    const parsed=new DOMParser().parseFromString(String(html||''),'text/html');
+    if(html==null)return'';
+    if(typeof html!=='string')throw new Error('HTML-innehållet måste vara en textsträng.');
+    const rawHtml=html;
+    const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
     for(const el of [...parsed.body.querySelectorAll('*')]){
       const tag=el.tagName.toLowerCase();
       if(DROP_TAGS.has(tag)){el.remove();continue}
