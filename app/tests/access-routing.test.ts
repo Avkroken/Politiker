@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { accessRoute } from "../src/access-routing";
+import { accessRoute } from "../src/access-routing.ts";
 
 test("canonical admin APIs rewrite to the existing internal handlers", () => {
   assert.deepEqual(accessRoute("/admin/api/accounts"), {
