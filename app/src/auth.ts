@@ -5,6 +5,7 @@ import { htmlToText } from "../../shared/html";
 import { generateTotpSecret, totpAuthUri, verifyTotpCode } from "../../shared/totp";
 import { createAccount, getAccountByEmail, getAccountById, verifyAccountEmail, deleteAccount, type Env } from "./db";
 import { enforceAttemptLimit, recordFailedAttempt, clearAttempts } from "./rate-limit";
+import { loginDiagnosticEvent } from "./login-diagnostic";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 dagar
 const RESET_TTL_MS = 30 * 60 * 1000; // 30 min
@@ -139,6 +140,8 @@ export async function login(
     (account?.password_hash as string) ?? DUMMY_HASH,
     (account?.password_salt as string) ?? DUMMY_SALT,
   );
+  const diagnostic = loginDiagnosticEvent(Boolean(account), passwordOk);
+  if (diagnostic) console.info(diagnostic);
   if (!account || !passwordOk) {
     await recordFailedAttempt(env, "login", email, LOGIN_WINDOW_SECONDS);
     throw new Error("Fel e-post eller lösenord");
