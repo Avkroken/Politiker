@@ -86,12 +86,17 @@
     requireDom();
     if(html==null)return'';
     if(typeof html!=='string')throw new Error('HTML-innehållet måste vara en textsträng.');
-    const rawHtml=String(html)
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'')
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
-      .replace(/<!--[\s\S]*?-->/g,'')
-      .replace(/<!DOCTYPE[^>]*>/gi,'')
-      .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'');
+    let rawHtml=String(html);
+    let previous;
+    do{
+      previous=rawHtml;
+      rawHtml=rawHtml
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'')
+        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
+        .replace(/<!--[\s\S]*?-->/g,'')
+        .replace(/<!DOCTYPE[^>]*>/gi,'')
+        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'');
+    }while(rawHtml!==previous);
     const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
     for(const el of [...parsed.body.querySelectorAll('*')]){
       const tag=el.tagName.toLowerCase();
