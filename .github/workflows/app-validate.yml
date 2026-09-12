@@ -1,0 +1,28 @@
+name: App validate
+
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "shared/**"
+      - "infra/**"
+      - ".github/workflows/app-validate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run validate
