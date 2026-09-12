@@ -10,12 +10,9 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 dagar
 const RESET_TTL_MS = 30 * 60 * 1000; // 30 min
 const TOTP_SETUP_TTL_SECONDS = 10 * 60;
 
-// Resend skickar från send.denied.se — den domänen är verifierad på
-// Resend-kontot sedan tidigare. denied.se är det inte, och Resend avvisar
-// avsändare på overifierade domäner. Cloudflare Email Service och system-SMTP
-// använder noreply@denied.se; det är bara Resend-ledet som ligger på
-// subdomänen.
-const SYSTEM_RESEND_FROM = "Politiker-kontakt <noreply@send.denied.se>";
+// Resend använder den verifierade avsändardomänen denied.se.
+// Return-Path och dess DNS-poster hanteras separat i Resend.
+const SYSTEM_RESEND_FROM = "Politiker-kontakt <noreply@denied.se>";
 
 // Brute-force-spärrar (försök inom glidande fönster). Lösenords-/TOTP-koll
 // och e-postverifiering har annars inga försöksgränser — utan detta är en
