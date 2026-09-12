@@ -1,13 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "politiker",
-  "main": "src/secure-index.ts",
+  "main": "src/access-index.ts",
   "compatibility_date": "2026-08-21",
   "observability": {"enabled":true,"head_sampling_rate":1,"logs":{"enabled":true,"head_sampling_rate":1,"persist":true,"invocation_logs":true},"traces":{"enabled":true,"persist":true,"head_sampling_rate":0.1}},
   "tail_consumers": [{ "service": "politiker-log-archive" }],
   "workers_dev": false,
   "upload_source_maps": true,
-  "assets": {"directory":"./public","not_found_handling":"single-page-application","binding":"ASSETS","run_worker_first":["/","/api/*"]},
+  "assets": {"directory":"./public","not_found_handling":"single-page-application","binding":"ASSETS","run_worker_first":["/","/api/*","/admin","/admin/*"]},
   "routes": [{ "pattern": "politiker.denied.se", "custom_domain": true, "zone_name": "denied.se", "enabled": true, "previews_enabled": false }],
   "d1_databases": [{
     "binding": "DB",
