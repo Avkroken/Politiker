@@ -1,30 +1,8 @@
 (() => {
   const adminHash = /^#admin(?:\/|$)/;
   const isAdminPath = () => location.pathname === "/admin" || location.pathname.startsWith("/admin/");
-
-  function normalizeLocation() {
-    if (adminHash.test(location.hash) && !isAdminPath()) {
-      location.replace(`/admin${location.search}${location.hash}`);
-      return true;
-    }
-
-    if (isAdminPath() && (!location.hash || location.hash === "#")) {
-      history.replaceState(null, "", `/admin${location.search}#admin/accounts`);
-      return false;
-    }
-
-    if (isAdminPath() && location.hash && !adminHash.test(location.hash)) {
-      location.replace(`/${location.search}${location.hash}`);
-      return true;
-    }
-
-    return false;
-  }
-
-  if (normalizeLocation()) return;
-  addEventListener("hashchange", normalizeLocation);
-
   const nativeFetch = window.fetch.bind(window);
+
   window.fetch = (input, init) => {
     let url;
     try {
@@ -53,4 +31,23 @@
     url.pathname = `/admin/api/${url.pathname.slice("/api/admin/".length)}`;
     location.href = url.toString();
   });
+
+  function normalizeLocation() {
+    if (adminHash.test(location.hash) && !isAdminPath()) {
+      location.replace(`/admin${location.search}${location.hash}`);
+      return;
+    }
+
+    if (isAdminPath() && (!location.hash || location.hash === "#")) {
+      history.replaceState(null, "", `/admin${location.search}#admin/accounts`);
+      return;
+    }
+
+    if (isAdminPath() && location.hash && !adminHash.test(location.hash)) {
+      location.replace(`/${location.search}${location.hash}`);
+    }
+  }
+
+  normalizeLocation();
+  addEventListener("hashchange", normalizeLocation);
 })();
