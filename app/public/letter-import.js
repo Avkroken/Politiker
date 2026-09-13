@@ -95,7 +95,8 @@
         .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
         .replace(/<!--[\s\S]*?-->/g,'')
         .replace(/<!DOCTYPE[^>]*>/gi,'')
-        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'');
+        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'')
+        .replace(/<\s*(script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b/gi,'$1');
     }while(rawHtml!==previous);
     const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
     for(const el of [...parsed.body.querySelectorAll('*')]){
