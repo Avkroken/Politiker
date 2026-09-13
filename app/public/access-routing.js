@@ -1,7 +1,38 @@
 (() => {
   const adminHash = /^#admin(?:\/|$)/;
+  const legacyAdminApiPrefix = "/api/admin/";
+  const adminApiPrefix = "/admin/api/";
+  const criticalAdminApiPrefix = "/admin/critical/api/";
   const isAdminPath = () => location.pathname === "/admin" || location.pathname.startsWith("/admin/");
+  const isCriticalAdminPath = () => location.pathname === "/admin/critical" || location.pathname.startsWith("/admin/critical/");
   const nativeFetch = window.fetch.bind(window);
+
+  function isCriticalAdminRequest(method, pathname) {
+    const normalizedMethod = String(method || "GET").toUpperCase();
+    if (
+      normalizedMethod === "POST" &&
+      /^\/api\/admin\/accounts\/[^/]+\/(?:reset-password|toggle-disabled)$/.test(pathname)
+    ) return true;
+    if (
+      normalizedMethod === "DELETE" &&
+      (
+        /^\/api\/admin\/accounts\/[^/]+$/.test(pathname) ||
+        /^\/api\/admin\/feedback(?:\/[^/]+)?$/.test(pathname)
+      )
+    ) return true;
+    return false;
+  }
+
+  function protectedAdminPath(pathname, method) {
+    const suffix = pathname.slice(legacyAdminApiPrefix.length);
+    return `${isCriticalAdminRequest(method, pathname) ? criticalAdminApiPrefix : adminApiPrefix}${suffix}`;
+  }
+
+  function enterCriticalAdmin() {
+    const target = new URL(location.href);
+    target.pathname = "/admin/critical";
+    location.assign(target.toString());
+  }
 
   window.fetch = (input, init) => {
     let url;
@@ -11,11 +42,18 @@
       return nativeFetch(input, init);
     }
 
-    if (url.origin !== location.origin || !url.pathname.startsWith("/api/admin/")) {
+    if (url.origin !== location.origin || !url.pathname.startsWith(legacyAdminApiPrefix)) {
       return nativeFetch(input, init);
     }
 
-    url.pathname = `/admin/api/${url.pathname.slice("/api/admin/".length)}`;
+    const method = init?.method || (input instanceof Request ? input.method : "GET");
+    const critical = isCriticalAdminRequest(method, url.pathname);
+    if (critical && !isCriticalAdminPath()) {
+      enterCriticalAdmin();
+      return Promise.reject(new Error("Öppnar kritiskt adminläge"));
+    }
+
+    url.pathname = protectedAdminPath(url.pathname, method);
     const rewritten = input instanceof Request
       ? new Request(url.toString(), input)
       : url.toString();
@@ -26,9 +64,9 @@
     const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
     if (!anchor) return;
     const url = new URL(anchor.href, location.href);
-    if (url.origin !== location.origin || !url.pathname.startsWith("/api/admin/")) return;
+    if (url.origin !== location.origin || !url.pathname.startsWith(legacyAdminApiPrefix)) return;
     event.preventDefault();
-    url.pathname = `/admin/api/${url.pathname.slice("/api/admin/".length)}`;
+    url.pathname = protectedAdminPath(url.pathname, "GET");
     location.href = url.toString();
   });
 
@@ -39,7 +77,7 @@
     }
 
     if (isAdminPath() && (!location.hash || location.hash === "#")) {
-      history.replaceState(null, "", `/admin${location.search}#admin/accounts`);
+      history.replaceState(null, "", `${location.pathname}${location.search}#admin/accounts`);
       return;
     }
 

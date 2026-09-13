@@ -16,7 +16,7 @@ const app = secureApp as unknown as SecureHandler;
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const externalUrl = new URL(request.url);
-    const route = accessRoute(externalUrl.pathname);
+    const route = accessRoute(externalUrl.pathname, request.method);
 
     if (route.type === "redirect") {
       const target = new URL(request.url);
