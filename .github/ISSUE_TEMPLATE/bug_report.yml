@@ -1,50 +1,53 @@
-name: Bug report
-description: Report a reproducible problem in Politiker.
+name: Felrapport
+description: Rapportera ett reproducerbart problem.
 title: "[Bug]: "
-labels:
-  - bug
 body:
   - type: markdown
     attributes:
-      value: Thank you for helping improve Politiker. Do not include passwords, tokens, or personal email credentials.
+      value: |
+        Tack för att du hjälper till att förbättra projektet.
+        Rapportera inte säkerhetsbrister här och lägg aldrig in lösenord, tokens, privata nycklar eller andra känsliga uppgifter i ett publikt issue.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Kontroll före rapportering
+      options:
+        - label: Jag har sökt efter ett befintligt issue med samma problem.
+          required: true
+        - label: Rapporten innehåller inga hemligheter eller andra känsliga uppgifter.
+          required: true
   - type: textarea
     id: problem
     attributes:
-      label: What happened?
-      description: Describe the problem and what you expected instead.
+      label: Vad hände?
+      description: Beskriv felet så konkret som möjligt.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Steps to reproduce
-      description: Provide the smallest reliable sequence that reproduces the problem.
+      label: Steg för att återskapa
+      description: Ange den minsta tillförlitliga sekvens som återskapar problemet.
       placeholder: |
-        1. Open ...
-        2. Select ...
-        3. Observe ...
+        1. Öppna ...
+        2. Välj ...
+        3. Observera ...
     validations:
       required: true
-  - type: dropdown
-    id: area
+  - type: textarea
+    id: expected
     attributes:
-      label: Affected area
-      options:
-        - Web application
-        - Politician contact data
-        - Email sending
-        - Authentication
-        - Import or export
-        - Other
+      label: Förväntat beteende
+      description: Beskriv vad du förväntade dig skulle hända.
     validations:
       required: true
   - type: input
-    id: browser
+    id: environment
     attributes:
-      label: Browser and device
-      description: For example, Firefox 142 on Android 16.
+      label: Miljö
+      description: Exempelvis operativsystem, webbläsare, runtime eller versionsnummer.
   - type: textarea
     id: details
     attributes:
-      label: Additional details
-      description: Add relevant logs or screenshots after removing personal and sensitive information.
+      label: Loggar, skärmbilder eller annan information
+      description: Ta bort personuppgifter och känslig information innan du bifogar något.

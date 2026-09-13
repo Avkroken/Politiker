@@ -1,34 +1,25 @@
-app:
-  - changed-files:
-      - any-glob-to-any-file: app/**
-
-python:
-  - changed-files:
-      - any-glob-to-any-file: kontakter/**
-
-shared:
-  - changed-files:
-      - any-glob-to-any-file: shared/**
-
-infra:
-  - changed-files:
-      - any-glob-to-any-file:
-          - infra/**
-          - log-archive/**
-
 documentation:
   - changed-files:
       - any-glob-to-any-file:
           - "**/*.md"
+          - "docs/**"
 
-dependencies:
+enhancement:
   - changed-files:
       - any-glob-to-any-file:
+          - ".github/**"
+          - "CODEOWNERS"
+          - "src/**"
+          - "app/**"
+          - "lib/**"
+          - "test/**"
+          - "tests/**"
           - "**/package.json"
           - "**/package-lock.json"
+          - "**/pyproject.toml"
           - "**/requirements*.txt"
           - "**/Dockerfile"
-
-github_actions:
-  - changed-files:
-      - any-glob-to-any-file: .github/**
+          - "**/Package.swift"
+          - "**/*.csproj"
+          - "**/*.gradle"
+          - "**/*.gradle.kts"
