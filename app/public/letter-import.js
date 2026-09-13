@@ -108,7 +108,13 @@
       if(tag==='a'&&href){el.setAttribute('href',href);el.setAttribute('rel','noopener noreferrer')}
     }
     if(validate)validateText(parsed.body.textContent||'');
-    return[...parsed.body.childNodes].map(serializeSafeNode).join('');
+    let sanitized=[...parsed.body.childNodes].map(serializeSafeNode).join('');
+    let previousSanitized;
+    do{
+      previousSanitized=sanitized;
+      sanitized=sanitized.replace(/<!--|--!?>/g,'');
+    }while(sanitized!==previousSanitized);
+    return sanitized;
   }
 
   function htmlToText(html,{validate=true}={}){
