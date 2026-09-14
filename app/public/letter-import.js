@@ -93,7 +93,7 @@
       rawHtml=rawHtml
         .replace(/<script\b[^>]*>[\s\S]*?<\/script(?:\s[^>]*)?>/gi,'')
         .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
-        .replace(/<!--|--!?>/g,'')
+        .replace(/<!--|--!?>/g,m=>m.replace(/[<>]/g,''))
         .replace(/<!DOCTYPE[^>]*>/gi,'')
         .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'')
         .replace(/<(?=\s*(?:script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b)/gi,'&lt;');
@@ -112,7 +112,7 @@
     let previousSanitized;
     do{
       previousSanitized=sanitized;
-      sanitized=sanitized.replace(/<!--|--!?>/g,'');
+      sanitized=sanitized.replace(/<!--|--!?>/g,m=>m.replace(/[<>]/g,''));
     }while(sanitized!==previousSanitized);
     return sanitized;
   }
