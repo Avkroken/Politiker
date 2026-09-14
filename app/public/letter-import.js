@@ -87,7 +87,7 @@
     if(html==null)return'';
     if(typeof html!=='string')throw new Error('HTML-innehållet måste vara en textsträng.');
     let rawHtml=String(html);
-    const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
+    let previous;
     do{
       previous=rawHtml;
       rawHtml=rawHtml
@@ -98,7 +98,8 @@
         .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'')
         .replace(/<(?=\s*(?:script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b)/gi,'&lt;');
     }while(rawHtml!==previous);
-    const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
+    const escapedRawHtml=escapeHtmlText(rawHtml);
+    const parsed=new DOMParser().parseFromString(escapedRawHtml,'text/html');
     for(const el of [...parsed.body.querySelectorAll('*')]){
       const tag=el.tagName.toLowerCase();
       if(DROP_TAGS.has(tag)){el.remove();continue}
