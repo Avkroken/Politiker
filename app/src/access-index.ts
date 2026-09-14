@@ -1,5 +1,5 @@
 import secureApp from "./secure-index";
-import { accessRoute, requestWithPath } from "./access-routing";
+import { accessRoute, requestWithPath, robotsPolicy } from "./access-routing";
 import type { Env } from "./db";
 import type { SendJobMessage } from "../../shared/types";
 
@@ -13,6 +13,14 @@ type SecureHandler = {
 
 const app = secureApp as unknown as SecureHandler;
 
+function withRobotsPolicy(response: Response, pathname: string): Response {
+  const policy = robotsPolicy(pathname);
+  if (!policy) return response;
+  const result = new Response(response.body, response);
+  result.headers.set("X-Robots-Tag", policy);
+  return result;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const externalUrl = new URL(request.url);
@@ -21,7 +29,7 @@ export default {
     if (route.type === "redirect") {
       const target = new URL(request.url);
       target.pathname = route.pathname;
-      return new Response(null, {
+      return withRobotsPolicy(new Response(null, {
         status: 308,
         headers: {
           Location: target.toString(),
@@ -29,13 +37,13 @@ export default {
           "Referrer-Policy": "no-referrer",
           "X-Content-Type-Options": "nosniff",
         },
-      });
+      }), externalUrl.pathname);
     }
 
     const upstreamRequest = route.type === "rewrite"
       ? requestWithPath(request, route.pathname)
       : request;
-    return app.fetch(upstreamRequest, env, ctx);
+    return withRobotsPolicy(await app.fetch(upstreamRequest, env, ctx), externalUrl.pathname);
   },
 
   queue(batch: MessageBatch<SendJobMessage>, env: Env): Promise<void> {
