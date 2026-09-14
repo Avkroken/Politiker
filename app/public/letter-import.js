@@ -91,7 +91,7 @@
     do{
       previous=rawHtml;
       rawHtml=rawHtml
-        .replace(/<script\b[^>]*>[\s\S]*?<\/script(?:\s[^>]*)?>/gi,'')
+        .replace(/<(?=\s*\/?\s*script\b)/gi,'&lt;')
         .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
         .replace(/<!--|--!?>/g,m=>m.replace(/[<>]/g,''))
         .replace(/<!DOCTYPE[^>]*>/gi,'')
