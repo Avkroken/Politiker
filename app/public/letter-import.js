@@ -91,12 +91,11 @@
     do{
       previous=rawHtml;
       rawHtml=rawHtml
-        .replace(/<(?=\s*\/?\s*script\b)/gi,'&lt;')
+        .replace(/<\s*\/?\s*(?:script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b/gi,'&lt;')
         .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
         .replace(/<!--|--!?>/g,m=>m.replace(/[<>]/g,''))
         .replace(/<!DOCTYPE[^>]*>/gi,'')
-        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'')
-        .replace(/<(?=\s*(?:script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b)/gi,'&lt;');
+        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'');
     }while(rawHtml!==previous);
     const escapedRawHtml=escapeHtmlText(rawHtml);
     const parsed=new DOMParser().parseFromString(escapedRawHtml,'text/html');
