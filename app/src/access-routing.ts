@@ -8,6 +8,17 @@ export type AccessRoute =
   | { type: "rewrite"; pathname: string }
   | { type: "redirect"; pathname: string };
 
+export function robotsPolicy(pathname: string): string | null {
+  if (pathname === "/") return "index, follow, max-image-preview:large";
+  if (
+    pathname === "/admin"
+    || pathname === "/admin/"
+    || pathname.startsWith("/admin/")
+    || pathname.startsWith("/api/")
+  ) return "noindex, nofollow";
+  return null;
+}
+
 export function accessRoute(pathname: string, _method = "GET"): AccessRoute {
   if (pathname === LEGACY_CRITICAL_PAGE || pathname === `${LEGACY_CRITICAL_PAGE}/`) {
     return { type: "redirect", pathname: "/admin" };

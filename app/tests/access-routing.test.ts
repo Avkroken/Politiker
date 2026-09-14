@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { accessRoute } from "../src/access-routing.ts";
+import { accessRoute, robotsPolicy } from "../src/access-routing.ts";
 
 test("all canonical admin APIs use one private namespace", () => {
   for (const [method, pathname, internal] of [
@@ -52,4 +52,12 @@ test("normal public and signed-in APIs are not moved", () => {
   ]) {
     assert.deepEqual(accessRoute(pathname), { type: "pass", pathname });
   }
+});
+
+test("robots policy indexes only the public root among worker-routed app paths", () => {
+  assert.equal(robotsPolicy("/"), "index, follow, max-image-preview:large");
+  assert.equal(robotsPolicy("/admin"), "noindex, nofollow");
+  assert.equal(robotsPolicy("/admin/api/stats"), "noindex, nofollow");
+  assert.equal(robotsPolicy("/api/me"), "noindex, nofollow");
+  assert.equal(robotsPolicy("/faq.html"), null);
 });
