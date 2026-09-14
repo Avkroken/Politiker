@@ -87,7 +87,7 @@
     if(html==null)return'';
     if(typeof html!=='string')throw new Error('HTML-innehållet måste vara en textsträng.');
     let rawHtml=String(html);
-    let previous;
+    const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
     do{
       previous=rawHtml;
       rawHtml=rawHtml
