@@ -16,8 +16,8 @@
     "secret:set-mail-key": "wrangler secret put MAIL_CRED_KEY"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260908.1",
-    "@types/node": "^26.5.0",
+    "@cloudflare/workers-types": "^5.20260911.1",
+    "@types/node": "^26.5.1",
     "c8": "^12.0.0",
     "typescript": "^7.0.2",
     "wrangler": "^4.131.1"
