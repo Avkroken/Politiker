@@ -3,9 +3,9 @@ FROM mcr.microsoft.com/playwright/python:v1.62.0-noble
 WORKDIR /app
 
 # Håll basimagen patchad. Playwright-imagen innehåller även globala Python-paket
-# som Trivy inventerar trots att applikationen kör i /opt/venv. Uppgradera de
-# säkerhetsrelevanta baskopiorna explicit med PEP 668-undantaget och ta bort
-# global pip; runtime använder endast venv-miljön nedan.
+# utanför applikationens /opt/venv. Uppgradera därför de säkerhetsrelevanta
+# baskopiorna explicit med PEP 668-undantaget och ta bort global pip; runtime
+# använder endast venv-miljön nedan.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-venv \
