@@ -96,7 +96,7 @@
         .replace(/<!--|--!?>/g,'')
         .replace(/<!DOCTYPE[^>]*>/gi,'')
         .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'')
-        .replace(/<\s*(script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b/gi,'$1');
+        .replace(/<(?=\s*(?:script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b)/gi,'&lt;');
     }while(rawHtml!==previous);
     const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
     for(const el of [...parsed.body.querySelectorAll('*')]){
