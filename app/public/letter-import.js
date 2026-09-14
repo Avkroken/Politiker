@@ -92,7 +92,7 @@
       previous=rawHtml;
       rawHtml=rawHtml
         .replace(/<\s*\/?\s*(?:script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b/gi,'&lt;')
-        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
+        .replace(/<\s*\/?\s*style\b/gi,'&lt;')
         .replace(/<!--|--!?>/g,m=>m.replace(/[<>]/g,''))
         .replace(/<!DOCTYPE[^>]*>/gi,'')
         .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'');
