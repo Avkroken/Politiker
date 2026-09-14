@@ -1,32 +1,38 @@
-name: Feature request
-description: Suggest an improvement to Politiker.
+name: Förslag
+description: Föreslå en förbättring eller ny funktion.
 title: "[Feature]: "
-labels:
-  - enhancement
 body:
-  - type: textarea
-    id: need
+  - type: markdown
     attributes:
-      label: User need
-      description: Describe the problem or need, rather than only the proposed implementation.
+      value: Beskriv behovet först och lösningen därefter. Undvik känsliga eller privata uppgifter.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Kontroll före förslaget
+      options:
+        - label: Jag har sökt efter ett befintligt issue med samma eller liknande förslag.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem eller behov
+      description: Vilket problem försöker du lösa, eller vilket behov finns?
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Proposed solution
-      description: Explain how the feature should work for citizens using the service.
+      label: Föreslagen lösning
+      description: Beskriv önskat beteende eller resultat.
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives considered
-      description: Describe existing workarounds or alternative solutions.
-  - type: checkboxes
-    id: privacy
+      label: Alternativ
+      description: Beskriv andra lösningar eller arbetssätt som du har övervägt.
+  - type: textarea
+    id: context
     attributes:
-      label: Privacy
-      options:
-        - label: This request does not contain personal data, credentials, or private correspondence.
-          required: true
+      label: Övrig kontext
+      description: Lägg till relevanta exempel eller skärmbilder utan känslig information.
