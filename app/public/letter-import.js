@@ -82,12 +82,38 @@
     return`<${tag}${attrs}>${[...node.childNodes].map(serializeSafeNode).join('')}</${tag}>`;
   }
 
+  function inlineStyleFormats(el){
+    const style=String(el.getAttribute('style')||'').toLowerCase();
+    const formats=[];
+    if(/(?:^|;)\s*font-weight\s*:\s*(?:bold|[6-9]00)\b/.test(style))formats.push('strong');
+    if(/(?:^|;)\s*font-style\s*:\s*(?:italic|oblique)\b/.test(style))formats.push('em');
+    if(/(?:^|;)\s*text-decoration(?:-line)?\s*:[^;]*\bunderline\b/.test(style))formats.push('u');
+    return formats;
+  }
+
+  function preserveInlineFormatting(el){
+    const ownTag=el.tagName.toLowerCase();
+    let nodes=[...el.childNodes],changed=false;
+    for(const format of inlineStyleFormats(el)){
+      const already=(format==='strong'&&(ownTag==='strong'||ownTag==='b'))
+        ||(format==='em'&&(ownTag==='em'||ownTag==='i'))
+        ||(format==='u'&&ownTag==='u');
+      if(already)continue;
+      const wrapper=document.createElement(format);
+      wrapper.append(...nodes);
+      nodes=[wrapper];
+      changed=true;
+    }
+    if(changed)el.replaceChildren(...nodes);
+  }
+
   function sanitizeHtml(html,{validate=true}={}){
     requireDom();
     const parsed=new DOMParser().parseFromString(String(html||''),'text/html');
     for(const el of [...parsed.body.querySelectorAll('*')]){
       const tag=el.tagName.toLowerCase();
       if(DROP_TAGS.has(tag)){el.remove();continue}
+      preserveInlineFormatting(el);
       if(!SAFE_TAGS.has(tag)){el.replaceWith(...el.childNodes);continue}
       const href=tag==='a'?safeHref(el.getAttribute('href')):null;
       for(const attr of [...el.attributes])el.removeAttribute(attr.name);
