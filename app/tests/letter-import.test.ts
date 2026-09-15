@@ -53,3 +53,21 @@ test("HTML sanitizer does not return parsed untrusted markup through innerHTML",
   assert.match(source, /map\(serializeSafeNode\)\.join\(''\)/);
   assert.match(source, /escapeHtmlAttribute\(href\)/);
 });
+
+test("compose editor keeps sanitized rich text through paste, review, and send", async () => {
+  const source = await readFile(new URL("../public/letter-editor.js", import.meta.url), "utf8");
+  assert.match(source, /contenteditable="true"[^>]+id="body"|id="body"[^>]+contenteditable="true"/);
+  assert.match(source, /clipboardData\?\.getData\('text\/html'\)/);
+  assert.match(source, /t\.sanitizeHtml\(bodyHtml\)/);
+  assert.match(source, /rich-text-preview">\$\{bodyHtml\}/);
+  assert.doesNotMatch(source, /letterHtml=t\.textToHtml\(body\)/);
+});
+
+test("DOCX and HTML imports are not flattened to plain text", async () => {
+  const editor = await readFile(new URL("../public/letter-editor.js", import.meta.url), "utf8");
+  const active = await readFile(new URL("../public/active-letter-import.js", import.meta.url), "utf8");
+  assert.doesNotMatch(editor, /htmlToText\(t\.sanitizeHtml\(html\)\)/);
+  assert.doesNotMatch(active, /htmlToText\(t\.sanitizeHtml\(html\)\)/);
+  assert.match(editor, /return t\.sanitizeHtml\(html\)/);
+  assert.match(active, /return t\.sanitizeHtml\(html\)/);
+});
