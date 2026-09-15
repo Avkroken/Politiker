@@ -52,6 +52,8 @@ test("HTML sanitizer does not return parsed untrusted markup through innerHTML",
   assert.match(source, /SAFE_TAGS\.has\(tag\)/);
   assert.match(source, /map\(serializeSafeNode\)\.join\(''\)/);
   assert.match(source, /escapeHtmlAttribute\(href\)/);
+  assert.match(source, /preserveInlineFormatting\(el\)/);
+  assert.match(source, /font-weight/);
 });
 
 test("compose editor keeps sanitized rich text through paste, review, and send", async () => {
