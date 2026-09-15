@@ -22,19 +22,19 @@
     return window.PolitikerLetterImport;
   }
 
-  async function fileToText(file){
+  async function fileToHtml(file){
     const ext=file.name.toLowerCase().split('.').pop();
     const t=tools();
     if(ext==='docx'){
       const mammoth=await loadMammoth();
       const html=(await mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()})).value||'';
-      return t.htmlToText(t.sanitizeHtml(html));
+      return t.sanitizeHtml(html);
     }
     if(ext==='html'||ext==='htm'){
       const html=await t.readFileText(file,{html:true});
-      return t.htmlToText(t.sanitizeHtml(html));
+      return t.sanitizeHtml(html);
     }
-    if(ext==='txt')return t.validateText(await t.readFileText(file));
+    if(ext==='txt')return t.textToHtml(t.validateText(await t.readFileText(file)));
     throw new Error('Bara DOCX, HTML och TXT kan importeras som ny brevtext.');
   }
 
@@ -48,7 +48,7 @@
 
     const details=document.createElement('details');
     details.className='details';
-    details.innerHTML='<summary>Importera brevet på nytt</summary><div class="stack"><input class="input" type="file" id="job-letter-file" accept=".txt,.docx,.html,.htm"><button class="button button--secondary" id="job-letter-import" type="button">Importera och ersätt brevtext</button><p class="muted">DOCX, HTML och TXT kontrolleras för trasiga tecken. Importen ersätter texten i redigeraren; spara sedan med “Uppdatera kvarvarande brev”.</p></div>';
+    details.innerHTML='<summary>Importera brevet på nytt</summary><div class="stack"><input class="input" type="file" id="job-letter-file" accept=".txt,.docx,.html,.htm"><button class="button button--secondary" id="job-letter-import" type="button">Importera och ersätt brevtext</button><p class="muted">DOCX och HTML behåller stödd formatering. TXT importeras som vanlig text. Importen ersätter texten i redigeraren; spara sedan med “Uppdatera kvarvarande brev”.</p></div>';
     const submit=form.querySelector('button[type="submit"]');
     form.insertBefore(details,submit);
 
@@ -59,10 +59,11 @@
       if(!file)return notice('Välj ett dokument att importera.','error');
       importButton.disabled=true;
       try{
-        const text=await fileToText(file);
-        tools().validateText(text);
-        editor.value=text;
-        notice('Dokumentet importerades och teckenkodningen kontrollerades. Kontrollera texten och spara ändringen.','success');
+        const importedHtml=await fileToHtml(file);
+        const text=tools().htmlToText(importedHtml);
+        if(!text.trim())throw new Error('Dokumentet innehåller ingen brevtext.');
+        editor.innerHTML=importedHtml;
+        notice('Dokumentet importerades med formatering och teckenkodningen kontrollerades. Kontrollera brevet och spara ändringen.','success');
       }catch(error){
         notice(error instanceof Error?error.message:'Dokumentet kunde inte importeras.','error');
       }finally{
