@@ -19,5 +19,5 @@ test("notices have readable auto-dismiss durations", () => {
 test("compose and review explain signature handling", () => {
   assert.match(source, /Mail-appens vanliga signatur läggs inte till automatiskt vid utskick/);
   assert.match(source, /Ingen extra signatur från Mail-appen läggs till/);
-  assert.match(source, /data\.signatureNote=kind/);
+  assert.match(source, /dataset\.signatureNote=kind/);
 });
