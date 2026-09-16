@@ -45,3 +45,17 @@ Run the narrowest relevant tests while iterating, then run the complete command 
 - Keep Cloudflare D1 migrations forward-only; do not rewrite migrations that may already be deployed.
 - Update both the TypeScript and Python sides when a shared contact-data contract changes.
 - Do not create additional repository documentation unless it is necessary for the requested change.
+
+## Agent workflow
+
+- Never make implementation commits directly on `main`. Use a dedicated branch named `{agent}/{feature}/{YYYY-MM-DD}/{HH-mm}-{id}` for new work, keep it focused, and open a pull request to `main` when it is ready.
+- Do not force-push unless the user explicitly requests it.
+- Before implementation, read repository documentation, nearby code, existing tests, and CI workflows. Prefer established repository architecture, naming, tooling, and conventions over generic defaults.
+- For non-trivial work, state the expected behavior and testing seam before editing production code. If the task is broad or ambiguous, record scope, constraints, acceptance checks, and split multi-part work into independently verifiable steps.
+- For bugs and regressions, establish evidence and a root cause before changing production code. When a stable public seam exists, add a regression test before the fix.
+- Preserve existing behavior unless the task explicitly changes it, and avoid unrelated cleanup in feature or fix commits.
+- For architecture changes, make module boundaries, interfaces, and dependency implications explicit. Do not silently expand a normal task into a refactor.
+- Run the narrowest relevant tests while iterating, then run the required validation above before declaring work complete.
+- Treat failing CI, tests, type checks, linters, and security checks as unresolved unless the failure is demonstrably unrelated and reported.
+- Review the completed diff for correctness, scope, security, and missing tests. Resolve merge or rebase conflicts by preserving the intent of both sides rather than choosing changes mechanically.
+- Keep progress and handoff notes concise: current state, evidence, verification performed, remaining work, and risks. Never expose secrets, tokens, credentials, private keys, or sensitive environment values.
