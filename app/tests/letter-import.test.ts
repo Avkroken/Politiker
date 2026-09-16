@@ -53,3 +53,11 @@ test("HTML sanitizer does not return parsed untrusted markup through innerHTML",
   assert.match(source, /map\(serializeSafeNode\)\.join\(''\)/);
   assert.match(source, /escapeHtmlAttribute\(href\)/);
 });
+
+test("HTML sanitizer preserves markup for DOM allowlist processing", async () => {
+  const source = await readFile(new URL("../public/letter-import.js", import.meta.url), "utf8");
+  assert.match(source, /const parsed=new DOMParser\(\)\.parseFromString\(rawHtml,'text\/html'\);/);
+  assert.doesNotMatch(source, /escapeHtmlText\(rawHtml\)/);
+  assert.doesNotMatch(source, /rawHtml=rawHtml\s*\.replace/);
+  assert.match(source, /DROP_TAGS\.has\(tag\)\)\{el\.remove\(\);continue\}/);
+});
