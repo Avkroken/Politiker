@@ -28,7 +28,7 @@ test("Windows-1252 input falls back without replacement characters", () => {
 
 test("HTML declared as Windows-1252 uses its declared charset", () => {
   const prefix = new TextEncoder().encode('<meta charset="windows-1252"><p>d');
-  const suffix = new TextEncoder().encode('</p>');
+  const suffix = new TextEncoder().encode("</p>");
   const input = new Uint8Array(prefix.length + 1 + suffix.length);
   input.set(prefix);
   input[prefix.length] = 0xe5;
@@ -76,11 +76,42 @@ test("HTML sanitizer keeps encoded markup as text, not executable markup", () =>
   assert.equal(tools.htmlToText("<p>&lt;script&gt;hej&lt;/script&gt;</p>"), "<script>hej</script>");
 });
 
+test("HTML sanitizer preserves supported inline styles as safe semantic markup", () => {
+  assert.equal(
+    tools.sanitizeHtml('<p style="font-weight:700;font-style:italic;text-decoration:underline">Hej</p>'),
+    "<p><u><em><strong>Hej</strong></em></u></p>",
+  );
+  assert.equal(
+    tools.sanitizeHtml('<font style="font-weight:bold">Hej</font>'),
+    "<strong>Hej</strong>",
+  );
+});
+
 test("HTML sanitizer does not feed untrusted strings to an HTML parser", async () => {
   const source = await readFile(new URL("../public/letter-import.js", import.meta.url), "utf8");
   assert.doesNotMatch(source, /\.innerHTML\s*=/);
   assert.doesNotMatch(source, /parseFromString\(/);
+  assert.doesNotMatch(source, /DOMParser/);
   assert.match(source, /SAFE_TAGS\.has\(tag\)/);
   assert.match(source, /DROP_TAGS\.has\(tag\)/);
   assert.match(source, /escapeHtmlAttribute\(href\)/);
+  assert.match(source, /font-weight/);
+});
+
+test("compose editor keeps sanitized rich text through paste, review, and send", async () => {
+  const source = await readFile(new URL("../public/letter-editor.js", import.meta.url), "utf8");
+  assert.match(source, /contenteditable="true"[^>]+id="body"|id="body"[^>]+contenteditable="true"/);
+  assert.match(source, /clipboardData\?\.getData\('text\/html'\)/);
+  assert.match(source, /t\.sanitizeHtml\(bodyHtml\)/);
+  assert.match(source, /rich-text-preview">\$\{bodyHtml\}/);
+  assert.doesNotMatch(source, /letterHtml=t\.textToHtml\(body\)/);
+});
+
+test("DOCX and HTML imports are not flattened to plain text", async () => {
+  const editor = await readFile(new URL("../public/letter-editor.js", import.meta.url), "utf8");
+  const active = await readFile(new URL("../public/active-letter-import.js", import.meta.url), "utf8");
+  assert.doesNotMatch(editor, /htmlToText\(t\.sanitizeHtml\(html\)\)/);
+  assert.doesNotMatch(active, /htmlToText\(t\.sanitizeHtml\(html\)\)/);
+  assert.match(editor, /return t\.sanitizeHtml\(html\)/);
+  assert.match(active, /return t\.sanitizeHtml\(html\)/);
 });

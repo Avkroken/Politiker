@@ -101,16 +101,31 @@
     return{tag,closing:Boolean(match[1]),attributes:match[3]||'',selfClosing:/\/\s*>$/.test(token)||VOID_TAGS.has(tag)};
   }
 
-  function hrefFromAttributes(attributes){
-    const match=String(attributes).match(/(?:^|\s)href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i);
+  function attributeValue(attributes,name){
+    const escaped=String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const match=String(attributes).match(new RegExp(`(?:^|\\s)${escaped}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'=<>`+'`'+`]+))`,'i'));
     if(!match)return null;
-    return safeHref(decodeHtmlEntities(match[1]??match[2]??match[3]??''));
+    return decodeHtmlEntities(match[1]??match[2]??match[3]??'');
+  }
+
+  function hrefFromAttributes(attributes){
+    const href=attributeValue(attributes,'href');
+    return href==null?null:safeHref(href);
+  }
+
+  function inlineStyleFormats(attributes,ownTag){
+    const style=String(attributeValue(attributes,'style')||'').toLowerCase();
+    const formats=[];
+    if(/(?:^|;)\s*font-weight\s*:\s*(?:bold|[6-9]00)\b/.test(style)&&ownTag!=='strong'&&ownTag!=='b')formats.push('strong');
+    if(/(?:^|;)\s*font-style\s*:\s*(?:italic|oblique)\b/.test(style)&&ownTag!=='em'&&ownTag!=='i')formats.push('em');
+    if(/(?:^|;)\s*text-decoration(?:-line)?\s*:[^;]*\bunderline\b/.test(style)&&ownTag!=='u')formats.push('u');
+    return formats;
   }
 
   function transformHtml(html,mode){
     if(typeof html!=='string')throw new Error('HTML-innehållet måste vara en textsträng.');
     let output='';
-    const openTags=[];
+    const openFrames=[];
     const dropTags=[];
 
     function appendText(value){
@@ -123,14 +138,16 @@
       if(mode==='text')output+='\n';
     }
 
-    function closeSafeTag(tag){
-      const index=openTags.lastIndexOf(tag);
+    function closeFrame(frame){
+      if(mode==='html'){
+        for(let i=frame.outputTags.length-1;i>=0;i--)output+=`</${frame.outputTags[i]}>`;
+      }else if(frame.block)appendBreak();
+    }
+
+    function closeSourceTag(tag){
+      const index=openFrames.map(frame=>frame.sourceTag).lastIndexOf(tag);
       if(index<0)return;
-      while(openTags.length>index){
-        const closing=openTags.pop();
-        if(mode==='html')output+=`</${closing}>`;
-        else if(BLOCK_TAGS.has(closing))appendBreak();
-      }
+      while(openFrames.length>index)closeFrame(openFrames.pop());
     }
 
     function closeDropTag(tag){
@@ -174,24 +191,36 @@
         continue;
       }
       if(dropTags.length)continue;
-      if(!SAFE_TAGS.has(tag))continue;
-      if(closing){closeSafeTag(tag);continue}
-      if(tag==='br'){if(mode==='html')output+='<br>';else appendBreak();continue}
+      if(closing){closeSourceTag(tag);continue}
+      if(tag==='br'){
+        if(mode==='html')output+='<br>';
+        else appendBreak();
+        continue;
+      }
 
-      if(mode==='html'){
+      const safe=SAFE_TAGS.has(tag);
+      const formats=inlineStyleFormats(attributes,tag);
+      const outputTags=[];
+      if(mode==='html'&&safe){
         const href=tag==='a'?hrefFromAttributes(attributes):null;
         const attrs=href?` href="${escapeHtmlAttribute(href)}" rel="noopener noreferrer"`:'';
         output+=`<${tag}${attrs}>`;
+        outputTags.push(tag);
       }
-      if(!selfClosing)openTags.push(tag);
-      else if(mode==='html')output+=`</${tag}>`;
+      if(mode==='html'){
+        for(let i=formats.length-1;i>=0;i--){
+          const format=formats[i];
+          output+=`<${format}>`;
+          outputTags.push(format);
+        }
+      }
+
+      const frame={sourceTag:tag,outputTags,block:safe&&BLOCK_TAGS.has(tag)};
+      if(selfClosing)closeFrame(frame);
+      else openFrames.push(frame);
     }
 
-    while(openTags.length){
-      const closing=openTags.pop();
-      if(mode==='html')output+=`</${closing}>`;
-      else if(BLOCK_TAGS.has(closing))appendBreak();
-    }
+    while(openFrames.length)closeFrame(openFrames.pop());
     return output;
   }
 

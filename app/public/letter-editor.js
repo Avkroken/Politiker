@@ -16,19 +16,69 @@
     return editorMammothPromise;
   }
 
-  async function importedFileToText(file){
+  function storedToEditorHtml(value,t){
+    const stored=String(value||'');
+    if(!stored)return'';
+    if(/<\/?(?:p|br|div|strong|em|b|i|u|ul|ol|li|blockquote|h[1-3]|span|a)\b/i.test(stored))return t.sanitizeHtml(stored,{validate:false});
+    return t.textToHtml(stored);
+  }
+
+  function editorHtml(editor,t,{requireContent=true}={}){
+    const html=t.sanitizeHtml(editor.innerHTML);
+    const text=t.htmlToText(html,{validate:false});
+    if(requireContent&&!text.trim())throw new Error('Skriv ett brev först.');
+    return html;
+  }
+
+  function insertHtmlAtSelection(html){
+    if(document.execCommand('insertHTML',false,html))return;
+    const selection=window.getSelection();
+    if(!selection||!selection.rangeCount)return;
+    const range=selection.getRangeAt(0);
+    range.deleteContents();
+    const template=document.createElement('template');
+    template.innerHTML=html;
+    const fragment=template.content;
+    const last=fragment.lastChild;
+    range.insertNode(fragment);
+    if(last){
+      range.setStartAfter(last);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+
+  function wireRichEditor(editor,t,onChange){
+    editor.addEventListener('input',onChange);
+    editor.addEventListener('paste',event=>{
+      const html=event.clipboardData?.getData('text/html')||'';
+      const text=event.clipboardData?.getData('text/plain')||'';
+      if(!html&&!text)return;
+      event.preventDefault();
+      try{
+        const safeHtml=html?t.sanitizeHtml(html):t.textToHtml(t.validateText(text));
+        insertHtmlAtSelection(safeHtml);
+        onChange();
+      }catch(error){
+        notice(error instanceof Error?error.message:'Den inklistrade texten kunde inte användas.','error');
+      }
+    });
+  }
+
+  async function importedFileToHtml(file){
     const ext=file.name.toLowerCase().split('.').pop();
     const t=tools();
     if(ext==='docx'){
       const mammoth=await loadEditorMammoth();
       const html=(await mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()})).value||'';
-      return t.htmlToText(t.sanitizeHtml(html));
+      return t.sanitizeHtml(html);
     }
     if(ext==='html'||ext==='htm'){
       const html=await t.readFileText(file,{html:true});
-      return t.htmlToText(t.sanitizeHtml(html));
+      return t.sanitizeHtml(html);
     }
-    if(ext==='txt')return t.validateText(await t.readFileText(file));
+    if(ext==='txt')return t.textToHtml(t.validateText(await t.readFileText(file)));
     throw new Error('Den filen kan bifogas, men bara DOCX, HTML och TXT kan användas som brevtext.');
   }
 
@@ -55,13 +105,14 @@
   renderCompose=function(){
     const el=$('#send-step'),t=tools();
     const stored=sessionStorage.getItem('draft:body')||'';
-    const bodyText=t.storedToEditorText(stored);
-    if(stored!==bodyText)sessionStorage.setItem('draft:body',bodyText);
-    el.innerHTML=`<div class="stack"><div class="row row--between compose-head"><div><h2>Skriv brevet</h2><p class="muted">Texten sparas tillfälligt i den här webbläsarfliken tills utskicket startar.</p></div><button class="button button--danger" id="clear-draft" type="button">Rensa formulär</button></div><div class="field"><label>Ämne</label><input class="input" id="subject" value="${esc(sessionStorage.getItem('draft:subject')||'')}"></div><div class="field"><label>Brev</label><textarea class="input" id="body"></textarea><span class="field__hint">Import kontrolleras för trasiga tecken innan brevet kan skickas.</span></div><details class="details"><summary>Bilagor och dokumentimport</summary><div class="stack"><input class="input" type="file" id="files" multiple accept=".pdf,.txt,.docx,.html,.htm"><div id="file-list" class="chips"></div><p id="file-info" class="muted"></p><button class="button button--secondary" id="use-file" type="button">Använd första filen som brev</button></div></details><div class="row"><button class="button button--secondary" id="back-rec">Tillbaka</button><button class="button button--primary" id="to-review">Nästa: Granska</button></div></div>`;
+    const bodyHtml=storedToEditorHtml(stored,t);
+    if(stored!==bodyHtml)sessionStorage.setItem('draft:body',bodyHtml);
+    el.innerHTML=`<div class="stack"><div class="row row--between compose-head"><div><h2>Skriv brevet</h2><p class="muted">Texten sparas tillfälligt i den här webbläsarfliken tills utskicket startar.</p></div><button class="button button--danger" id="clear-draft" type="button">Rensa formulär</button></div><div class="field"><label>Ämne</label><input class="input" id="subject" value="${esc(sessionStorage.getItem('draft:subject')||'')}"></div><div class="field"><label for="body">Brev</label><div class="input rich-text-editor" id="body" contenteditable="true" style="min-height:220px;resize:vertical;overflow:auto" role="textbox" aria-multiline="true" spellcheck="true"></div><span class="field__hint">Fetstil, kursiv och understrykning från formaterad text behålls. Import kontrolleras för trasiga tecken innan brevet kan skickas.</span></div><details class="details"><summary>Bilagor och dokumentimport</summary><div class="stack"><input class="input" type="file" id="files" multiple accept=".pdf,.txt,.docx,.html,.htm"><div id="file-list" class="chips"></div><p id="file-info" class="muted"></p><button class="button button--secondary" id="use-file" type="button">Använd första filen som brev</button></div></details><div class="row"><button class="button button--secondary" id="back-rec">Tillbaka</button><button class="button button--primary" id="to-review">Nästa: Granska</button></div></div>`;
     const subject=$('#subject'),body=$('#body'),files=$('#files');
-    body.value=bodyText;
+    body.innerHTML=bodyHtml;
+    const saveBody=()=>sessionStorage.setItem('draft:body',t.sanitizeHtml(body.innerHTML,{validate:false}));
     subject.oninput=()=>sessionStorage.setItem('draft:subject',subject.value);
-    body.oninput=()=>sessionStorage.setItem('draft:body',body.value);
+    wireRichEditor(body,t,saveBody);
     files.onchange=e=>{
       for(const file of [...e.target.files])if(!state.files.some(existing=>sameFile(existing,file)))state.files.push(file);
       files.value='';
@@ -72,20 +123,22 @@
       const file=state.files[0];
       if(!file)return;
       try{
-        const text=await importedFileToText(file);
-        t.validateText(text);
-        body.value=text;
+        const html=await importedFileToHtml(file);
+        const text=t.htmlToText(html);
+        if(!text.trim())throw new Error('Dokumentet innehåller ingen brevtext.');
+        body.innerHTML=html;
         subject.value=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
         sessionStorage.setItem('draft:subject',subject.value);
-        sessionStorage.setItem('draft:body',body.value);
-        notice('Dokumentet importerades och teckenkodningen kontrollerades.','success');
+        sessionStorage.setItem('draft:body',html);
+        notice('Dokumentet importerades med formatering och teckenkodningen kontrollerades.','success');
       }catch(error){notice(error instanceof Error?error.message:'Dokumentet kunde inte importeras.','error')}
     };
     $('#clear-draft').onclick=()=>{
-      if(!subject.value&&!body.value&&!state.files.length)return;
+      const hasBody=t.htmlToText(t.sanitizeHtml(body.innerHTML,{validate:false}),{validate:false}).trim();
+      if(!subject.value&&!hasBody&&!state.files.length)return;
       if(!confirm('Rensa ämne, brevtext och alla valda filer?'))return;
       subject.value='';
-      body.value='';
+      body.innerHTML='';
       state.files=[];
       sessionStorage.removeItem('draft:subject');
       sessionStorage.removeItem('draft:body');
@@ -93,13 +146,12 @@
       renderSelectedFiles();
       notice('Formuläret är rensat.','success');
     };
-    $('#back-rec').onclick=()=>{state.step=1;location.hash='send/1';renderSend($('#root'))};
+    $('#back-rec').onclick=()=>{saveBody();state.step=1;location.hash='send/1';renderSend($('#root'))};
     $('#to-review').onclick=()=>{
       try{
-        t.validateText(body.value);
-        if(!body.value.trim())throw new Error('Skriv ett brev först.');
+        const html=editorHtml(body,t);
+        sessionStorage.setItem('draft:body',html);
       }catch(error){notice(error instanceof Error?error.message:'Kontrollera brevtexten.','error');return}
-      sessionStorage.setItem('draft:body',body.value);
       state.step=3;
       location.hash='send/3';
       renderSend($('#root'));
@@ -107,17 +159,23 @@
   };
 
   renderReview=function(){
-    const el=$('#send-step'),t=tools(),subject=sessionStorage.getItem('draft:subject')||'',body=t.storedToEditorText(sessionStorage.getItem('draft:body')||'');
+    const el=$('#send-step'),t=tools(),subject=sessionStorage.getItem('draft:subject')||'';
+    const bodyHtml=storedToEditorHtml(sessionStorage.getItem('draft:body')||'',t);
+    const bodyText=t.htmlToText(bodyHtml,{validate:false});
     let contentError='';
-    try{t.validateText(body);if(!body.trim())contentError='Brevtext saknas.'}catch(error){contentError=error instanceof Error?error.message:'Kontrollera brevtexten.'}
-    el.innerHTML=`<div class="stack"><h2>Granska och skicka</h2>${contentError?`<div class="notice notice--error">${esc(contentError)}</div>`:''}<div class="kpis"><div class="kpi"><strong id="review-count">…</strong><span>Mottagare</span></div><div class="kpi"><strong>${state.credentials?.length||0}</strong><span>Mailkonton</span></div><div class="kpi"><strong>${state.files.length}</strong><span>Bilagor</span></div></div><div class="field"><label>Skicka från</label><select class="input" id="credential"><option value="">Välj mailkonto…</option>${(state.credentials||[]).map(c=>`<option value="${esc(c.id)}">${esc(c.from_address)} · ${esc(c.provider)}</option>`).join('')}</select></div><div class="card"><div class="card__title">${esc(subject||'(utan ämne)')}</div><div class="muted letter-preview-text">${esc(body.slice(0,1200))}</div></div><details class="details"><summary>Avancerad utskickstakt</summary><div class="grid grid--3"><div class="field"><label>Högst per dag nu</label><input class="input" id="limit-now" type="number" min="1"></div><div class="field"><label>Växla efter dagar</label><input class="input" id="switch-days" type="number" min="1"></div><div class="field"><label>Högst per dag därefter</label><input class="input" id="limit-after" type="number" min="1"></div></div></details><div class="row"><button class="button button--secondary" id="back-compose">Tillbaka</button><button class="button button--primary" id="send-now" ${contentError?'disabled':''}>Starta utskick</button></div></div>`;
+    try{t.validateText(bodyText);if(!bodyText.trim())contentError='Brevtext saknas.'}catch(error){contentError=error instanceof Error?error.message:'Kontrollera brevtexten.'}
+    el.innerHTML=`<div class="stack"><h2>Granska och skicka</h2>${contentError?`<div class="notice notice--error">${esc(contentError)}</div>`:''}<div class="kpis"><div class="kpi"><strong id="review-count">…</strong><span>Mottagare</span></div><div class="kpi"><strong>${state.credentials?.length||0}</strong><span>Mailkonton</span></div><div class="kpi"><strong>${state.files.length}</strong><span>Bilagor</span></div></div><div class="field"><label>Skicka från</label><select class="input" id="credential"><option value="">Välj mailkonto…</option>${(state.credentials||[]).map(c=>`<option value="${esc(c.id)}">${esc(c.from_address)} · ${esc(c.provider)}</option>`).join('')}</select></div><div class="card"><div class="card__title">${esc(subject||'(utan ämne)')}</div><div class="muted letter-preview-text rich-text-preview">${bodyHtml}</div></div><details class="details"><summary>Avancerad utskickstakt</summary><div class="grid grid--3"><div class="field"><label>Högst per dag nu</label><input class="input" id="limit-now" type="number" min="1"></div><div class="field"><label>Växla efter dagar</label><input class="input" id="switch-days" type="number" min="1"></div><div class="field"><label>Högst per dag därefter</label><input class="input" id="limit-after" type="number" min="1"></div></div></details><div class="row"><button class="button button--secondary" id="back-compose">Tillbaka</button><button class="button button--primary" id="send-now" ${contentError?'disabled':''}>Starta utskick</button></div></div>`;
     recipientCount();
     $('#back-compose').onclick=()=>{state.step=2;location.hash='send/2';renderSend($('#root'))};
     $('#send-now').onclick=async()=>{
       const credential=$('#credential').value;
       if(!credential)return notice('Välj mailkonto.','error');
       let letterHtml;
-      try{t.validateText(body);if(!body.trim())throw new Error('Skriv ett brev först.');letterHtml=t.textToHtml(body)}catch(error){return notice(error instanceof Error?error.message:'Kontrollera brevtexten.','error')}
+      try{
+        letterHtml=t.sanitizeHtml(bodyHtml);
+        const text=t.htmlToText(letterHtml,{validate:false});
+        if(!text.trim())throw new Error('Skriv ett brev först.');
+      }catch(error){return notice(error instanceof Error?error.message:'Kontrollera brevtexten.','error')}
       const attachments=[];
       for(const file of state.files)attachments.push({filename:file.name,contentType:file.type||'application/octet-stream',mode:'attach',base64Data:await file64(file)});
       const val=id=>$(id).value.trim()?Number($(id).value):null;
@@ -137,15 +195,16 @@
   function openLetterEditor(job){
     if(!job.letter_html)return notice('Brevtexten är inte längre tillgänglig för redigering.','error');
     const t=tools();
-    const text=t.storedToEditorText(job.letter_html);
-    showModal('Redigera kvarvarande brev',`<form id="letter-edit-form" class="stack"><div class="notice notice--warning">Ändringen gäller bara mottagare som ännu inte har skickats.</div><div class="field"><label>Ämne</label><input class="input" name="subject" value="${esc(job.subject||'')}"></div><div class="field"><label>Brev</label><textarea class="input" id="job-letter-body"></textarea><span class="field__hint">Trasiga tecken måste rättas innan ändringen kan sparas.</span></div><button class="button button--primary" type="submit">Uppdatera kvarvarande brev</button></form>`);
+    const html=storedToEditorHtml(job.letter_html,t);
+    showModal('Redigera kvarvarande brev',`<form id="letter-edit-form" class="stack"><div class="notice notice--warning">Ändringen gäller bara mottagare som ännu inte har skickats.</div><div class="field"><label>Ämne</label><input class="input" name="subject" value="${esc(job.subject||'')}"></div><div class="field"><label for="job-letter-body">Brev</label><div class="input rich-text-editor" id="job-letter-body" contenteditable="true" style="min-height:220px;resize:vertical;overflow:auto" role="textbox" aria-multiline="true" spellcheck="true"></div><span class="field__hint">Formatering behålls. Trasiga tecken måste rättas innan ändringen kan sparas.</span></div><button class="button button--primary" type="submit">Uppdatera kvarvarande brev</button></form>`);
     const editor=$('#job-letter-body');
-    editor.value=text;
+    editor.innerHTML=html;
+    wireRichEditor(editor,t,()=>{});
     $('#letter-edit-form').onsubmit=async event=>{
       event.preventDefault();
-      const form=new FormData(event.currentTarget),letterText=editor.value;
+      const form=new FormData(event.currentTarget);
       let letterHtml;
-      try{t.validateText(letterText);if(!letterText.trim())throw new Error('Brevtext får inte vara tom.');letterHtml=t.textToHtml(letterText)}catch(error){return notice(error instanceof Error?error.message:'Kontrollera brevtexten.','error')}
+      try{letterHtml=editorHtml(editor,t)}catch(error){return notice(error instanceof Error?error.message:'Kontrollera brevtexten.','error')}
       try{
         await api(`/api/send-jobs/${job.id}/rate`,{method:'PATCH',body:JSON.stringify({letterHtml,subject:String(form.get('subject')||'')})});
         closeModal();
