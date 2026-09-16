@@ -61,3 +61,11 @@ test("HTML sanitizer preserves markup for DOM allowlist processing", async () =>
   assert.doesNotMatch(source, /rawHtml=rawHtml\s*\.replace/);
   assert.match(source, /DROP_TAGS\.has\(tag\)\)\{el\.remove\(\);continue\}/);
 });
+
+test("HTML-to-text does not reparse serialized sanitized markup", async () => {
+  const source = await readFile(new URL("../public/letter-import.js", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /parseFromString\(sanitizeHtml\(/);
+  assert.match(source, /function parseAndSanitizeHtml\(/);
+  assert.match(source, /function sanitizeHtml[\s\S]*?parseAndSanitizeHtml\(/);
+  assert.match(source, /function htmlToText[\s\S]*?parseAndSanitizeHtml\(/);
+});
