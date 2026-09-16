@@ -82,9 +82,8 @@
     return`<${tag}${attrs}>${[...node.childNodes].map(serializeSafeNode).join('')}</${tag}>`;
   }
 
-  function sanitizeHtml(html,{validate=true}={}){
+  function parseAndSanitizeHtml(html){
     requireDom();
-    if(html==null)return'';
     if(typeof html!=='string')throw new Error('HTML-innehållet måste vara en textsträng.');
     const rawHtml=html;
     const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
@@ -96,13 +95,19 @@
       for(const attr of [...el.attributes])el.removeAttribute(attr.name);
       if(tag==='a'&&href){el.setAttribute('href',href);el.setAttribute('rel','noopener noreferrer')}
     }
+    return parsed;
+  }
+
+  function sanitizeHtml(html,{validate=true}={}){
+    if(html==null)return'';
+    const parsed=parseAndSanitizeHtml(html);
     if(validate)validateText(parsed.body.textContent||'');
     return[...parsed.body.childNodes].map(serializeSafeNode).join('');
   }
 
   function htmlToText(html,{validate=true}={}){
-    requireDom();
-    const parsed=new DOMParser().parseFromString(sanitizeHtml(html,{validate:false}),'text/html');
+    if(html==null)return'';
+    const parsed=parseAndSanitizeHtml(html);
     for(const br of [...parsed.body.querySelectorAll('br')])br.replaceWith('\n');
     for(const el of [...parsed.body.querySelectorAll('p,div,li,blockquote,h1,h2,h3')])el.append('\n');
     const text=(parsed.body.textContent||'').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
