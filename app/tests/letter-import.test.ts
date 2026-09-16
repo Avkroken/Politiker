@@ -6,6 +6,8 @@ import "../public/letter-import.js";
 type LetterImportTools = {
   decodeTextBytes(input: Uint8Array, options?: { html?: boolean }): { text: string; encoding: string };
   validateText(text: string): string;
+  sanitizeHtml(html: string, options?: { validate?: boolean }): string;
+  htmlToText(html: string, options?: { validate?: boolean }): string;
 };
 
 const tools = (globalThis as typeof globalThis & { PolitikerLetterImport: LetterImportTools }).PolitikerLetterImport;
@@ -46,26 +48,39 @@ test("common UTF-8 mojibake is rejected", () => {
   assert.throws(() => tools.decodeTextBytes(input), /felkodad/);
 });
 
-test("HTML sanitizer does not return parsed untrusted markup through innerHTML", async () => {
+test("HTML sanitizer preserves safe paragraphs and line breaks", () => {
+  const input = "<p>Hej<br>värld</p>";
+  assert.equal(tools.sanitizeHtml(input), input);
+  assert.equal(tools.htmlToText(input), "Hej\nvärld");
+});
+
+test("HTML sanitizer removes unsafe element subtrees", () => {
+  const input = "<p>Hej<script>alert(1)</script><style>body{display:none}</style>värld</p>";
+  assert.equal(tools.sanitizeHtml(input), "<p>Hejvärld</p>");
+  assert.equal(tools.htmlToText(input), "Hejvärld");
+});
+
+test("HTML sanitizer allowlists link protocols and attributes", () => {
+  assert.equal(
+    tools.sanitizeHtml('<a href="javascript:alert(1)" onclick="alert(1)">osäker</a>'),
+    "<a>osäker</a>",
+  );
+  assert.equal(
+    tools.sanitizeHtml('<a href="https://example.com/path?a=1&b=2" onclick="alert(1)">säker</a>'),
+    '<a href="https://example.com/path?a=1&amp;b=2" rel="noopener noreferrer">säker</a>',
+  );
+});
+
+test("HTML sanitizer keeps encoded markup as text, not executable markup", () => {
+  assert.equal(tools.sanitizeHtml("<p>&lt;script&gt;hej&lt;/script&gt;</p>"), "<p>&lt;script&gt;hej&lt;/script&gt;</p>");
+  assert.equal(tools.htmlToText("<p>&lt;script&gt;hej&lt;/script&gt;</p>"), "<script>hej</script>");
+});
+
+test("HTML sanitizer does not feed untrusted strings to an HTML parser", async () => {
   const source = await readFile(new URL("../public/letter-import.js", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /return\s+parsed\.body\.innerHTML\b/);
+  assert.doesNotMatch(source, /\.innerHTML\s*=/);
+  assert.doesNotMatch(source, /parseFromString\(/);
   assert.match(source, /SAFE_TAGS\.has\(tag\)/);
-  assert.match(source, /map\(serializeSafeNode\)\.join\(''\)/);
+  assert.match(source, /DROP_TAGS\.has\(tag\)/);
   assert.match(source, /escapeHtmlAttribute\(href\)/);
-});
-
-test("HTML sanitizer preserves markup for DOM allowlist processing", async () => {
-  const source = await readFile(new URL("../public/letter-import.js", import.meta.url), "utf8");
-  assert.match(source, /const parsed=new DOMParser\(\)\.parseFromString\(rawHtml,'text\/html'\);/);
-  assert.doesNotMatch(source, /escapeHtmlText\(rawHtml\)/);
-  assert.doesNotMatch(source, /rawHtml=rawHtml\s*\.replace/);
-  assert.match(source, /DROP_TAGS\.has\(tag\)\)\{el\.remove\(\);continue\}/);
-});
-
-test("HTML-to-text does not reparse serialized sanitized markup", async () => {
-  const source = await readFile(new URL("../public/letter-import.js", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /parseFromString\(sanitizeHtml\(/);
-  assert.match(source, /function parseAndSanitizeHtml\(/);
-  assert.match(source, /function sanitizeHtml[\s\S]*?parseAndSanitizeHtml\(/);
-  assert.match(source, /function htmlToText[\s\S]*?parseAndSanitizeHtml\(/);
 });
