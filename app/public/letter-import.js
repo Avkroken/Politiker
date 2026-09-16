@@ -2,6 +2,9 @@
   const COMMON_MOJIBAKE=/(?:Ã¥|Ã¤|Ã¶|Ã…|Ã„|Ã–|Ã©|Ã¨|Ã¼|Ã±|â€“|â€”|â€™|â€œ|â€|â€¦|Â |ï¿½)/;
   const SAFE_TAGS=new Set(['p','br','strong','em','b','i','u','ul','ol','li','blockquote','h1','h2','h3','div','span','a']);
   const DROP_TAGS=new Set(['script','style','iframe','object','embed','svg','math','form','input','button','textarea','select','option','link','meta','base']);
+  const DROP_VOID_TAGS=new Set(['embed','input','link','meta','base']);
+  const VOID_TAGS=new Set(['br']);
+  const BLOCK_TAGS=new Set(['p','div','li','blockquote','h1','h2','h3']);
 
   function normalizeCharset(value){
     const charset=String(value||'').trim().toLowerCase().replace(/["']/g,'');
@@ -55,6 +58,19 @@
     return escapeHtmlText(value).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
+  function decodeHtmlEntities(value){
+    const named={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:'\u00a0'};
+    return String(value).replace(/&(#(?:x[0-9a-f]+|\d+)|amp|lt|gt|quot|apos|nbsp);/gi,(match,entity)=>{
+      const key=String(entity).toLowerCase();
+      if(key[0]!=='#')return named[key]??match;
+      const hex=key[1]==='x';
+      const digits=hex?key.slice(2):key.slice(1);
+      const code=Number.parseInt(digits,hex?16:10);
+      if(!Number.isFinite(code)||code<=0||code>0x10ffff||(code>=0xd800&&code<=0xdfff))return match;
+      return String.fromCodePoint(code);
+    });
+  }
+
   function textToHtml(text){
     validateText(text);
     const normalized=String(text).replace(/\r\n?/g,'\n').trim();
@@ -62,73 +78,162 @@
     return normalized.split(/\n{2,}/).map(para=>`<p>${escapeHtmlText(para).replace(/\n/g,'<br>')}</p>`).join('\n');
   }
 
-  function requireDom(){
-    if(typeof DOMParser==='undefined'||typeof document==='undefined')throw new Error('HTML-import stöds inte i den här miljön.');
-  }
-
   function safeHref(value){
     const href=String(value||'').trim();
     return /^(?:https?:|mailto:)/i.test(href)?href:null;
   }
 
-  function serializeSafeNode(node){
-    if(node.nodeType===3)return escapeHtmlText(node.nodeValue||'');
-    if(node.nodeType!==1)return'';
-    const tag=String(node.tagName||'').toLowerCase();
-    if(!SAFE_TAGS.has(tag))return[...node.childNodes].map(serializeSafeNode).join('');
-    const href=tag==='a'?safeHref(node.getAttribute('href')):null;
-    const attrs=href?` href="${escapeHtmlAttribute(href)}" rel="noopener noreferrer"`:'';
-    if(tag==='br')return'<br>';
-    return`<${tag}${attrs}>${[...node.childNodes].map(serializeSafeNode).join('')}</${tag}>`;
+  function findTagEnd(html,start){
+    let quote=null;
+    for(let i=start+1;i<html.length;i++){
+      const ch=html[i];
+      if(quote){if(ch===quote)quote=null;continue}
+      if(ch==='"'||ch==="'"){quote=ch;continue}
+      if(ch==='>')return i;
+    }
+    return-1;
   }
 
-  function inlineStyleFormats(el){
-    const style=String(el.getAttribute('style')||'').toLowerCase();
+  function parseTagToken(token){
+    const match=token.match(/^<\s*(\/?)\s*([A-Za-z][A-Za-z0-9:-]*)(?=[\s/>])([\s\S]*?)>$/);
+    if(!match)return null;
+    const tag=match[2].toLowerCase();
+    return{tag,closing:Boolean(match[1]),attributes:match[3]||'',selfClosing:/\/\s*>$/.test(token)||VOID_TAGS.has(tag)};
+  }
+
+  function attributeValue(attributes,name){
+    const escaped=String(name).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const match=String(attributes).match(new RegExp(`(?:^|\\s)${escaped}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'=<>`+'`'+`]+))`,'i'));
+    if(!match)return null;
+    return decodeHtmlEntities(match[1]??match[2]??match[3]??'');
+  }
+
+  function hrefFromAttributes(attributes){
+    const href=attributeValue(attributes,'href');
+    return href==null?null:safeHref(href);
+  }
+
+  function inlineStyleFormats(attributes,ownTag){
+    const style=String(attributeValue(attributes,'style')||'').toLowerCase();
     const formats=[];
-    if(/(?:^|;)\s*font-weight\s*:\s*(?:bold|[6-9]00)\b/.test(style))formats.push('strong');
-    if(/(?:^|;)\s*font-style\s*:\s*(?:italic|oblique)\b/.test(style))formats.push('em');
-    if(/(?:^|;)\s*text-decoration(?:-line)?\s*:[^;]*\bunderline\b/.test(style))formats.push('u');
+    if(/(?:^|;)\s*font-weight\s*:\s*(?:bold|[6-9]00)\b/.test(style)&&ownTag!=='strong'&&ownTag!=='b')formats.push('strong');
+    if(/(?:^|;)\s*font-style\s*:\s*(?:italic|oblique)\b/.test(style)&&ownTag!=='em'&&ownTag!=='i')formats.push('em');
+    if(/(?:^|;)\s*text-decoration(?:-line)?\s*:[^;]*\bunderline\b/.test(style)&&ownTag!=='u')formats.push('u');
     return formats;
   }
 
-  function preserveInlineFormatting(el){
-    const ownTag=el.tagName.toLowerCase();
-    let nodes=[...el.childNodes],changed=false;
-    for(const format of inlineStyleFormats(el)){
-      const already=(format==='strong'&&(ownTag==='strong'||ownTag==='b'))
-        ||(format==='em'&&(ownTag==='em'||ownTag==='i'))
-        ||(format==='u'&&ownTag==='u');
-      if(already)continue;
-      const wrapper=document.createElement(format);
-      wrapper.append(...nodes);
-      nodes=[wrapper];
-      changed=true;
+  function transformHtml(html,mode){
+    if(typeof html!=='string')throw new Error('HTML-innehållet måste vara en textsträng.');
+    let output='';
+    const openFrames=[];
+    const dropTags=[];
+
+    function appendText(value){
+      if(!value||dropTags.length)return;
+      const decoded=decodeHtmlEntities(value);
+      output+=mode==='html'?escapeHtmlText(decoded):decoded;
     }
-    if(changed)el.replaceChildren(...nodes);
+
+    function appendBreak(){
+      if(mode==='text')output+='\n';
+    }
+
+    function closeFrame(frame){
+      if(mode==='html'){
+        for(let i=frame.outputTags.length-1;i>=0;i--)output+=`</${frame.outputTags[i]}>`;
+      }else if(frame.block)appendBreak();
+    }
+
+    function closeSourceTag(tag){
+      const index=openFrames.map(frame=>frame.sourceTag).lastIndexOf(tag);
+      if(index<0)return;
+      while(openFrames.length>index)closeFrame(openFrames.pop());
+    }
+
+    function closeDropTag(tag){
+      const index=dropTags.lastIndexOf(tag);
+      if(index>=0)dropTags.length=index;
+    }
+
+    let index=0;
+    while(index<html.length){
+      const start=html.indexOf('<',index);
+      if(start<0){appendText(html.slice(index));break}
+      appendText(html.slice(index,start));
+
+      if(html.startsWith('<!--',start)){
+        const end=html.indexOf('-->',start+4);
+        index=end<0?html.length:end+3;
+        continue;
+      }
+      if(/^<!doctype\b/i.test(html.slice(start,start+10))){
+        const end=findTagEnd(html,start);
+        index=end<0?html.length:end+1;
+        continue;
+      }
+      if(html.startsWith('<![CDATA[',start)){
+        const end=html.indexOf(']]>',start+9);
+        index=end<0?html.length:end+3;
+        continue;
+      }
+
+      const end=findTagEnd(html,start);
+      if(end<0){appendText(html.slice(start));break}
+      const rawToken=html.slice(start,end+1);
+      const token=parseTagToken(rawToken);
+      index=end+1;
+      if(!token){appendText(rawToken);continue}
+
+      const {tag,closing,attributes,selfClosing}=token;
+      if(DROP_TAGS.has(tag)){
+        if(closing){closeDropTag(tag);continue}
+        if(!selfClosing&&!DROP_VOID_TAGS.has(tag))dropTags.push(tag);
+        continue;
+      }
+      if(dropTags.length)continue;
+      if(closing){closeSourceTag(tag);continue}
+      if(tag==='br'){
+        if(mode==='html')output+='<br>';
+        else appendBreak();
+        continue;
+      }
+
+      const safe=SAFE_TAGS.has(tag);
+      const formats=inlineStyleFormats(attributes,tag);
+      const outputTags=[];
+      if(mode==='html'&&safe){
+        const href=tag==='a'?hrefFromAttributes(attributes):null;
+        const attrs=href?` href="${escapeHtmlAttribute(href)}" rel="noopener noreferrer"`:'';
+        output+=`<${tag}${attrs}>`;
+        outputTags.push(tag);
+      }
+      if(mode==='html'){
+        for(let i=formats.length-1;i>=0;i--){
+          const format=formats[i];
+          output+=`<${format}>`;
+          outputTags.push(format);
+        }
+      }
+
+      const frame={sourceTag:tag,outputTags,block:safe&&BLOCK_TAGS.has(tag)};
+      if(selfClosing)closeFrame(frame);
+      else openFrames.push(frame);
+    }
+
+    while(openFrames.length)closeFrame(openFrames.pop());
+    return output;
   }
 
   function sanitizeHtml(html,{validate=true}={}){
-    requireDom();
-    const parsed=new DOMParser().parseFromString(String(html||''),'text/html');
-    for(const el of [...parsed.body.querySelectorAll('*')]){
-      const tag=el.tagName.toLowerCase();
-      if(DROP_TAGS.has(tag)){el.remove();continue}
-      preserveInlineFormatting(el);
-      if(!SAFE_TAGS.has(tag)){el.replaceWith(...el.childNodes);continue}
-      const href=tag==='a'?safeHref(el.getAttribute('href')):null;
-      for(const attr of [...el.attributes])el.removeAttribute(attr.name);
-      if(tag==='a'&&href){el.setAttribute('href',href);el.setAttribute('rel','noopener noreferrer')}
-    }
-    if(validate)validateText(parsed.body.textContent||'');
-    return[...parsed.body.childNodes].map(serializeSafeNode).join('');
+    if(html==null)return'';
+    const sanitized=transformHtml(html,'html');
+    if(validate)validateText(htmlToText(sanitized,{validate:false}));
+    return sanitized;
   }
 
   function htmlToText(html,{validate=true}={}){
-    requireDom();
-    const parsed=new DOMParser().parseFromString(sanitizeHtml(html,{validate:false}),'text/html');
-    for(const br of [...parsed.body.querySelectorAll('br')])br.replaceWith('\n');
-    for(const el of [...parsed.body.querySelectorAll('p,div,li,blockquote,h1,h2,h3')])el.append('\n');
-    const text=(parsed.body.textContent||'').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+    if(html==null)return'';
+    const text=transformHtml(html,'text').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
     if(validate)validateText(text);
     return text;
   }
