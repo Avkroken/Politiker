@@ -86,19 +86,8 @@
     requireDom();
     if(html==null)return'';
     if(typeof html!=='string')throw new Error('HTML-innehållet måste vara en textsträng.');
-    let rawHtml=String(html);
-    let previous;
-    do{
-      previous=rawHtml;
-      rawHtml=rawHtml
-        .replace(/<\s*\/?\s*(?:script|style|iframe|object|embed|svg|math|form|input|button|textarea|select|option|link|meta|base)\b/gi,'&lt;')
-        .replace(/<\s*\/?\s*style\b/gi,'&lt;')
-        .replace(/<!--|--!?>/g,m=>m.replace(/[<>]/g,''))
-        .replace(/<!DOCTYPE[^>]*>/gi,'')
-        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi,'');
-    }while(rawHtml!==previous);
-    const escapedRawHtml=escapeHtmlText(rawHtml);
-    const parsed=new DOMParser().parseFromString(escapedRawHtml,'text/html');
+    const rawHtml=html;
+    const parsed=new DOMParser().parseFromString(rawHtml,'text/html');
     for(const el of [...parsed.body.querySelectorAll('*')]){
       const tag=el.tagName.toLowerCase();
       if(DROP_TAGS.has(tag)){el.remove();continue}
@@ -108,13 +97,7 @@
       if(tag==='a'&&href){el.setAttribute('href',href);el.setAttribute('rel','noopener noreferrer')}
     }
     if(validate)validateText(parsed.body.textContent||'');
-    let sanitized=[...parsed.body.childNodes].map(serializeSafeNode).join('');
-    let previousSanitized;
-    do{
-      previousSanitized=sanitized;
-      sanitized=sanitized.replace(/<!--|--!?>/g,m=>m.replace(/[<>]/g,''));
-    }while(sanitized!==previousSanitized);
-    return sanitized;
+    return[...parsed.body.childNodes].map(serializeSafeNode).join('');
   }
 
   function htmlToText(html,{validate=true}={}){
