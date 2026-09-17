@@ -32,10 +32,11 @@ async function processJobMessages(env:Env,sendJobId:string,messages:QueueMessage
   if(credentialRow.provider==="microsoft_graph"&&(credentialRow.oauth_token_expires_at??0)<Date.now()+5*60*1000)credentialRow=await refreshAndPersistMicrosoftToken(env,credentialId,credentialRow);
   const attachments=await fetchAttachments(env,job.letter_id);let bounceCount=0,attempted=0,sentCount=0,aborted=false,cachedStoredBody:string|null=null,cachedLetterBody="";
   for(const queueMsg of messages){const m=queueMsg.body;if(m.mailCredentialId!==credentialId){queueMsg.ack();continue;}if(aborted){queueMsg.ack();continue;}
-    const staged=await env.DB.prepare("SELECT status FROM send_job_recipients WHERE send_job_id=? AND recipient_email=?").bind(sendJobId,m.recipientEmail).first<{status:string}>();if(!staged||staged.status!=="queued"){queueMsg.ack();continue;}
-    if(!(await maySendQueuedRecipient(env,sendJobId,m.recipientEmail))){queueMsg.ack();continue;}if(!(await waitForSendSlot(env,credentialId,credentialRow.provider))){queueMsg.retry({delaySeconds:30});continue;}
-    const current=await env.DB.prepare(`SELECT r.status,r.subject,l.html_body FROM send_job_recipients r JOIN send_jobs sj ON sj.id=r.send_job_id JOIN letters l ON l.id=sj.letter_id WHERE r.send_job_id=? AND r.recipient_email=?`).bind(sendJobId,m.recipientEmail).first<{status:string;subject:string|null;html_body:string}>();
-    if(!current||current.status!=="queued"){queueMsg.ack();continue;}
+    const staged=await env.DB.prepare("SELECT status,queued_at FROM send_job_recipients WHERE send_job_id=? AND recipient_email=?").bind(sendJobId,m.recipientEmail).first<{status:string;queued_at:number|null}>();if(!staged||staged.status!=="queued"){queueMsg.ack();continue;}
+    if(m.queuedAt==null||staged.queued_at!==m.queuedAt){queueMsg.ack();continue;}
+    if(!(await maySendQueuedRecipient(env,sendJobId,m.recipientEmail,m.queuedAt))){queueMsg.ack();continue;}if(!(await waitForSendSlot(env,credentialId,credentialRow.provider))){queueMsg.retry({delaySeconds:30});continue;}
+    const current=await env.DB.prepare(`SELECT r.status,r.queued_at,r.subject,l.html_body FROM send_job_recipients r JOIN send_jobs sj ON sj.id=r.send_job_id JOIN letters l ON l.id=sj.letter_id WHERE r.send_job_id=? AND r.recipient_email=?`).bind(sendJobId,m.recipientEmail).first<{status:string;queued_at:number|null;subject:string|null;html_body:string}>();
+    if(!current||current.status!=="queued"||current.queued_at!==m.queuedAt){queueMsg.ack();continue;}
     if(current.html_body!==cachedStoredBody){cachedStoredBody=current.html_body;cachedLetterBody=await decryptLetterData(env,current.html_body);}
     if(!cachedLetterBody){queueMsg.ack();await markJobAborted(env,sendJobId,"Brevets innehåll har raderats");aborted=true;continue;}
     attempted++;try{const html=personalizeLetter(cachedLetterBody,m.recipientName,m.recipientEmail);await sendOneMail(env,credentialRow,m.recipientEmail,html,current.subject??undefined,attachments);await logSend(env,m,"ok",null);sentCount++;queueMsg.ack();}
