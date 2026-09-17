@@ -11,6 +11,8 @@ export interface SendJobMessage {
   recipientEmail: string;
   recipientName: string;
   subject?: string;
+  // Saknas bara på meddelanden som skapades före generationskontrollen.
+  queuedAt?: number;
 }
 // Cloudflare Email Service-bindingen (send_email i wrangler.jsonc). Objekt-
 // API:t (send({to, from, ...})) finns ännu inte i @cloudflare/workers-types —

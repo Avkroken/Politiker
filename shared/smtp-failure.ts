@@ -8,8 +8,8 @@ export function isSmtpAuthenticationFailure(error: unknown): boolean {
 
 export function visibleSendJobError(status: string, error: string | null | undefined): string | null {
   if (!error) return null;
-  const active = status === "pending" || status === "queued" || status === "sending";
-  return active && isSmtpAuthenticationFailure(error) ? null : error;
+  if (isSmtpAuthenticationFailure(error)) return status === "aborted" ? error : null;
+  return error;
 }
 
 export function isPermanentRecipientSmtpFailure(error: unknown): boolean {
