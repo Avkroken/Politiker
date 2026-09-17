@@ -7,6 +7,7 @@ import { visibleSendJobError } from "../../shared/smtp-failure";
 
 const STAGE_CHUNK_SIZE = 500;
 const MAX_LETTER_HTML_BYTES = 1024 * 1024;
+const STALE_QUEUED_MS = 2 * 60 * 60 * 1000;
 const COMMON_MOJIBAKE = /(?:Ã¥|Ã¤|Ã¶|Ã…|Ã„|Ã–|Ã©|Ã¨|Ã¼|Ã±|â€“|â€”|â€™|â€œ|â€|â€¦|Â |ï¿½)/;
 type SendJobAction = "cancel" | "retry" | "delete";
 
@@ -124,7 +125,7 @@ async function prioritizeRecipients(env: Env, sendJobId: string, recipients: Sta
   });
 }
 
-export async function maySendQueuedRecipient(env: Env, sendJobId: string, recipientEmail: string): Promise<boolean> {
+export async function maySendQueuedRecipient(env: Env, sendJobId: string, recipientEmail: string, queuedAt: number): Promise<boolean> {
   const job = await env.DB.prepare(
     "SELECT daily_limit, next_daily_limit, limit_switch_at, status FROM send_jobs WHERE id = ?",
   ).bind(sendJobId).first<{
@@ -157,8 +158,8 @@ export async function maySendQueuedRecipient(env: Env, sendJobId: string, recipi
 
   await env.DB.prepare(
     `UPDATE send_job_recipients SET status = 'pending', queued_at = NULL
-     WHERE send_job_id = ? AND recipient_email = ? AND status = 'queued'`,
-  ).bind(sendJobId, recipientEmail).run();
+     WHERE send_job_id = ? AND recipient_email = ? AND status = 'queued' AND queued_at = ?`,
+  ).bind(sendJobId, recipientEmail, queuedAt).run();
   return false;
 }
 
@@ -231,10 +232,11 @@ export async function enqueuePendingRecipientsForJob(env: Env, sendJobId: string
 
   let queued = 0;
   for (const recipient of results) {
+    const queuedAt = Date.now();
     const claimed = await env.DB.prepare(
       `UPDATE send_job_recipients SET status = 'queued', queued_at = ?
        WHERE send_job_id = ? AND recipient_email = ? AND status = 'pending'`,
-    ).bind(Date.now(), sendJobId, recipient.recipient_email).run();
+    ).bind(queuedAt, sendJobId, recipient.recipient_email).run();
     if (claimed.meta.changes !== 1) continue;
 
     const message: SendJobMessage = {
@@ -244,6 +246,7 @@ export async function enqueuePendingRecipientsForJob(env: Env, sendJobId: string
       recipientEmail: recipient.recipient_email,
       recipientName: recipient.recipient_name,
       subject: recipient.subject ?? undefined,
+      queuedAt,
     };
     try {
       await env.SEND_QUEUE.send(message);
@@ -251,8 +254,8 @@ export async function enqueuePendingRecipientsForJob(env: Env, sendJobId: string
     } catch (error) {
       await env.DB.prepare(
         `UPDATE send_job_recipients SET status = 'pending', queued_at = NULL, error = ?
-         WHERE send_job_id = ? AND recipient_email = ? AND status = 'queued'`,
-      ).bind(String(error).slice(0, 300), sendJobId, recipient.recipient_email).run();
+         WHERE send_job_id = ? AND recipient_email = ? AND status = 'queued' AND queued_at = ?`,
+      ).bind(String(error).slice(0, 300), sendJobId, recipient.recipient_email, queuedAt).run();
       throw error;
     }
   }
@@ -289,7 +292,34 @@ async function enqueueWithinLimits(env: Env, sendJobId: string, providerRemainin
   return enqueuePendingRecipientsForJob(env, sendJobId, Math.min(providerRemaining, jobRemaining ?? providerRemaining));
 }
 
+export async function recoverStaleQueuedRecipients(env: Env, now = Date.now()): Promise<number> {
+  const cutoff = now - STALE_QUEUED_MS;
+  const recovered = await env.DB.prepare(
+    `UPDATE send_job_recipients
+     SET status = 'pending', queued_at = NULL, error = NULL
+     WHERE rowid IN (
+       SELECT r.rowid
+       FROM send_job_recipients r
+       JOIN send_jobs j ON j.id = r.send_job_id
+       WHERE r.status = 'queued'
+         AND r.queued_at IS NOT NULL
+         AND r.queued_at <= ?
+         AND j.status IN ('pending', 'sending')
+         AND NOT EXISTS (
+           SELECT 1 FROM send_log l
+           WHERE l.send_job_id = r.send_job_id
+             AND l.recipient_email = r.recipient_email COLLATE NOCASE
+             AND l.status = 'ok'
+         )
+       ORDER BY r.queued_at
+       LIMIT 250
+     )`,
+  ).bind(cutoff).run();
+  return recovered.meta.changes ?? 0;
+}
+
 export async function enqueuePendingUserSendJobs(env: Env): Promise<void> {
+  await recoverStaleQueuedRecipients(env);
   const { results: jobs } = await env.DB.prepare(
     `SELECT id, account_id, mail_credential_id FROM send_jobs
      WHERE status IN ('pending', 'sending')
