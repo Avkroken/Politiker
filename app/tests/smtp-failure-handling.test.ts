@@ -14,9 +14,9 @@ test("SMTP authentication failures are account-scoped, not recipient bounces", (
   assert.equal(isSmtpAuthenticationFailure(new Error("RCPT TO nekades (550): 550 5.1.1 User unknown")), false);
 });
 
-test("active jobs hide stale SMTP authentication diagnostics", () => {
+test("non-aborted jobs hide stale SMTP authentication diagnostics", () => {
   const error = "Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed";
-  for (const status of ["pending", "queued", "sending"]) {
+  for (const status of ["pending", "queued", "sending", "done", "cancelled"]) {
     assert.equal(visibleSendJobError(status, error), null);
   }
 });
