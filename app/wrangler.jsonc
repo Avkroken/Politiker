@@ -26,6 +26,6 @@
   "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@denied.se"] }],
   "secrets": { "required": ["MAIL_CRED_KEY", "SYSTEM_SMTP_PASSWORD"] },
   "vars": {
-    "SYSTEM_SMTP_HOST":"smtp.mail.me.com","SYSTEM_SMTP_PORT":"587","SYSTEM_SMTP_USER":"nils.anders.eriksson@icloud.com","SYSTEM_FROM_ADDRESS":"noreply@denied.se","FEEDBACK_NOTIFY_EMAIL":"politiker@denied.se","OAUTH_GOOGLE_CLIENT_ID":"1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com","OAUTH_MICROSOFT_CLIENT_ID":"dd6d7bb1-3a2d-46ad-8d4f-12fe09691414"
+    "SYSTEM_SMTP_HOST":"smtp.mail.me.com","SYSTEM_SMTP_PORT":"587","SYSTEM_SMTP_USER":"nils.anders.eriksson@icloud.com","SYSTEM_FROM_ADDRESS":"noreply@denied.se","FEEDBACK_NOTIFY_EMAIL":"politiker@denied.se","TURNSTILE_HOSTNAMES":"politiker.denied.se","OAUTH_GOOGLE_CLIENT_ID":"1051427827429-nu6si4bq993a4onm8spk7bf94gctgr18.apps.googleusercontent.com","OAUTH_MICROSOFT_CLIENT_ID":"dd6d7bb1-3a2d-46ad-8d4f-12fe09691414"
   }
 }
