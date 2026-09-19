@@ -12,7 +12,7 @@ befintliga .env på mp100 och GitHub Actions-secrets. Kanoniska namn först,
 alias efter:
 
   CLOUDFLARE_ACCOUNT_ID
-  CLOUDFLARE_API_TOKEN_POLITIKER   (alias: CLOUDFLARE_API_TOKEN)
+  CLOUDFLARE_API_TOKEN_W1   (migrationsfallback: CLOUDFLARE_API_TOKEN_POLITIKER)
   D1_DATABASE_UUID                 (alias: D1_DATABASE_ID)
 """
 from __future__ import annotations
@@ -40,7 +40,7 @@ class D1Client:
 
     def __init__(self, session: requests.Session | None = None):
         self.account_id = _env("CLOUDFLARE_ACCOUNT_ID")
-        self.token = _env("CLOUDFLARE_API_TOKEN_POLITIKER", "CLOUDFLARE_API_TOKEN")
+        self.token = _env("CLOUDFLARE_API_TOKEN_W1", "CLOUDFLARE_API_TOKEN_POLITIKER")
         self.db = _env("D1_DATABASE_UUID", "D1_DATABASE_ID")
         self.url = (
             f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}"
