@@ -15,7 +15,7 @@ profilsida.
 
 Miljövariabler som krävs (samma .env som sync_to_d1.py):
   CLOUDFLARE_ACCOUNT_ID
-  CLOUDFLARE_API_TOKEN_POLITIKER
+  CLOUDFLARE_API_TOKEN_W1
   D1_DATABASE_UUID
 """
 
