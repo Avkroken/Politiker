@@ -1,4 +1,4 @@
-playwright>=1.62.0
+playwright>=1.63.0
 pypdf>=6.19.0
 requests>=2.34.2
 # Transitiv via requests, som bara kräver idna>=2.5,<4 och därför inte
