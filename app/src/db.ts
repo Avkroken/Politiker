@@ -10,7 +10,7 @@ export interface Env {
   SYSTEM_SMTP_PASSWORD: string; SYSTEM_FROM_ADDRESS: string; FEEDBACK_NOTIFY_EMAIL: string;
   OAUTH_GOOGLE_CLIENT_ID?: string; OAUTH_GOOGLE_CLIENT_SECRET?: string; OAUTH_GITHUB_CLIENT_ID?: string;
   OAUTH_GITHUB_CLIENT_SECRET?: string; OAUTH_MICROSOFT_CLIENT_ID?: string; OAUTH_MICROSOFT_CLIENT_SECRET?: string;
-  VISITOR_SALT?: string; TURNSTILE_SECRET?: string; EMAIL?: EmailSendBinding; RESEND_API_KEY?: string;
+  VISITOR_SALT?: string; TURNSTILE_SECRET?: string; TURNSTILE_HOSTNAMES?: string; EMAIL?: EmailSendBinding; RESEND_API_KEY?: string;
   RATE_LIMITER: DurableObjectNamespace;
 }
 
