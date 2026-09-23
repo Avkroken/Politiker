@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_W1 }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_W1 || secrets.CLOUDFLARE_API_TOKEN_POLITIKER }}
 
     steps:
       - name: Checkout repository
@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
-            echo "::error::CLOUDFLARE_API_TOKEN_W1 is not available to this repository"
+            echo "::error::Neither CLOUDFLARE_API_TOKEN_W1 nor the established CLOUDFLARE_API_TOKEN_POLITIKER fallback is available to this repository"
             exit 1
           fi
 
