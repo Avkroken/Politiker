@@ -1,11 +1,8 @@
 name: Deploy free-first cutover once
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/deploy-free-first-once.yml"
-      - ".github/deploy-free-first-once.trigger"
+  issues:
+    types: [opened]
 
 permissions:
   contents: read
@@ -16,6 +13,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event.issue.title == '[ops] execute free-first cutover 2026-09-23'
     name: Deploy Politiker and retire tail worker
     runs-on: ubuntu-latest
     timeout-minutes: 25
