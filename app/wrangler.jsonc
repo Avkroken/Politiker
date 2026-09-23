@@ -19,7 +19,6 @@
       "persist": true
     }
   },
-  "tail_consumers": [{ "service": "politiker-log-archive" }],
   "workers_dev": false,
   "preview_urls": false,
   "upload_source_maps": true,
