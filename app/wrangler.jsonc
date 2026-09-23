@@ -3,7 +3,22 @@
   "name": "politiker",
   "main": "src/access-index.ts",
   "compatibility_date": "2026-08-21",
-  "observability": {"enabled":true,"head_sampling_rate":1,"logs":{"enabled":true,"head_sampling_rate":1,"persist":true,"invocation_logs":true},"traces":{"enabled":true,"persist":true,"head_sampling_rate":0.1}},
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1,
+    "redact_query_string": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 0.1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.01,
+      "persist": true
+    }
+  },
   "tail_consumers": [{ "service": "politiker-log-archive" }],
   "workers_dev": false,
   "preview_urls": false,
