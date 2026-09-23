@@ -1,0 +1,67 @@
+name: Deploy free-first cutover once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deploy-free-first-once.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: politiker-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Politiker and retire tail worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_W1 }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "24"
+
+      - name: Validate production credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+            echo "::error::CLOUDFLARE_API_TOKEN_W1 is not available to this repository"
+            exit 1
+          fi
+
+      - name: Install app dependencies
+        working-directory: app
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify app before production mutation
+        working-directory: app
+        run: npm run validate
+
+      - name: Deploy app without tail consumer
+        working-directory: app
+        run: npm run deploy
+
+      - name: Verify production
+        working-directory: app
+        run: npm run verify:production
+
+      - name: Delete retired tail Worker
+        working-directory: app
+        run: npx wrangler delete --name politiker-log-archive --force
+
+      - name: Inspect retained archive bucket
+        continue-on-error: true
+        working-directory: app
+        run: npx wrangler r2 bucket info politiker-worker-logs --json
