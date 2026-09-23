@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deploy-free-first-once.yml"
+      - ".github/deploy-free-first-once.trigger"
 
 permissions:
   contents: read
@@ -59,7 +60,20 @@ jobs:
 
       - name: Delete retired tail Worker
         working-directory: app
-        run: npx wrangler delete --name politiker-log-archive --force
+        shell: bash
+        run: |
+          set +e
+          output="$(npx wrangler delete --name politiker-log-archive --force 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [[ $status -ne 0 ]]; then
+            if grep -Eqi 'not found|does not exist|404' <<<"$output"; then
+              echo "politiker-log-archive is already absent"
+            else
+              exit "$status"
+            fi
+          fi
 
       - name: Inspect retained archive bucket
         continue-on-error: true
