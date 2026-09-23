@@ -1,11 +1,14 @@
 name: Deploy free-first cutover once
 
 on:
-  issues:
-    types: [opened]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/deploy-free-first-once.yml"
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: politiker-production
@@ -13,7 +16,6 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event.issue.title == '[ops] execute free-first cutover 2026-09-23'
     name: Deploy Politiker and retire tail worker
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -25,13 +27,32 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
-        with:
-          node-version: "24"
+      - name: Gate production mutation until this PR is merged
+        id: gate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          merged_at="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPOSITORY/pulls/$PR_NUMBER" | jq -r '.merged_at // empty')"
+          if [[ -z "$merged_at" ]]; then
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "PR is not merged; production mutation is intentionally skipped."
+            exit 0
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+          echo "PR merged at $merged_at; production mutation is authorized."
+
 
       - name: Validate production credential
+        if: steps.gate.outputs.deploy == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -41,22 +62,27 @@ jobs:
           fi
 
       - name: Install app dependencies
+        if: steps.gate.outputs.deploy == 'true'
         working-directory: app
         run: npm ci --no-audit --no-fund
 
       - name: Verify app before production mutation
+        if: steps.gate.outputs.deploy == 'true'
         working-directory: app
         run: npm run validate
 
       - name: Deploy app without tail consumer
+        if: steps.gate.outputs.deploy == 'true'
         working-directory: app
         run: npm run deploy
 
       - name: Verify production
+        if: steps.gate.outputs.deploy == 'true'
         working-directory: app
         run: npm run verify:production
 
       - name: Delete retired tail Worker
+        if: steps.gate.outputs.deploy == 'true'
         working-directory: app
         shell: bash
         run: |
@@ -74,6 +100,7 @@ jobs:
           fi
 
       - name: Inspect retained archive bucket
+        if: steps.gate.outputs.deploy == 'true'
         continue-on-error: true
         working-directory: app
         run: npx wrangler r2 bucket info politiker-worker-logs --json
