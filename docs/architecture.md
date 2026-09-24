@@ -6,47 +6,92 @@
 Browser
   |
   v
-politiker.denied.se
+access-index.ts
   |
   v
-Cloudflare Worker
-  |   |   |   |   \
-  |   |   |   |    +--> Email binding
-  |   |   |   +------> R2 attachments
-  |   |   +----------> KV sessions
-  |   +--------------> D1 politiker-eu
+index.ts
+  |     |       |        |          |
+  |     |       |        |          +--> Email
+  |     |       |        +------------> R2 attachments
+  |     |       +---------------------> KV sessions
+  |     +------------------------------> D1 application state
   |
-  +--> Queue politiker-send-jobs
+  +--> Queue send jobs
+          |
+          +--> retries
+          +--> dead-letter queue
           |
           v
-      queue consumer
+     CredentialRateLimiter DO
           |
-          +--> CredentialRateLimiter DO
-          +--> provider/mail delivery
+          v
+       mail delivery
 ```
 
 ## Request boundary
 
-`app/src/access-index.ts` är extern entrypoint och routar vidare till applikationslogik/assets. API-responser för känsliga operationer ska fortsatt vara no-store.
+`app/src/access-index.ts` är extern entrypoint. Requestpolicyn ska appliceras server-side innan applikationslogik eller assets svarar.
 
-## Stateful lager
+Känsliga API-svar ska fortsatt behandlas som icke-cachebar privat data.
 
-- **D1** — canonical application data.
-- **KV** — sessionsstate.
-- **R2** — bilagor.
-- **Queue** — leveransarbete och retries.
-- **Durable Object** — serialiserad rate-limit/koordination per credential.
+## Auth och session
 
-Queue och Durable Object kompletterar D1; de ersätter inte D1 som canonical application state.
+Sessioner ligger i KV, medan konton och övrig canonical applikationsstate ligger i D1. Det är en viktig gräns: sessioncache och persistent datamodell har olika konsistens- och livscykelkrav.
+
+Authändringar måste verifiera:
+
+- login/logout och sessionslivscykel,
+- lösenords-/TOTP-flöden där de berörs,
+- OAuth identity linking där det berörs,
+- access till privata API-routes.
+
+## D1
+
+D1 är canonical datalager för applikationen. Queue, KV och Durable Objects ska inte skapa konkurrerande canonical kopior av samma affärsstate.
+
+## Bilagor
+
+R2 lagrar bilagor. D1 kan bära metadata/referenser medan objektbytes ligger i R2.
 
 ## Utskicksflöde
 
-Ett utskicksjobb skapas i applikationslagret, köas och bearbetas asynkront. CredentialRateLimiter samordnar leveranstakt för ett mailkonto även när flera queue-invocations kör samtidigt.
+Ett utskick skapas som persistent applikationsstate och köas för asynkron bearbetning.
+
+```text
+persistent send state
+        |
+        v
+     Queue
+        |
+        v
+queue consumer
+        |
+        v
+CredentialRateLimiter
+        |
+        v
+provider / Email
+```
+
+Queue retries och DLQ representerar transport-/bearbetningsstate. Persistent D1-state behövs för att avgöra applikationens faktiska status.
+
+## Rate limiting
+
+`CredentialRateLimiter` använder Durable Object för serialiserad koordinering per credential/mailkonto. Den designen skyddar mot samtidiga Worker-invocations som annars skulle kunna överskrida avsedd leveranstakt.
+
+## Cron
+
+Cron-triggern kör varje minut och används för att fortsätta väntande arbete enligt applikationens körmodell. Cron ska inte introducera en separat state machine vid sidan av D1/queue.
 
 ## Trust boundaries
 
-Credentials som lagras eller används av applikationen ska hanteras via avsedd kryptering/runtime-secretmodell. API-nycklar, SMTP-lösenord och OAuth-secrets får inte exponeras i UI-respons, logs eller dokumentation.
+- Internet → accesslager
+- session/token → authkontroll
+- app → D1/KV/R2
+- app → Queue
+- queue consumer → rate limiter → mail/provider
+- adminfunktioner → explicit authorization
 
 ## Failure model
 
-Queue har retries och dead-letter queue. Fel ska därför observeras i både persistent jobbstate och queue-failure-state innan manuella omkörningar görs.
+Vid leveransproblem ska både persistent send state och queue/DLQ-state undersökas. Att bara återköra en queue-operation utan att förstå persistent state kan ge dubblerad eller felaktig behandling.
