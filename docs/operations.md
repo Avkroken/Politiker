@@ -1,41 +1,96 @@
 # Drift
 
-## Full repositoryverifiering för appen
+## Lokal/full verifiering
+
+Från `app/`:
 
 ```bash
-cd app
 npm ci
 npm run validate
 ```
 
-Verifieringen omfattar tester, lokala D1-migrationer, type generation/typecheck, syntaxkontroller och Wrangler dry-run.
+`validate` omfattar:
 
-## D1
+- enhetstester,
+- produktionsverifieringstester,
+- syntaxkontroller för frontend-JavaScript,
+- lokala D1-migrationer,
+- Wrangler type generation,
+- TypeScript typecheck,
+- Wrangler dry-run.
 
-Migrationer ligger i `infra/migrations/`. Produktionsmigrationer ska appliceras med repositoryts avsedda Wrangler-konfiguration; gör inte ad hoc-schemaändringar direkt i produktion som saknar versionerad migration.
+## Lokal utveckling
 
-## Queue
+```bash
+cd app
+npm run dev
+```
 
-Vid leveransproblem kontrollera:
+Använd lokal runtime för request- och API-förändringar innan produktion berörs.
 
-1. persistent send-job-state i D1,
-2. queue retries/backlog,
-3. dead-letter queue,
-4. rate-limiter-state/credentialgräns,
-5. först därefter eventuell manuell återkörning.
+## D1-migrationer
 
-## Credentials
+Migrationerna ligger i `infra/migrations/`.
 
-Secret-värden får aldrig läggas i Git, issues, logs eller dokumentation. Behåll separata secrets för separata trust boundaries.
+Produktionsmigration:
 
-## Observability
+```bash
+cd app
+npm run migrate:production
+```
 
-Wrangler-konfigurationen redigerar query strings från persistent observability. Den inställningen ska inte tas bort eftersom auth-/API-flöden kan bära känsliga parametrar.
+Före migration:
+
+1. verifiera att migrationen är versionsstyrd;
+2. verifiera att aktuell Worker-kod är kompatibel med både före- och efterstate där deploymentordningen kräver det;
+3. kör lokal migration genom `npm run validate`.
+
+## Queue/DLQ-felsökning
+
+Vid leveransproblem, kontrollera i ordning:
+
+1. persistent send-job-state i D1;
+2. queue backlog/retries;
+3. dead-letter queue;
+4. `CredentialRateLimiter` och credentialgräns;
+5. provider/mail-fel.
+
+Manuell återkörning ska inte vara första åtgärd eftersom persistent state och queue-state måste vara konsistenta.
+
+## R2/bilagor
+
+Verifiera binding, objektkey och metadatarelation innan objekt raderas eller skrivs om. Objektinnehåll ska inte användas som generell debugdump.
+
+## Auth/sessionproblem
+
+Kontrollera:
+
+1. request/accessroute;
+2. sessionstate i KV;
+3. motsvarande account/auth-state i D1;
+4. relevant OAuth/TOTP/password-flöde.
+
+Lös inte authfel genom att göra privata routes publika.
 
 ## Deployment
 
-Repositoryt har explicita deploy- och produktionsmigrationsscripts i `app/package.json`. Vanlig dokumentations- eller PR-verifiering ska stanna vid test/typecheck/dry-run och inte implicit deploya produktion.
+```bash
+cd app
+npm run deploy
+```
 
-## Scraper/underhåll
+Vanlig PR-verifiering ska inte implicit deploya.
 
-Scripts under `kontakter/scraper/` som arbetar mot D1 ska köras med verifierad target/config och utan nya separata credentials när befintlig Wrangler-inloggning är den avsedda vägen.
+Efter en avsedd deployment:
+
+```bash
+npm run verify:production
+```
+
+## Observability
+
+Persistent logs/traces använder sampling och query-string-redaction. Lägg inte credentials, tokens, mailinnehåll eller privata API-payloads i loggar.
+
+## Underhållsscripts
+
+Scripts under `kontakter/scraper/` är operativa verktyg, inte alternativa sources of truth. Verifiera target/config före D1-relaterade operationer och dokumentera nya underhållsflöden här.

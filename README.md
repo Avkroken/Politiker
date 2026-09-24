@@ -1,27 +1,8 @@
 # Politiker
 
-Politiker är en Cloudflare-baserad webbapplikation för kontaktdata, konton, utskick och relaterad administration. Repositoryt innehåller både applikationsruntime och stöd för att underhålla den data som applikationen använder.
+Politiker är en Cloudflare-baserad webbapplikation för konton, kontakt-/mottagardata, brev och utskick. Repositoryt innehåller både applikationsruntime och verktyg för att underhålla dess data.
 
-## Runtime
-
-Produktionsappen körs som Worker `politiker` på `politiker.denied.se` och använder bland annat:
-
-- D1-databasen `politiker-eu`,
-- KV för sessionsstate,
-- Queue `politiker-send-jobs` för utskick,
-- Durable Object `CredentialRateLimiter` för serialiserad rate limiting,
-- R2 `politiker-attachments` för bilagor,
-- Cloudflare Email Service-binding,
-- schemalagd körning för att fortsätta väntande utskicksjobb.
-
-## Dokumentation
-
-- [Projektkontext](docs/project-context.md)
-- [Arkitektur](docs/architecture.md)
-- [Drift](docs/operations.md)
-- [Avkrokens dokumentationsstandard](https://github.com/Avkroken/.github/blob/main/docs/documentation-standard.md)
-
-## Verifiering
+## Snabb verifiering
 
 Från `app/`:
 
@@ -30,8 +11,19 @@ npm ci
 npm run validate
 ```
 
-`validate` kör tester, produktionsverifieringstester, JavaScript-syntaxkontroller, lokala D1-migrationer, Wrangler types, TypeScript typecheck och Wrangler dry-run.
+`validate` kör tester, produktionsverifieringstester, JavaScript-kontroller, lokala D1-migrationer, Wrangler types, TypeScript typecheck och Worker dry-run.
 
-## Säkerhet
+## Dokumentation
 
-Secrets, SMTP-credentials, OAuth-client secrets och andra känsliga värden hör hemma i runtimekonfiguration och får inte committas. Rapportera sårbarheter privat enligt [SECURITY.md](SECURITY.md).
+Börja i **[dokumentationsöversikten](docs/index.md)**.
+
+- [Projektkontext](docs/project-context.md) — runtime, state och subsystem
+- [Arkitektur](docs/architecture.md) — request-, auth-, lagrings- och utskicksflöden
+- [Drift](docs/operations.md) — verifiering, migrationer, queue/DLQ och deployment
+- [SECURITY.md](SECURITY.md) — säkerhetsrapportering
+
+README hålls medvetet kort. Detaljerad teknisk dokumentation ligger under `docs/`.
+
+## Runtime i korthet
+
+Applikationen använder D1, KV, Queue + DLQ, Durable Object, R2, Cloudflare Email och schemalagd Worker-körning. Dessa lager har olika ansvar och ska inte behandlas som utbytbara state stores.
