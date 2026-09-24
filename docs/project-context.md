@@ -1,65 +1,89 @@
 # Projektkontext
 
-**Senast verifierad:** 2026-09-23
+**Senast verifierad:** 2026-09-24
 
 ## Ansvar
 
-Politiker är en stateful Cloudflare Worker-applikation för användarkonton, kontakt-/mottagardata, brev/utskicksjobb, bilagor och relaterad administration.
+Politiker är en stateful Cloudflare Worker-applikation för:
 
-Den publika/applikationsnära current-state-källan är `app/wrangler.jsonc` tillsammans med `app/src/` och D1-migrationerna i `infra/migrations/`.
+- användarkonton och authentication,
+- kontakt-/mottagardata,
+- privata kontaktlistor,
+- brev och bilagor,
+- utskicksjobb,
+- provider/mail credentials,
+- feedback och administration.
+
+Den kodnära current-state-källan är `app/wrangler.jsonc`, `app/src/` och D1-migrationerna under `infra/migrations/`.
 
 ## Runtime
 
-Verifierad produktionstopologi:
+`app/wrangler.jsonc` definierar:
 
-- Worker: `politiker`
-- entrypoint: `app/src/access-index.ts`
-- domain: `politiker.denied.se`
-- assets: `app/public/`
-- D1: `DB -> politiker-eu`
-- KV: `SESSIONS`
-- Queue: producer/consumer `politiker-send-jobs`
-- dead-letter queue: `politiker-send-jobs-dlq`
-- Durable Object: `CredentialRateLimiter` med SQLite-storage
-- R2: `ATTACHMENTS -> politiker-attachments`
-- Email binding: `EMAIL`
-- cron: varje minut
+- Worker `politiker`
+- entrypoint `app/src/access-index.ts`
+- custom domain `politiker.denied.se`
+- static assets under `app/public/`
+- D1 binding `DB`
+- KV binding `SESSIONS`
+- Queue producer/consumer `SEND_QUEUE`
+- dead-letter queue
+- Durable Object binding `RATE_LIMITER`
+- R2 binding `ATTACHMENTS`
+- Cloudflare Email binding `EMAIL`
+- cron varje minut
+- persistent observability med query-string-redaction.
 
-## Applikationsansvar
+## Kodansvar
 
-`app/src/index.ts` hanterar bland annat:
+### Accesslager
 
-- kontoregistrering, login, lösenordsflöden och TOTP,
-- OAuth identity linking,
-- API-nycklar,
-- kontakt-/mottagardata,
-- privata kontaktlistor,
-- mail credentials,
-- brevdata och bilagor,
-- utskicksjobb och kökonsumtion,
-- feedback och felrapportering,
-- adminfunktioner.
+`app/src/access-index.ts` är extern requestgräns och ligger framför den huvudsakliga applikationslogiken/assets.
 
-## Rate limiting
+### Applikationslager
 
-Mailkonto-baserad koordinering sker i `CredentialRateLimiter`. Durable Object används för att få en serialiserad koordinationspunkt där D1/KV inte i sig ger motsvarande samtidighetsgaranti.
+`app/src/index.ts` hanterar bland annat auth, konton, API-nycklar, kontaktdata, brev, bilagor, utskick, queue-konsumtion, feedback och adminfunktioner.
 
-Ändringar i utskickskoncurrency eller rate limiting måste verifieras mot den här modellen; den får inte ersättas med oserialiserad lokal state.
+## State ownership
 
-## Data och migrationer
+### D1
 
-D1-migrationerna ligger under `infra/migrations`. Wrangler-konfigurationen pekar explicit på denna katalog och migrationstabell.
+Canonical application state, inklusive data som måste överleva enskilda Worker-invocations.
 
-Repo-specifika scripts under `kontakter/scraper/` använder Wrangler för D1-relaterade underhållsoperationer. De ska behandlas som operativa verktyg och inte som alternativa sources of truth.
+### KV
 
-## Secrets
+Sessionsstate. KV ska inte användas som ersättning för relationell canonical data.
 
-Wrangler-konfigurationen deklarerar obligatoriska runtime-secrets för bland annat mailkryptering, SMTP och Turnstile. Dokumentation får beskriva secret-namn och ansvar men aldrig värden.
+### R2
+
+Bilagor och objektdata. Objektinnehåll ska inte flyttas in i loggning eller dokumentation.
+
+### Queue och DLQ
+
+Asynkront leveransarbete. Queue-state kompletterar persistent jobbstate; det ersätter det inte.
+
+### Durable Object
+
+`CredentialRateLimiter` är serialiserad koordinationspunkt för credential-/mailkontobaserad leveranstakt. Detta får inte ersättas av oserialiserad processlokal state.
+
+## Migrationer
+
+D1-migrationer ligger i `infra/migrations/`. Wrangler pekar explicit på den katalogen och migrations-tabellen.
+
+Schemaändringar ska göras som versionerade migrationer.
+
+## Secrets och credentials
+
+Kod och docs får beskriva secret-namn och ansvar men aldrig värden. Credentialflöden ska behålla sina avsedda krypterings- och runtimegränser.
 
 ## Observability
 
-Cloudflare observability är aktiverat med query-string-redaction samt begränsad persistent log-/trace-sampling enligt central free-first-policy.
+Persistent logs/traces är aktiverade med sampling och query-string-redaction. Auth-/API-flöden kan bära känsliga parametrar; redaction är därför en driftinvariant.
+
+## Dokumentationsgräns
+
+Denna fil dokumenterar repo-specifik current-state. Organisationsgemensam GitHub-governance och privata operativa detaljer hör inte hemma här.
 
 ## Uppdateringskontrakt
 
-Uppdatera denna fil när runtime bindings, queue-/rate-limit-modell, D1-schema, authmodell, storage eller deploymentmodell ändras.
+Uppdatera filen när bindings, queue-/rate-limitmodell, D1-schema, authmodell, storage, cron eller deploymentmodell ändras.
