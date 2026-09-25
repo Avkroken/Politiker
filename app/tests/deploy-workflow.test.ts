@@ -15,15 +15,15 @@ test("production deployment is manual and uses the standard W1 credential", () =
   assert.match(workflow, /GITHUB_REF.*refs\/heads\/main/);
 });
 
-test("production deployment keeps migration, deploy, verification and academic sync ordered", () => {
+test("production deployment completes control-plane work before public ingress verification", () => {
   const ordered = [
     "npm run validate",
     "npm run migrate:production",
     "npm run deploy",
-    "npm run verify:production",
     "fetch_academics.py --sql-file",
     "wrangler d1 execute politiker-eu --remote --file",
     "Verify academic contacts",
+    "npm run verify:production",
   ];
 
   let previous = -1;
