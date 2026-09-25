@@ -72,7 +72,7 @@ SECTION_PAGES = [
 ]
 
 UPSERT_SQL = (
-    "INSERT INTO politicians (id, name, email, area_name, area_type, party, role, last_scraped_at) "
+    "INSERT INTO public_contacts (id, name, email, area_name, area_type, party, role, last_scraped_at) "
     "VALUES (lower(hex(randomblob(11))), ?, ?, ?, 'media', NULL, ?, ?) "
     "ON CONFLICT(email, area_name) DO UPDATE SET name=excluded.name, role=excluded.role, "
     "last_scraped_at=excluded.last_scraped_at"
