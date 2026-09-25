@@ -64,10 +64,6 @@ jobs:
         working-directory: app
         run: npm run deploy
 
-      - name: Verify production
-        working-directory: app
-        run: npm run verify:production
-
       - name: Generate academic contact sync
         shell: bash
         run: |
@@ -125,3 +121,7 @@ jobs:
           if fields != 3:
               raise SystemExit(f"Fel antal akademiska kärnområden: {fields}, förväntade 3.")
           PY
+
+      - name: Verify public ingress
+        working-directory: app
+        run: npm run verify:production

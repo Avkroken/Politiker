@@ -5,10 +5,40 @@ const ATTEMPTS = 5;
 const RETRY_DELAY_MS = 10_000;
 const REQUEST_TIMEOUT_MS = 20_000;
 
+function safeEdgeDiagnostics(response) {
+  const names = ["server", "cf-ray", "cf-cache-status", "cf-mitigated", "content-type", "location"];
+  return names
+    .map((name) => [name, response.headers.get(name)])
+    .filter(([, value]) => value)
+    .map(([name, value]) => `${name}=${value}`)
+    .join(", ");
+}
+
+export function isCloudflareEdgeBlock(response) {
+  if (response.status !== 403) return false;
+
+  const server = (response.headers.get("server") ?? "").toLowerCase();
+  const cfRay = response.headers.get("cf-ray");
+  const cfMitigated = (response.headers.get("cf-mitigated") ?? "").toLowerCase();
+  const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
+
+  if (cfMitigated === "challenge") return true;
+  return (server === "cloudflare" || Boolean(cfRay)) && contentType.includes("text/html");
+}
+
 export async function validateProductionResponse(response) {
-  if (response.status !== 200) {
-    throw new Error(`${PRODUCTION_URL} returned ${response.status}, expected 200`);
+  if (response.status === 200) return { status: "ok" };
+
+  if (isCloudflareEdgeBlock(response)) {
+    return {
+      status: "edge_blocked",
+      diagnostics: safeEdgeDiagnostics(response),
+    };
   }
+
+  throw new Error(
+    `${PRODUCTION_URL} returned ${response.status}, expected 200${safeEdgeDiagnostics(response) ? ` (${safeEdgeDiagnostics(response)})` : ""}`,
+  );
 }
 
 export async function checkProduction({
@@ -22,9 +52,18 @@ export async function checkProduction({
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         headers: { "user-agent": "politiker-workers-build-production-check" },
       });
-      await validateProductionResponse(response);
+      const result = await validateProductionResponse(response);
+
+      if (result.status === "edge_blocked") {
+        const details = result.diagnostics ? ` (${result.diagnostics})` : "";
+        console.warn(
+          `::warning title=Production ingress blocked by Cloudflare edge::${PRODUCTION_URL} returned a Cloudflare edge 403 to the GitHub runner${details}. Deployment and control-plane checks remain authoritative.`,
+        );
+        return result;
+      }
+
       console.log(`politiker: production check passed on attempt ${attempt}`);
-      return;
+      return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`attempt ${attempt}: ${message}`);
