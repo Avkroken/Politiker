@@ -12,15 +12,17 @@ Kärnområden:
 
 Varje post behåller sin officiella käll-URL för spårbarhet. Källorna ska
 omprövas när urvalet ändras; e-postverifieringen hanterar leveransstatus separat.
+
+Skriptet kan antingen skriva direkt via D1 HTTP-klienten eller generera en
+idempotent SQL-fil för Wrangler/GitHub Actions med --sql-file.
 """
 from __future__ import annotations
 
-import sys
+import argparse
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from urllib.parse import urlparse
-
-from d1 import D1Client
 
 POLITICAL_SCIENCE = "political-science"
 PUBLIC_ADMINISTRATION = "public-administration"
@@ -80,6 +82,7 @@ ALLOWED_EMAIL_DOMAINS = {
 }
 ALLOWED_SOURCE_DOMAINS = {"www.uu.se", "www.gu.se"}
 
+
 UPSERT_SQL = (
     "INSERT INTO public_contacts "
     "(id, name, email, area_name, area_type, party, role, last_scraped_at, "
@@ -123,19 +126,82 @@ def validated_contacts() -> list[AcademicContact]:
     return rows
 
 
+def sql_literal(value: str | int | None) -> str:
+    if value is None:
+        return "NULL"
+    if isinstance(value, int):
+        return str(value)
+    return "'" + value.replace("'", "''") + "'"
+
+
+def academic_upsert_statement(contact: AcademicContact, now_ms: int) -> str:
+    values = [
+        contact.name,
+        contact.email,
+        contact.organisation,
+        contact.title,
+        now_ms,
+        contact.organisation,
+        contact.unit,
+        contact.title,
+        contact.academic_field,
+        contact.source_url,
+    ]
+    rendered = ", ".join(sql_literal(value) for value in values)
+    return (
+        "INSERT INTO public_contacts "
+        "(id, name, email, area_name, area_type, party, role, last_scraped_at, "
+        "organisation, unit, title, academic_field, source_url) VALUES "
+        f"(lower(hex(randomblob(11))), {rendered.split(', ', 3)[0]}, "
+        f"{rendered.split(', ', 3)[1]}, {rendered.split(', ', 3)[2]}, 'academia', NULL, "
+        f"{', '.join(rendered.split(', ')[3:])}) "
+        "ON CONFLICT(email, area_name) DO UPDATE SET "
+        "name=excluded.name, role=excluded.role, last_scraped_at=excluded.last_scraped_at, "
+        "organisation=excluded.organisation, unit=excluded.unit, title=excluded.title, "
+        "academic_field=excluded.academic_field, source_url=excluded.source_url"
+    )
+
+
+def write_sql_file(path: Path, rows: list[AcademicContact], now_ms: int) -> None:
+    statements = [academic_upsert_statement(row, now_ms) + ";" for row in rows]
+    path.write_text("BEGIN;\n" + "\n".join(statements) + "\nCOMMIT;\n", encoding="utf-8")
+
+
+def parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description=__doc__)
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="Visa det kurerade urvalet utan skrivning.")
+    mode.add_argument("--sql-file", type=Path, help="Skriv idempotent D1-SQL till fil i stället för HTTP-synk.")
+    mode.add_argument("--count", action="store_true", help="Skriv endast antal kurerade akademikontakter.")
+    return p
+
+
 def main() -> None:
+    args = parser().parse_args()
     rows = validated_contacts()
+
+    if args.count:
+        print(len(rows))
+        return
+
     print(f"Akademiska kontakter: {len(rows)}")
     for field in sorted(ACADEMIC_FIELDS):
         print(f"  {field}: {sum(row.academic_field == field for row in rows)}")
 
-    if "--dry-run" in sys.argv:
+    if args.dry_run:
         for row in rows:
             print(f"  {row.organisation:<24} {row.academic_field:<24} {row.name} <{row.email}>")
         return
 
-    client = D1Client()
     now_ms = int(time.time() * 1000)
+    if args.sql_file:
+        write_sql_file(args.sql_file, rows, now_ms)
+        print(f"Skrev {len(rows)} idempotenta akademikontakter till {args.sql_file}")
+        return
+
+    from d1 import D1Client
+
+    client = D1Client()
     ok = fail = 0
     for row in rows:
         try:
@@ -156,7 +222,7 @@ def main() -> None:
             )
             ok += 1
         except Exception as exc:
-            print(f"FEL {row.name} <{row.email}>: {exc}", file=sys.stderr)
+            print(f"FEL {row.name} <{row.email}>: {exc}")
             fail += 1
 
     print(f"Synkat akademi till D1: {ok} ok, {fail} fel")
