@@ -74,7 +74,8 @@ jobs:
           set -euo pipefail
           output="$(npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview --name "pr-${{ github.event.pull_request.number }}" --json --config .wrangler-preview.json)"
           printf '%s\n' "$output"
-          preview_url="$(printf '%s' "$output" | jq -er '.preview.urls[0]')"
+          json="$(printf '%s\n' "$output" | sed -n '/^{/,$p')"
+          preview_url="$(printf '%s' "$json" | jq -er '.preview.urls[0] // .deployment.urls[0]')"
           echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
 
       - name: Probe preview
