@@ -1,6 +1,6 @@
 # Projektkontext
 
-**Senast verifierad:** 2026-09-24
+**Senast verifierad:** 2026-09-25
 
 ## Ansvar
 
@@ -49,6 +49,10 @@ Den kodnära current-state-källan är `app/wrangler.jsonc`, `app/src/` och D1-m
 ### D1
 
 Canonical application state, inklusive data som måste överleva enskilda Worker-invocations.
+
+Det gemensamma offentliga mottagarregistret ligger i `public_contacts`. `area_type` skiljer bland annat politiska nivåer, media och `academia`. Akademiska poster kan dessutom bära `organisation`, `unit`, `title`, `academic_field` och `source_url`. De tre aktuella akademiska fälten är statsvetenskap, offentlig förvaltning och offentlig rätt/förvaltningsrätt.
+
+Kommun-/regionkopplingar till nämnder och styrelser ligger i `public_contact_assignments`. Migration `0003_generalize_public_contacts.sql` behåller temporära legacy-vyer för de tidigare tabellnamnen så att den gamla Worker-versionen kan fortsätta läsa under en kontrollerad migration.
 
 ### KV
 
