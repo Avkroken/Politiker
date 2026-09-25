@@ -6,6 +6,7 @@ const workflow = readFileSync(new URL("../../.github/workflows/preview.yml", imp
 const prep = readFileSync(new URL("../../scripts/prepare-worker-preview.mjs", import.meta.url), "utf8");
 const auth = readFileSync(new URL("../src/auth.ts", import.meta.url), "utf8");
 const index = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
+const secureIndex = readFileSync(new URL("../src/secure-index.ts", import.meta.url), "utf8");
 
 test("preview workflow only exposes Cloudflare credentials to same-repository pull requests", () => {
   assert.match(workflow, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
@@ -40,6 +41,11 @@ test("preview config omits production consumers, routes, cron and email bindings
 test("real email and sending are disabled in preview mode", () => {
   assert.match(auth, /env\.PREVIEW_MODE === "1"[\s\S]*system email suppressed/);
   assert.match(index, /PREVIEW_MODE==="1"\) return json\(\{error:"Utskick är avstängt i previewmiljön\."\},409\)/);
+});
+
+test("preview runtime does not require the production rate-limiter Durable Object", () => {
+  assert.doesNotMatch(prep, /durable_objects:/);
+  assert.match(secureIndex, /if \(env\.PREVIEW_MODE === "1"\) return true;/);
 });
 
 test("preview account creation avoids production Turnstile and email dependencies", () => {

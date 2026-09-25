@@ -63,6 +63,7 @@ function isCrossSiteMutation(req: Request, url: URL, bearer: boolean): boolean {
   return origin !== null && origin !== url.origin;
 }
 async function takeRateLimit(env: Env, key: string, capacity: number, refillPerMinute: number): Promise<boolean> {
+  if (env.PREVIEW_MODE === "1") return true;
   const id = env.RATE_LIMITER.idFromName(`web-abuse:${key}`);
   try {
     const response = await env.RATE_LIMITER.get(id).fetch("https://rate-limiter/acquire", { method: "POST", body: JSON.stringify({ capacity, refillPerMinute }) });

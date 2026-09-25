@@ -154,9 +154,6 @@ production.previews = {
   queues: {
     producers: [{ queue: names.queue, binding: "SEND_QUEUE" }],
   },
-  durable_objects: {
-    bindings: [{ name: "RATE_LIMITER", class_name: "CredentialRateLimiter" }],
-  },
   r2_buckets: [
     {
       binding: "ATTACHMENTS",
