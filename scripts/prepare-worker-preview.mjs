@@ -15,7 +15,7 @@ const names = {
   queue: "politiker-preview-send-jobs",
 };
 
-function run(args, { allowFailure = false } = {}) {
+function run(args, { allowFailure = false, quiet = false } = {}) {
   const result = spawnSync(
     "npx",
     ["--yes", `wrangler@${WRANGLER_VERSION}`, ...args],
@@ -25,8 +25,8 @@ function run(args, { allowFailure = false } = {}) {
       env: process.env,
     },
   );
-  if (result.stdout) process.stdout.write(result.stdout);
-  if (result.stderr) process.stderr.write(result.stderr);
+  if (!quiet && result.stdout) process.stdout.write(result.stdout);
+  if (!quiet && result.stderr) process.stderr.write(result.stderr);
   if (result.status !== 0 && !allowFailure) {
     throw new Error(`wrangler ${args.join(" ")} failed with exit code ${result.status}`);
   }
@@ -82,12 +82,53 @@ function ensureQueue() {
   }
 }
 
+async function ensurePreviewHostname() {
+  const token = process.env.CLOUDFLARE_API_TOKEN;
+  if (!token) throw new Error("CLOUDFLARE_API_TOKEN is required");
+
+  const identity = parseJsonOutput(run(["whoami", "--json"], { quiet: true }).stdout);
+  const accounts = Array.isArray(identity.accounts) ? identity.accounts : [];
+  if (accounts.length !== 1 || !accounts[0]?.id) {
+    throw new Error(`Expected exactly one Cloudflare account for W1, got ${accounts.length}`);
+  }
+
+  const accountId = accounts[0].id;
+  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/politiker/subdomain`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  const currentResponse = await fetch(endpoint, { headers });
+  const current = await currentResponse.json();
+  if (!currentResponse.ok || current.success !== true) {
+    throw new Error("Could not read Politiker workers.dev Preview URL state");
+  }
+
+  const enabled = current.result?.enabled === true;
+  if (current.result?.previews_enabled === true) return;
+
+  const updateResponse = await fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ enabled, previews_enabled: true }),
+  });
+  const updated = await updateResponse.json();
+  if (!updateResponse.ok || updated.success !== true || updated.result?.previews_enabled !== true) {
+    throw new Error("Could not enable Politiker workers.dev Preview URLs");
+  }
+
+  console.log("Enabled workers.dev Preview URLs for Politiker; production workers.dev state preserved.");
+}
+
 const d1Id = ensureD1();
 const kvId = ensureKv();
 ensureR2();
 ensureQueue();
+await ensurePreviewHostname();
 
 const production = JSON.parse(readFileSync(join(appDir, "wrangler.jsonc"), "utf8"));
+production.preview_urls = true;
 
 production.previews = {
   vars: {
