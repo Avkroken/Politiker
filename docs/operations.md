@@ -76,7 +76,7 @@ Lös inte authfel genom att göra privata routes publika.
 
 ## Deployment
 
-Normal produktionsexekvering sker manuellt via GitHub Actions-workflown `Deploy Politiker production` (`.github/workflows/deploy-production.yml`). Workflown kan endast köras från `main` och använder organisationens standardiserade deploycredential `CLOUDFLARE_API_TOKEN_W1`.
+Repositoryt deklarerar en manuell GitHub Actions-workflow `Deploy Politiker production` (`.github/workflows/deploy-production.yml`). Workflown kan endast köras från `main` och refererar till GitHub-secret-namnet `CLOUDFLARE_API_TOKEN_W1`; faktisk secret-provisionering är extern GitHub-state.
 
 Körordningen är:
 
@@ -107,7 +107,7 @@ Vanlig PR-verifiering ska inte implicit deploya produktion.
 
 ### Worker Previews för pull requests
 
-Interna pull requests i `Avkroken/Politiker` får en Cloudflare Worker Preview via `.github/workflows/preview.yml`. Workflown använder organisationens befintliga `CLOUDFLARE_API_TOKEN_W1`; secrets exponeras inte för forkade pull requests.
+Repositoryt deklarerar Cloudflare Worker Preview för interna pull requests via `.github/workflows/preview.yml`. Workflown refererar till GitHub-secret-namnet `CLOUDFLARE_API_TOKEN_W1`; faktisk secret-provisionering är extern GitHub-state. Secrets exponeras inte för forkade pull requests.
 
 Previewmiljön är isolerad från produktion och använder gemensamma stagingresurser för alla aktiva PR-previews:
 
@@ -122,7 +122,7 @@ Previewmiljön binder avsiktligt inte produktions- eller Preview-Durable Object 
 
 Previewläge sätter `PREVIEW_MODE=1`. Systemmail undertrycks, verkliga utskick returnerar 409 och previewkonton auto-verifieras lokalt utan Turnstile eller e-post. Detta beteende finns inte i produktionskonfigurationen. OAuth-secrets och produktionsmail-secrets kopieras inte till previews.
 
-När en PR stängs ersätts Preview-deploymenten först med en minimal tombstone som alltid svarar HTTP 410 och saknar applikationsbindings. Eftersom Worker-koden exporterar `CredentialRateLimiter` pensionerar tombstone-konfigurationen samtidigt det Preview-specifika Durable Object-namespacet med en explicit `state: deleted`-export, enligt Cloudflares exports-reconciliation. Workflown verifierar först den unika tombstone-deploymenten och väntar därefter på att den stabila PR-URL:n ska propagera till samma 410-state, med cache-bypass och begränsad retry. Därefter härleder workflown Cloudflare account ID från den befintliga `CLOUDFLARE_API_TOKEN_W1`-credentialen med `wrangler whoami --json` och försöker radera Preview-recorden med Cloudflares beta-kommando. Ingen separat account-ID-secret eller ny API-token införs. Om beta-delete-endpointen nekar den befintliga W1-credentialen rapporteras det som en varning i stället för ett falskt deployfel: den gamla applikationen är redan avstängd och Cloudflare evikterar inaktiva Preview-records automatiskt när Preview-gränsen nås. De gemensamma stagingresurserna behålls för nästa PR-preview. Preview-URL:n kommenteras på pull requesten.
+När en PR stängs ersätts Preview-deploymenten först med en minimal tombstone som alltid svarar HTTP 410 och saknar applikationsbindings. Eftersom Worker-koden exporterar `CredentialRateLimiter` pensionerar tombstone-konfigurationen samtidigt det Preview-specifika Durable Object-namespacet med en explicit `state: deleted`-export, enligt Cloudflares exports-reconciliation. Workflown verifierar först den unika tombstone-deploymenten och väntar därefter på att den stabila PR-URL:n ska propagera till samma 410-state, med cache-bypass och begränsad retry. Därefter härleder workflown Cloudflare account ID från den credential som mappas från `CLOUDFLARE_API_TOKEN_W1` med `wrangler whoami --json` och försöker radera Preview-recorden med Cloudflares beta-kommando. Ingen separat account-ID-secret eller ny API-token införs. Om beta-delete-endpointen nekar den konfigurerade W1-credentialen rapporteras det som en varning i stället för ett falskt deployfel: den gamla applikationen är redan avstängd och Cloudflare evikterar inaktiva Preview-records automatiskt när Preview-gränsen nås. De gemensamma stagingresurserna behålls för nästa PR-preview. Preview-URL:n kommenteras på pull requesten.
 
 ## Observability
 

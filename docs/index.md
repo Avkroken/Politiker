@@ -53,4 +53,4 @@ En cron trigger kör varje minut för att fortsätta väntande arbete enligt app
 
 ## Wiki
 
-GitHub Wiki är aktiverad och lämpar sig för klickbar presentation av dessa sektioner. Repositoryts Markdown är versionsstyrt underlag; unik current-state eller säkerhetskritisk information ska inte finnas enbart i Wiki.
+Om GitHub Wiki används kan den ge en klickbar presentation av dessa sektioner. Repositoryts Markdown är versionsstyrt underlag; unik current-state eller säkerhetskritisk information ska inte finnas enbart i Wiki.
