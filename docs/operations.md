@@ -114,8 +114,9 @@ Previewmiljön är isolerad från produktion och använder gemensamma stagingres
 - D1: `politiker-preview-eu` med EU-jurisdiktion;
 - KV: `politiker-preview-sessions`;
 - R2: `politiker-preview-attachments` med EU-jurisdiktion;
-- Queue producer: `politiker-preview-send-jobs`, utan consumer och med kort retention;
-- Durable Object: separat namespace/storage provisioneras automatiskt per Preview av Cloudflare.
+- Queue producer: `politiker-preview-send-jobs`, utan consumer och med kort retention.
+
+Previewmiljön binder avsiktligt inte produktions- eller Preview-Durable Object för `RATE_LIMITER`. Verkliga utskick är redan blockerade i `PREVIEW_MODE`, och web-abuse-rate-limit bypassas endast där. Produktionens Durable Object och rate limiting är oförändrade.
 
 `scripts/prepare-worker-preview.mjs` skapar resurserna idempotent om de saknas och genererar temporära Wrangler-konfigurationer i `app/.wrangler-preview*.json`. Produktions-ID:n kopieras aldrig in i Preview-konfigurationen. D1-migrationerna appliceras på staging-D1 före Preview-deploy och den kurerade akademidatan seedas idempotent så mottagar-UI:t kan granskas.
 
