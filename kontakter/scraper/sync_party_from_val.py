@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Fyller i partibeteckning för redan skrapade kommun- och regionpolitiker i
-D1-tabellen `politicians`, genom att matcha namn mot Valmyndighetens öppna
+D1-tabellen `public_contacts`, genom att matcha namn mot Valmyndighetens öppna
 data över nuvarande ledamöter (kommun-/regionfullmäktige).
 
 Valmyndighetens data har INGEN mailadress (det är valresultatdata, inte
@@ -144,7 +144,7 @@ def main():
 
     print("Hämtar befintliga kommun-/regionpolitiker från D1...", flush=True)
     existing = client.query(
-        "SELECT id, name, area_name FROM politicians WHERE area_type IN ('kommun', 'region')",
+        "SELECT id, name, area_name FROM public_contacts WHERE area_type IN ('kommun', 'region')",
         timeout=60,
     )
     print(f"{len(existing)} befintliga rader att matcha mot.", flush=True)
@@ -169,11 +169,11 @@ def main():
     print(f"{exact_count} exakta + {fuzzy_count} fuzzy-matchade ({len(to_update)} totalt), {unmatched} utan match (lämnas orörda).", flush=True)
 
     def update_one(item: tuple[str, str, str]) -> tuple[bool, str]:
-        politician_id, name, party = item
+        contact_id, name, party = item
         try:
             client.run(
-                "UPDATE politicians SET party = ?, last_scraped_at = ? WHERE id = ?",
-                [party, now_ms, politician_id],
+                "UPDATE public_contacts SET party = ?, last_scraped_at = ? WHERE id = ?",
+                [party, now_ms, contact_id],
             )
             return True, name
         except (requests.RequestException, RuntimeError) as err:
