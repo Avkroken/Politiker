@@ -75,8 +75,10 @@ jobs:
           output="$(npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview --name "pr-${{ github.event.pull_request.number }}" --json --config .wrangler-preview.json)"
           printf '%s\n' "$output"
           json="$(printf '%s\n' "$output" | sed -n '/^{/,$p')"
-          preview_url="$(printf '%s' "$json" | jq -er '.preview.urls[0] // .deployment.urls[0]')"
+          preview_url="$(printf '%s' "$json" | jq -er '.preview.urls[0]')"
+          deployment_url="$(printf '%s' "$json" | jq -er '.deployment.urls[0]')"
           echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
 
       - name: Probe preview
         shell: bash
@@ -96,6 +98,7 @@ jobs:
           gh pr comment "${{ github.event.pull_request.number }}" --edit-last --create-if-none --body "Worker Preview: $PREVIEW_URL
 
           Isolerad från produktion: separat D1, KV, R2 och Queue. Systemmail och verkliga utskick är avstängda. Previewkonton verifieras lokalt i previewmiljön."
+
 
   cleanup:
     name: Delete closed Worker preview
