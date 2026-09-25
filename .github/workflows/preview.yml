@@ -170,9 +170,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          deployment_status="$(curl --location --max-redirs 3 --show-error --silent --output /dev/null --write-out '%{http_code}' --header 'Cache-Control: no-cache' "$DEPLOYMENT_URL/")"
+          deployment_status=""
+          for attempt in $(seq 1 24); do
+            deployment_status="$(curl --location --max-redirs 3 --show-error --silent --output /dev/null --write-out '%{http_code}' --header 'Cache-Control: no-cache' "$DEPLOYMENT_URL/?closed=${GITHUB_RUN_ID}-deployment-${attempt}")"
+            if [[ "$deployment_status" == "410" ]]; then
+              break
+            fi
+            echo "Tombstone deployment has not propagated yet (attempt $attempt/24, HTTP $deployment_status)."
+            sleep 5
+          done
+
           [[ "$deployment_status" == "410" ]] || {
-            echo "::error::Closed Preview tombstone deployment returned HTTP $deployment_status, expected 410."
+            echo "::error::Closed Preview tombstone deployment returned HTTP $deployment_status after propagation wait, expected 410."
             exit 1
           }
 
