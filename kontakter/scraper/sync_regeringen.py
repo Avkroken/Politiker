@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Synkar regeringens 11 departement (registratorsadresser) till D1-tabellen
-`politicians` (area_type='regering').
+`public_contacts` (area_type='regering').
 
 Det finns medvetet INGA personliga mailadresser till enskilda statsråd —
 all formell kontakt med regeringen sker via departementets registrator
@@ -35,7 +35,7 @@ DEPARTMENT_NAMES = {
 }
 
 UPSERT_SQL = (
-    "INSERT INTO politicians (id, name, email, area_name, area_type, last_scraped_at) "
+    "INSERT INTO public_contacts (id, name, email, area_name, area_type, last_scraped_at) "
     "VALUES (lower(hex(randomblob(11))), ?, ?, ?, 'regering', ?) "
     "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, last_scraped_at = excluded.last_scraped_at"
 )
