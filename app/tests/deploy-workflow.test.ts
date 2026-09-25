@@ -10,6 +10,8 @@ const workflow = readFileSync(
 test("production deployment is manual and uses the standard W1 credential", () => {
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /secrets\.CLOUDFLARE_API_TOKEN_W1/);
+  assert.match(workflow, /runs-on: ubuntu-24\.04/);
+  assert.doesNotMatch(workflow, /runs-on: ubuntu-latest/);
   assert.doesNotMatch(workflow, /^\s+push:/m);
   assert.doesNotMatch(workflow, /^\s+pull_request:/m);
   assert.match(workflow, /GITHUB_REF.*refs\/heads\/main/);
