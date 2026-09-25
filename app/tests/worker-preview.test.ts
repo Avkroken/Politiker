@@ -70,6 +70,7 @@ test("closed pull requests are tombstoned before best-effort Preview deletion", 
   assert.match(workflow, /status: 410/);
   assert.match(workflow, /expected 410/);
   assert.match(workflow, /--ignore-base-config/);
+  assert.match(workflow, /"CredentialRateLimiter"[\s\S]*"state": "deleted"/);
   assert.match(workflow, /preview delete --name "pr-\$\{\{ github\.event\.pull_request\.number \}\}" --skip-confirmation/);
   assert.match(workflow, /Cloudflare Preview cleanup deferred/);
 });
