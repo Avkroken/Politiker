@@ -212,3 +212,102 @@ a:not(.button):hover{
     width:100%;
   }
 }
+
+
+/* Advanced recipient filters are grouped by audience so large registries stay scannable. */
+.advanced-filter-section[hidden]{
+  display:none;
+}
+
+.advanced-filter-section__body{
+  padding-top:4px;
+}
+
+.advanced-filter-hint{
+  margin:0 0 12px;
+}
+
+.advanced-filter-subheading{
+  margin:4px 0 2px;
+  font-size:1rem;
+}
+
+#area-list.filter-area-groups{
+  display:grid;
+  gap:10px;
+}
+
+.filter-area-group{
+  padding:0 14px 12px;
+  border-color:rgba(20,83,132,.68);
+  background:rgba(3,23,46,.72);
+  box-shadow:none;
+}
+
+.filter-area-group[open]{
+  border-color:rgba(29,109,166,.82);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.018),transparent 32%),
+    #041c36;
+}
+
+.filter-area-group__summary{
+  min-height:52px;
+}
+
+.filter-area-group__title{
+  display:block;
+  color:#f3f7fc;
+  font-weight:750;
+}
+
+.filter-area-group__meta{
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:.84rem;
+  font-weight:500;
+}
+
+.filter-area-group[open] .filter-area-group__title{
+  color:var(--accent);
+}
+
+.filter-area-group__body{
+  display:grid;
+  gap:2px;
+  padding-top:4px;
+}
+
+.filter-area-group__body .check{
+  min-height:42px;
+  padding:2px 0;
+}
+
+.filter-area-limit,
+.filter-area-empty{
+  margin:8px 0 2px;
+}
+
+#advanced-area-section > summary,
+#local-filter > summary,
+#media-filter > summary,
+#academic-filter > summary,
+#political-filter > summary,
+#person-filter > summary{
+  font-weight:750;
+}
+
+@media(max-width:560px){
+  .filter-area-group{
+    padding-inline:12px;
+  }
+
+  .filter-area-group__summary{
+    min-height:50px;
+  }
+
+  .filter-area-group__meta{
+    font-size:.8rem;
+  }
+}
