@@ -1,5 +1,6 @@
 from pathlib import Path
 import importlib.util
+import sqlite3
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,3 +46,47 @@ def test_academic_upsert_targets_general_public_contact_registry():
     assert "'academia'" in academics.UPSERT_SQL
     assert "academic_field" in academics.UPSERT_SQL
     assert "source_url" in academics.UPSERT_SQL
+
+
+def test_academic_sql_export_is_idempotent_and_sqlite_valid(tmp_path):
+    rows = academics.validated_contacts()
+    sql_path = tmp_path / "academics.sql"
+    academics.write_sql_file(sql_path, rows, 123456789)
+    sql = sql_path.read_text(encoding="utf-8")
+
+    assert sql.startswith("BEGIN;\n")
+    assert sql.endswith("COMMIT;\n")
+    assert sql.count("INSERT INTO public_contacts") == len(rows)
+
+    db = sqlite3.connect(":memory:")
+    db.execute(
+        """
+        CREATE TABLE public_contacts (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          area_name TEXT NOT NULL,
+          area_type TEXT NOT NULL,
+          party TEXT,
+          role TEXT,
+          last_scraped_at INTEGER NOT NULL,
+          organisation TEXT,
+          unit TEXT,
+          title TEXT,
+          academic_field TEXT,
+          source_url TEXT,
+          UNIQUE(email, area_name)
+        )
+        """
+    )
+    db.executescript(sql)
+    db.executescript(sql)
+
+    count = db.execute("SELECT COUNT(*) FROM public_contacts WHERE area_type='academia'").fetchone()[0]
+    fields = db.execute("SELECT COUNT(DISTINCT academic_field) FROM public_contacts WHERE area_type='academia'").fetchone()[0]
+    assert count == len(rows)
+    assert fields == 3
+
+
+def test_sql_literal_escapes_apostrophes_without_guessing():
+    assert academics.sql_literal("O'Brien") == "'O''Brien'"

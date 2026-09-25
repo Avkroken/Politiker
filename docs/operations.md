@@ -76,18 +76,30 @@ Lös inte authfel genom att göra privata routes publika.
 
 ## Deployment
 
+Normal produktionsexekvering sker manuellt via GitHub Actions-workflown `Deploy Politiker production` (`.github/workflows/deploy-production.yml`). Workflown kan endast köras från `main` och använder organisationens standardiserade deploycredential `CLOUDFLARE_API_TOKEN_W1`.
+
+Körordningen är:
+
+1. installera dependencies och köra `npm run validate`;
+2. applicera alla väntande D1-migrationer med `npm run migrate:production`;
+3. deploya Workern med `npm run deploy`;
+4. verifiera `https://politiker.denied.se/` med `npm run verify:production`;
+5. generera den kurerade akademisynken som idempotent SQL;
+6. applicera akademisynken via Wrangler mot `politiker-eu`;
+7. verifiera att minst det kurerade antalet akademikontakter finns över exakt tre kärnområden.
+
+Workflown använder `workflow_dispatch`; push och pull request deployar inte produktion automatiskt. `concurrency` tillåter inte parallella produktionsdeployments.
+
+Direkt lokal exekvering finns kvar för kontrollerad drift:
+
 ```bash
 cd app
+npm run migrate:production
 npm run deploy
+npm run verify:production
 ```
 
 Vanlig PR-verifiering ska inte implicit deploya.
-
-Efter en avsedd deployment:
-
-```bash
-npm run verify:production
-```
 
 ## Observability
 
