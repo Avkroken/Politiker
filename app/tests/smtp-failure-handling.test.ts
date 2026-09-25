@@ -41,7 +41,7 @@ test("only permanent recipient rejections mark an address as dead", () => {
 test("queue aborts on SMTP auth failure without counting it as sent or poisoning the recipient", () => {
   assert.match(queueSource, /if\s*\(\s*isSmtpAuthenticationFailure\(err\)\s*\)\s*\{[\s\S]*?recordBlockingSendError\(env\s*,\s*m\s*,\s*errorMsg\)[\s\S]*?queueMsg\.ack\(\)[\s\S]*?aborted\s*=\s*true[\s\S]*?continue\s*;/);
   assert.match(queueSource, /\.bind\(\s*sentCount\s*,\s*bounceCount\s*,\s*aborted\s*\?\s*"aborted"\s*:\s*"sending"\s*,\s*sendJobId\s*\)/);
-  assert.match(queueSource, /else\s+if\s*\(\s*markRecipientDead\s*\)\s*await\s+env\.DB\.prepare\(\s*"UPDATE politicians SET verification_status='dead_via_send'/);
+  assert.match(queueSource, /else\s+if\s*\(\s*markRecipientDead\s*\)\s*await\s+env\.DB\.prepare\(\s*"UPDATE public_contacts SET verification_status='dead_via_send'/);
 });
 
 test("remaining batch messages are acknowledged after a job aborts", () => {
