@@ -106,7 +106,7 @@ SET party = NULL
 WHERE party IS NOT NULL
   AND party NOT IN ({KNOWN_PARTIES_SQL});
 
-UPDATE public_contacts SET role = NULL WHERE role IS NOT NULL;
+UPDATE public_contacts SET role = NULL WHERE area_type NOT IN ('media', 'academia') AND role IS NOT NULL;
 UPDATE public_contact_assignments SET role = '' WHERE role <> '';
 
 DELETE FROM public_contact_assignments
@@ -162,7 +162,7 @@ def dry_run() -> None:
     print("\nIrrelevanta kommun-/regionuppdrag som skulle tas bort:")
     query("SELECT area_type, role, COUNT(*) AS rows FROM public_contacts WHERE area_type IN ('kommun','region') AND role IS NOT NULL AND " + IRRELEVANT_ROLE_SQL + " GROUP BY area_type, role ORDER BY rows DESC, role;")
     print("\nDetaljerade huvudroller som skulle rensas:")
-    query("SELECT COUNT(*) AS rows FROM public_contacts WHERE role IS NOT NULL AND TRIM(role) <> ''; ")
+    query("SELECT COUNT(*) AS rows FROM public_contacts WHERE area_type NOT IN ('media','academia') AND role IS NOT NULL AND TRIM(role) <> ''; ")
     print("\nDetaljerade nämndroller som skulle rensas:")
     query("SELECT COUNT(*) AS rows FROM public_contact_assignments WHERE role <> ''; ")
     print("\nNämnd/organ-brus som skulle tas bort:")
