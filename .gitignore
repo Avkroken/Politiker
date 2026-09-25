@@ -18,3 +18,4 @@ app/lcov.info
 kontakter/coverage.xml
 kontakter/.coverage
 .coverage
+app/.wrangler-preview*.json
