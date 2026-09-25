@@ -73,7 +73,11 @@ test("closed pull requests are tombstoned, resolve account context, and best-eff
   const tombstoneBlock = workflow.slice(tombstone, verify);
   assert.match(tombstoneBlock, /deployment_url=.*\.deployment\.urls\[0\]/);
   assert.match(tombstoneBlock, /echo "deployment_url=\$deployment_url" >> "\$GITHUB_OUTPUT"/);
-  assert.match(workflow, /for attempt in \$\(seq 1 24\)/);
+  const retries = workflow.match(/for attempt in \$\(seq 1 24\)/g) ?? [];
+  assert.equal(retries.length, 2);
+  assert.match(workflow, /closed=\$\{GITHUB_RUN_ID\}-deployment-\$\{attempt\}/);
+  assert.match(workflow, /Tombstone deployment has not propagated yet/);
+  assert.match(workflow, /after propagation wait, expected 410/);
   assert.match(workflow, /closed=\$\{GITHUB_RUN_ID\}-\$\{attempt\}/);
   assert.match(workflow, /Cache-Control: no-cache/);
   assert.match(workflow, /curl --location --max-redirs 3/);
