@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Periodisk verifiering av e-postadresser i D1-tabellen `politicians`
+Periodisk verifiering av e-postadresser i D1-tabellen `public_contacts`
 (politiker-projektet). Körs via cron/systemd-timer på mp100 — INTE
 i Cloudflare Workers, eftersom Cloudflare blockerar utgående port 25
 ovillkorligt (dokumenterat i politiker/README.md).
@@ -152,11 +152,11 @@ def probe_domain(domain: str, emails: list[str]) -> dict[str, str]:
 
 def main():
     client = D1Client()
-    politicians = client.query("SELECT id, email FROM politicians")
-    print(f"Hämtade {len(politicians)} politiker-rader från D1.")
+    public_contacts = client.query("SELECT id, email FROM public_contacts")
+    print(f"Hämtade {len(public_contacts)} politiker-rader från D1.")
 
     by_domain: dict[str, list[tuple[str, str]]] = defaultdict(list)
-    for row in politicians:
+    for row in public_contacts:
         email = row["email"]
         if "@" not in email:
             continue
@@ -177,12 +177,12 @@ def main():
             print(f"  OVÄNTAT FEL för {domain}: {err}", file=sys.stderr)
             status_by_email = {e: "error_unexpected" for e in emails}
 
-        for politician_id, email in rows:
+        for contact_id, email in rows:
             status = status_by_email.get(email, "unknown")
             counts[status] += 1
             client.run(
-                "UPDATE politicians SET verification_status = ?, last_verified_at = ? WHERE id = ?",
-                [status, now_ms, politician_id],
+                "UPDATE public_contacts SET verification_status = ?, last_verified_at = ? WHERE id = ?",
+                [status, now_ms, contact_id],
             )
 
         time.sleep(DELAY_BETWEEN_DOMAINS)
