@@ -59,3 +59,17 @@ test("preview D1 is EU-jurisdictional and migrations run before preview deployme
 test("closed pull requests remove their Worker Preview", () => {
   assert.match(workflow, /preview delete --name "pr-\$\{\{ github\.event\.pull_request\.number \}\}" --skip-confirmation/);
 });
+
+
+test("workers.dev is disabled for production but enabled for Preview URLs", () => {
+  const wrangler = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8");
+  assert.match(wrangler, /"workers_dev": false/);
+  assert.match(wrangler, /"preview_urls": true/);
+  assert.match(prep, /previews_enabled: true/);
+  assert.match(prep, /body: JSON\.stringify\(\{ enabled, previews_enabled: true \}\)/);
+});
+
+test("preview URL parsing ignores Wrangler banners before JSON", () => {
+  assert.match(workflow, /sed -n '\/\^\{\/,\$p'/);
+  assert.match(workflow, /\.preview\.urls\[0\] \/\/ \.deployment\.urls\[0\]/);
+});
