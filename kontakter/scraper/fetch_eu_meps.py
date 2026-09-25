@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Hämtar Sveriges nuvarande ledamöter i Europaparlamentet via parlamentets
-öppna data-API och synkar dem till D1-tabellen `politicians` som
+öppna data-API och synkar dem till D1-tabellen `public_contacts` som
 area_type='eu', area_name='Europaparlamentet (Sverige)'.
 
 Politikerkontakt är inriktat på svenska politiska företrädare. Därför importeras
@@ -31,7 +31,7 @@ EP_API_BASE = "https://data.europarl.europa.eu/api/v2"
 SWEDISH_EU_AREA = "Europaparlamentet (Sverige)"
 
 UPSERT_SQL = (
-    "INSERT INTO politicians (id, name, email, area_name, area_type, party, role, last_scraped_at) "
+    "INSERT INTO public_contacts (id, name, email, area_name, area_type, party, role, last_scraped_at) "
     "VALUES (lower(hex(randomblob(11))), ?, ?, ?, 'eu', ?, ?, ?) "
     "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, party = excluded.party, role = excluded.role, "
     "last_scraped_at = excluded.last_scraped_at, verification_status = NULL"
