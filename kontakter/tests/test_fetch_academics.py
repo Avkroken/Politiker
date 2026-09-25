@@ -54,8 +54,11 @@ def test_academic_sql_export_is_idempotent_and_sqlite_valid(tmp_path):
     academics.write_sql_file(sql_path, rows, 123456789)
     sql = sql_path.read_text(encoding="utf-8")
 
-    assert sql.startswith("BEGIN;\n")
-    assert sql.endswith("COMMIT;\n")
+    assert not sql.startswith("BEGIN;\n")
+    assert "BEGIN;" not in sql
+    assert "COMMIT;" not in sql
+    assert "SAVEPOINT" not in sql
+    assert sql.endswith(";\n")
     assert sql.count("INSERT INTO public_contacts") == len(rows)
 
     db = sqlite3.connect(":memory:")
