@@ -22,7 +22,7 @@ app/src/access-index.ts
   v
 app/src/index.ts
   |
-  +--> D1: application state
+  +--> D1: application state + public contact registry
   +--> KV: sessions
   +--> R2: attachments
   +--> Queue: send jobs ---> DLQ
@@ -35,7 +35,7 @@ En cron trigger kör varje minut för att fortsätta väntande arbete enligt app
 
 ## State ownership
 
-- **D1**: canonical application state.
+- **D1**: canonical application state, inklusive `public_contacts` för politiker, media och akademiska mottagare.
 - **KV**: sessionsstate.
 - **R2**: bilagor.
 - **Queue/DLQ**: leveransarbete och retry/failure state.
