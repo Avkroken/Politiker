@@ -164,7 +164,7 @@ jobs:
           PREVIEW_URL: ${{ steps.tombstone.outputs.preview_url }}
         run: |
           set -euo pipefail
-          status="$(curl --show-error --silent --output /dev/null --write-out '%{http_code}' --retry 4 --retry-delay 2 "$PREVIEW_URL/")"
+          status="$(curl --location --max-redirs 3 --show-error --silent --output /dev/null --write-out '%{http_code}' --retry 4 --retry-delay 2 "$PREVIEW_URL/")"
           [[ "$status" == "410" ]] || {
             echo "::error::Closed Preview returned HTTP $status, expected 410."
             exit 1
