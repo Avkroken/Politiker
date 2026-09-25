@@ -191,6 +191,16 @@ jobs:
             exit 1
           }
 
+      - name: Resolve Cloudflare account
+        working-directory: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" whoami --json)"
+          json="$(printf '%s\n' "$output" | sed -n '/^{/,$p')"
+          account_id="$(printf '%s' "$json" | jq -er '.accounts | if length == 1 then .[0].id else error("expected exactly one Cloudflare account") end')"
+          echo "CLOUDFLARE_ACCOUNT_ID=$account_id" >> "$GITHUB_ENV"
+
       - name: Delete Preview record when Cloudflare permits it
         working-directory: app
         shell: bash

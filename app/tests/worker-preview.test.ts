@@ -62,11 +62,12 @@ test("preview D1 is EU-jurisdictional and migrations run before preview deployme
   assert.ok(migration >= 0 && deploy > migration);
 });
 
-test("closed pull requests are tombstoned before best-effort Preview deletion", () => {
+test("closed pull requests are tombstoned, resolve account context, and best-effort delete", () => {
   const tombstone = workflow.indexOf("Disable closed Preview");
   const verify = workflow.indexOf("Verify closed Preview is disabled");
+  const resolve = workflow.indexOf("Resolve Cloudflare account");
   const remove = workflow.indexOf("Delete Preview record when Cloudflare permits it");
-  assert.ok(tombstone >= 0 && verify > tombstone && remove > verify);
+  assert.ok(tombstone >= 0 && verify > tombstone && resolve > verify && remove > resolve);
   assert.match(workflow, /status: 410/);
   assert.match(workflow, /expected 410/);
   const tombstoneBlock = workflow.slice(tombstone, verify);
@@ -78,6 +79,8 @@ test("closed pull requests are tombstoned before best-effort Preview deletion", 
   assert.match(workflow, /curl --location --max-redirs 3/);
   assert.match(workflow, /--ignore-base-config/);
   assert.match(workflow, /"CredentialRateLimiter"[\s\S]*"state": "deleted"/);
+  assert.match(workflow, /wrangler@\$\{PREVIEW_WRANGLER_VERSION\}" whoami --json/);
+  assert.match(workflow, /CLOUDFLARE_ACCOUNT_ID=\$account_id/);
   assert.match(workflow, /preview delete --name "pr-\$\{\{ github\.event\.pull_request\.number \}\}" --skip-confirmation/);
   assert.match(workflow, /Cloudflare Preview cleanup deferred/);
 });
