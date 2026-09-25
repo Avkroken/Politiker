@@ -75,11 +75,18 @@ test("closed pull requests are tombstoned, resolve account context, and best-eff
   assert.match(tombstoneBlock, /echo "deployment_url=\$deployment_url" >> "\$GITHUB_OUTPUT"/);
   const retries = workflow.match(/for attempt in \$\(seq 1 24\)/g) ?? [];
   assert.equal(retries.length, 2);
-  assert.match(workflow, /closed=\$\{GITHUB_RUN_ID\}-deployment-\$\{attempt\}/);
+  assert.match(
+    workflow,
+    /--header 'Cache-Control: no-cache' "\$DEPLOYMENT_URL\/\?closed=\$\{GITHUB_RUN_ID\}-deployment-\$\{attempt\}"/
+  );
+  assert.match(
+    workflow,
+    /--header 'Cache-Control: no-cache' "\$PREVIEW_URL\/\?closed=\$\{GITHUB_RUN_ID\}-\$\{attempt\}"/
+  );
+  assert.match(workflow, /deployment_status="000"/);
+  assert.match(workflow, /status="000"/);
   assert.match(workflow, /Tombstone deployment has not propagated yet/);
   assert.match(workflow, /after propagation wait, expected 410/);
-  assert.match(workflow, /closed=\$\{GITHUB_RUN_ID\}-\$\{attempt\}/);
-  assert.match(workflow, /Cache-Control: no-cache/);
   assert.match(workflow, /curl --location --max-redirs 3/);
   assert.match(workflow, /--ignore-base-config/);
   assert.match(workflow, /"CredentialRateLimiter"[\s\S]*"state": "deleted"/);
