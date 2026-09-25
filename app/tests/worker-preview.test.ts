@@ -62,7 +62,9 @@ test("preview D1 is EU-jurisdictional and migrations run before preview deployme
   assert.ok(migration >= 0 && deploy > migration);
 });
 
-test("closed pull requests remove their Worker Preview", () => {
+test("closed pull requests resolve the account id and remove their Worker Preview", () => {
+  assert.match(workflow, /wrangler@\$\{PREVIEW_WRANGLER_VERSION\}" whoami --json/);
+  assert.match(workflow, /CLOUDFLARE_ACCOUNT_ID=\$account_id/);
   assert.match(workflow, /preview delete --name "pr-\$\{\{ github\.event\.pull_request\.number \}\}" --skip-confirmation/);
 });
 
