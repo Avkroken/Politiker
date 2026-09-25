@@ -103,7 +103,25 @@ npm run deploy
 npm run verify:production
 ```
 
-Vanlig PR-verifiering ska inte implicit deploya.
+Vanlig PR-verifiering ska inte implicit deploya produktion.
+
+### Worker Previews för pull requests
+
+Interna pull requests i `Avkroken/Politiker` får en Cloudflare Worker Preview via `.github/workflows/preview.yml`. Workflown använder organisationens befintliga `CLOUDFLARE_API_TOKEN_W1`; secrets exponeras inte för forkade pull requests.
+
+Previewmiljön är isolerad från produktion och använder gemensamma stagingresurser för alla aktiva PR-previews:
+
+- D1: `politiker-preview-eu` med EU-jurisdiktion;
+- KV: `politiker-preview-sessions`;
+- R2: `politiker-preview-attachments` med EU-jurisdiktion;
+- Queue producer: `politiker-preview-send-jobs`, utan consumer och med kort retention;
+- Durable Object: separat namespace/storage provisioneras automatiskt per Preview av Cloudflare.
+
+`scripts/prepare-worker-preview.mjs` skapar resurserna idempotent om de saknas och genererar temporära Wrangler-konfigurationer i `app/.wrangler-preview*.json`. Produktions-ID:n kopieras aldrig in i Preview-konfigurationen. D1-migrationerna appliceras på staging-D1 före Preview-deploy och den kurerade akademidatan seedas idempotent så mottagar-UI:t kan granskas.
+
+Previewläge sätter `PREVIEW_MODE=1`. Systemmail undertrycks, verkliga utskick returnerar 409 och previewkonton auto-verifieras lokalt utan Turnstile eller e-post. Detta beteende finns inte i produktionskonfigurationen. OAuth-secrets och produktionsmail-secrets kopieras inte till previews.
+
+När en PR stängs tas själva Worker Previewn bort. De gemensamma stagingresurserna behålls för nästa PR-preview. Preview-URL:n kommenteras på pull requesten.
 
 ## Observability
 

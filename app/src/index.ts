@@ -123,6 +123,7 @@ const AUTHED_ROUTES: RouteDef[] = [
     const recipients=await getRecipientsForAreas(c.env.DB,input.areaNames??[],input.excludeParties??[],input.excludeEmails??[],input.includeRoles??[],input.includeEmails??[]); return json({count:recipients.length});
   } },
   { method: "POST", rx: /^\/api\/send$/, h: async c => {
+    if(c.env.PREVIEW_MODE==="1") return json({error:"Utskick är avstängt i previewmiljön."},409);
     const input=await c.req.json<{letterHtml:string;subject?:string;mailCredentialId:string;areaNames:string[];excludeParties?:string[];excludeEmails?:string[];includeRoles?:string[];includeEmails?:string[];attachments?:AttachmentInput[];dailyLimit?:number|null;switchAfterDays?:number|null;nextDailyLimit?:number|null}>();
     if (typeof input.letterHtml !== "string" || !input.letterHtml.trim()) throw new Error("Brevtext krävs");
     if (new TextEncoder().encode(input.letterHtml).byteLength > MAX_LETTER_HTML_BYTES) throw new Error("Brevtexten är för stor");
@@ -173,7 +174,7 @@ async function handleRequest(req: Request, env: Env, url: URL): Promise<Response
   try{
     const sessionToken=getCookie(req,"session");let account=await getAccountFromSession(env,sessionToken);
     if(!account){const authHeader=req.headers.get("Authorization");if(authHeader?.startsWith("Bearer "))account=await getAccountFromApiKey(env,authHeader.slice(7));}
-    if(url.pathname==="/api/signup"&&req.method==="POST"){const{email,password,turnstileToken}=await req.json<{email:string;password:string;turnstileToken?:string}>();if(!(await verifyTurnstile(env.TURNSTILE_SECRET,turnstileToken,req.headers.get("CF-Connecting-IP"),"turnstile-spin-v1",env.TURNSTILE_HOSTNAMES)))return json({error:"Bekräfta att du inte är en robot och försök igen."},400);return json(await signup(env,email,password));}
+    if(url.pathname==="/api/signup"&&req.method==="POST"){const{email,password,turnstileToken}=await req.json<{email:string;password:string;turnstileToken?:string}>();if(env.PREVIEW_MODE!=="1"&&!(await verifyTurnstile(env.TURNSTILE_SECRET,turnstileToken,req.headers.get("CF-Connecting-IP"),"turnstile-spin-v1",env.TURNSTILE_HOSTNAMES)))return json({error:"Bekräfta att du inte är en robot och försök igen."},400);return json(await signup(env,email,password));}
     if(url.pathname==="/api/verify"&&req.method==="POST"){const{accountId,code}=await req.json<{accountId:string;code:string}>();await verifyEmail(env,accountId,code);return json({ok:true});}
     if(url.pathname==="/api/login"&&req.method==="POST"){const{email,password,totpCode}=await req.json<{email:string;password:string;totpCode?:string}>(),{sessionToken:token}=await login(env,email,password,totpCode),resp=json({ok:true});resp.headers.set("Set-Cookie",setSessionCookie(token));return resp;}
     if(url.pathname==="/api/logout"&&req.method==="POST"){if(sessionToken)await env.SESSIONS.delete(`session:${sessionToken}`);const resp=json({ok:true});resp.headers.set("Set-Cookie","session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");return resp;}

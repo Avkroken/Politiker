@@ -1,0 +1,119 @@
+name: Preview Politiker
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: politiker-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Create isolated Worker preview
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_W1 }}
+      PREVIEW_WRANGLER_VERSION: "4.139.0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "24"
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.13"
+
+      - name: Validate preview credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] || {
+            echo "::error::Required organization secret is not configured: CLOUDFLARE_API_TOKEN_W1"
+            exit 1
+          }
+
+      - name: Install application dependencies
+        working-directory: app
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify application
+        working-directory: app
+        run: npm run validate
+
+      - name: Prepare isolated preview resources
+        run: node scripts/prepare-worker-preview.mjs
+
+      - name: Apply preview D1 migrations
+        working-directory: app
+        run: npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" d1 migrations apply PREVIEW_DB --remote --config .wrangler-preview-migrations.json
+
+      - name: Seed preview academic contacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python kontakter/scraper/fetch_academics.py --sql-file "$RUNNER_TEMP/academic-preview.sql"
+          cd app
+          npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" d1 execute PREVIEW_DB --remote --config .wrangler-preview-migrations.json --file "$RUNNER_TEMP/academic-preview.sql"
+
+      - id: preview
+        name: Create or update Worker Preview
+        working-directory: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview --name "pr-${{ github.event.pull_request.number }}" --json --config .wrangler-preview.json)"
+          printf '%s\n' "$output"
+          json="$(printf '%s\n' "$output" | sed -n '/^{/,$p')"
+          preview_url="$(printf '%s' "$json" | jq -er '.preview.urls[0] // .deployment.urls[0]')"
+          echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+
+      - name: Probe preview
+        shell: bash
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --retry 4 --retry-delay 2 "$PREVIEW_URL/" >/dev/null
+
+      - name: Comment preview URL
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+        run: |
+          set -euo pipefail
+          gh pr comment "${{ github.event.pull_request.number }}" --edit-last --create-if-none --body "Worker Preview: $PREVIEW_URL
+
+          Isolerad från produktion: separat D1, KV, R2 och Queue. Systemmail och verkliga utskick är avstängda. Previewkonton verifieras lokalt i previewmiljön."
+
+  cleanup:
+    name: Delete closed Worker preview
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_W1 }}
+      PREVIEW_WRANGLER_VERSION: "4.139.0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "24"
+
+      - name: Delete Preview
+        working-directory: app
+        run: npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview delete --name "pr-${{ github.event.pull_request.number }}" --skip-confirmation
