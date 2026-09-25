@@ -172,7 +172,7 @@ jobs:
 
           deployment_status=""
           for attempt in $(seq 1 24); do
-            deployment_status="$(curl --location --max-redirs 3 --show-error --silent --output /dev/null --write-out '%{http_code}' --header 'Cache-Control: no-cache' "$DEPLOYMENT_URL/?closed=${GITHUB_RUN_ID}-deployment-${attempt}")"
+            deployment_status="$(curl --location --max-redirs 3 --show-error --silent --output /dev/null --write-out '%{http_code}' --header 'Cache-Control: no-cache' "$DEPLOYMENT_URL/?closed=${GITHUB_RUN_ID}-deployment-${attempt}")" || deployment_status="000"
             if [[ "$deployment_status" == "410" ]]; then
               break
             fi
@@ -187,7 +187,7 @@ jobs:
 
           status=""
           for attempt in $(seq 1 24); do
-            status="$(curl --location --max-redirs 3 --show-error --silent --output /dev/null --write-out '%{http_code}' --header 'Cache-Control: no-cache' "$PREVIEW_URL/?closed=${GITHUB_RUN_ID}-${attempt}")"
+            status="$(curl --location --max-redirs 3 --show-error --silent --output /dev/null --write-out '%{http_code}' --header 'Cache-Control: no-cache' "$PREVIEW_URL/?closed=${GITHUB_RUN_ID}-${attempt}")" || status="000"
             if [[ "$status" == "410" ]]; then
               break
             fi
