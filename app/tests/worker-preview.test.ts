@@ -62,10 +62,15 @@ test("preview D1 is EU-jurisdictional and migrations run before preview deployme
   assert.ok(migration >= 0 && deploy > migration);
 });
 
-test("closed pull requests resolve the account id and remove their Worker Preview", () => {
+test("closed pull requests resolve Cloudflare account context and delete their Preview", () => {
+  const resolve = workflow.indexOf("Resolve Cloudflare account");
+  const remove = workflow.indexOf("Delete Preview");
+  assert.ok(resolve >= 0 && remove > resolve);
   assert.match(workflow, /wrangler@\$\{PREVIEW_WRANGLER_VERSION\}" whoami --json/);
   assert.match(workflow, /CLOUDFLARE_ACCOUNT_ID=\$account_id/);
   assert.match(workflow, /preview delete --name "pr-\$\{\{ github\.event\.pull_request\.number \}\}" --skip-confirmation/);
+  assert.doesNotMatch(workflow, /Disable closed Preview/);
+  assert.doesNotMatch(workflow, /Preview cleanup deferred/);
 });
 
 
@@ -77,7 +82,9 @@ test("workers.dev is disabled for production but enabled for Preview URLs", () =
   assert.match(prep, /body: JSON\.stringify\(\{ enabled, previews_enabled: true \}\)/);
 });
 
-test("preview URL parsing ignores Wrangler banners before JSON", () => {
+test("preview URL parsing ignores Wrangler banners and keeps stable and deployment URLs distinct", () => {
   assert.match(workflow, /sed -n '\/\^\{\/,\$p'/);
-  assert.match(workflow, /\.preview\.urls\[0\] \/\/ \.deployment\.urls\[0\]/);
+  assert.match(workflow, /preview_url=.*\.preview\.urls\[0\]/);
+  assert.match(workflow, /deployment_url=.*\.deployment\.urls\[0\]/);
+  assert.doesNotMatch(workflow, /\.preview\.urls\[0\] \/\/ \.deployment\.urls\[0\]/);
 });
