@@ -122,7 +122,7 @@ Previewmiljön binder avsiktligt inte produktions- eller Preview-Durable Object 
 
 Previewläge sätter `PREVIEW_MODE=1`. Systemmail undertrycks, verkliga utskick returnerar 409 och previewkonton auto-verifieras lokalt utan Turnstile eller e-post. Detta beteende finns inte i produktionskonfigurationen. OAuth-secrets och produktionsmail-secrets kopieras inte till previews.
 
-När en PR stängs tas själva Worker Previewn bort. De gemensamma stagingresurserna behålls för nästa PR-preview. Preview-URL:n kommenteras på pull requesten.
+När en PR stängs ersätts Preview-deploymenten först med en minimal tombstone som alltid svarar HTTP 410 och saknar applikationsbindings. Därefter försöker workflown radera Preview-recorden med Cloudflares beta-kommando. Om beta-delete-endpointen nekar den befintliga W1-credentialen rapporteras det som en varning i stället för ett falskt deployfel: den gamla applikationen är redan avstängd och Cloudflare evikterar inaktiva Preview-records automatiskt när Preview-gränsen nås. De gemensamma stagingresurserna behålls för nästa PR-preview. Preview-URL:n kommenteras på pull requesten.
 
 ## Observability
 

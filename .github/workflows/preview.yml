@@ -114,6 +114,63 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Delete Preview
+      - id: tombstone
+        name: Disable closed Preview
         working-directory: app
-        run: npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview delete --name "pr-${{ github.event.pull_request.number }}" --skip-confirmation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .preview-tombstone.mjs <<'EOF'
+          export default {
+            fetch() {
+              return new Response("Preview closed", {
+                status: 410,
+                headers: {
+                  "Cache-Control": "no-store",
+                  "Content-Type": "text/plain; charset=utf-8",
+                },
+              });
+            },
+          };
+          EOF
+          cat > .wrangler-preview-tombstone.json <<'EOF'
+          {
+            "name": "politiker",
+            "main": ".preview-tombstone.mjs",
+            "compatibility_date": "2026-08-21",
+            "preview_urls": true,
+            "previews": {
+              "vars": {
+                "PREVIEW_MODE": "1"
+              }
+            }
+          }
+          EOF
+          output="$(npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview --name "pr-${{ github.event.pull_request.number }}" --ignore-base-config --json --config .wrangler-preview-tombstone.json)"
+          printf '%s\n' "$output"
+          json="$(printf '%s\n' "$output" | sed -n '/^{/,$p')"
+          preview_url="$(printf '%s' "$json" | jq -er '.preview.urls[0] // .deployment.urls[0]')"
+          echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+
+      - name: Verify closed Preview is disabled
+        shell: bash
+        env:
+          PREVIEW_URL: ${{ steps.tombstone.outputs.preview_url }}
+        run: |
+          set -euo pipefail
+          status="$(curl --show-error --silent --output /dev/null --write-out '%{http_code}' --retry 4 --retry-delay 2 "$PREVIEW_URL/")"
+          [[ "$status" == "410" ]] || {
+            echo "::error::Closed Preview returned HTTP $status, expected 410."
+            exit 1
+          }
+
+      - name: Delete Preview record when Cloudflare permits it
+        working-directory: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          if npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview delete --name "pr-${{ github.event.pull_request.number }}" --skip-confirmation; then
+            echo "Preview record deleted."
+          else
+            echo "::warning title=Cloudflare Preview cleanup deferred::The closed Preview already returns HTTP 410. Cloudflare's beta Preview delete endpoint denied deletion, so the inert Preview record will remain until Cloudflare evicts it automatically."
+          fi
