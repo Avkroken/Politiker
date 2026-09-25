@@ -49,6 +49,16 @@ Authändringar måste verifiera:
 
 D1 är canonical datalager för applikationen. Queue, KV och Durable Objects ska inte skapa konkurrerande canonical kopior av samma affärsstate.
 
+### Offentligt mottagarregister
+
+`public_contacts` är den gemensamma modellen för offentliga mottagare. Politiska nivåer, media och akademi delar grundfält för namn, e-post, område/kategori och verifieringsstatus. Akademiposter kompletteras med organisation, enhet, titel, akademiskt fält och officiell käll-URL.
+
+`public_contact_assignments` lagrar de politiska kommun-/regionrelationer som behövs för sakområdesfiltrering. Relationerna ska inte användas för att modellera akademiska ämnen.
+
+Den kanoniska sökvägen är `/api/public-contacts/search`. `/api/politicians/search` finns kvar som kompatibilitetsalias och ska inte användas av ny klientkod.
+
+Akademiska e-postadresser får endast tas från officiellt publicerade yrkeskällor. Adresser ska inte konstrueras från namn eller adressmönster.
+
 ## Bilagor
 
 R2 lagrar bilagor. D1 kan bära metadata/referenser medan objektbytes ligger i R2.
