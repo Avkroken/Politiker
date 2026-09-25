@@ -24,6 +24,6 @@ export function d1SessionBookmark(env: { DB: D1Database }): string | null {
 }
 
 export function d1ReplicaEligibleRequest(method: string, pathname: string): boolean {
-  if (method === "GET" && ["/api/areas", "/api/parties", "/api/roles", "/api/politicians/search"].includes(pathname)) return true;
+  if (method === "GET" && ["/api/areas", "/api/parties", "/api/roles", "/api/public-contacts/search", "/api/politicians/search"].includes(pathname)) return true;
   return method === "POST" && pathname === "/api/recipients/count";
 }
