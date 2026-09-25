@@ -69,6 +69,10 @@ test("closed pull requests are tombstoned before best-effort Preview deletion", 
   assert.ok(tombstone >= 0 && verify > tombstone && remove > verify);
   assert.match(workflow, /status: 410/);
   assert.match(workflow, /expected 410/);
+  assert.match(workflow, /deployment_url=.*\.deployment\.urls\[0\]/);
+  assert.match(workflow, /for attempt in \$\(seq 1 24\)/);
+  assert.match(workflow, /closed=\$\{GITHUB_RUN_ID\}-\$\{attempt\}/);
+  assert.match(workflow, /Cache-Control: no-cache/);
   assert.match(workflow, /curl --location --max-redirs 3/);
   assert.match(workflow, /--ignore-base-config/);
   assert.match(workflow, /"CredentialRateLimiter"[\s\S]*"state": "deleted"/);
