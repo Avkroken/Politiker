@@ -7,6 +7,7 @@ test("recipient metadata reads are replica eligible", () => {
   assert.equal(d1ReplicaEligibleRequest("GET", "/api/areas"), true);
   assert.equal(d1ReplicaEligibleRequest("GET", "/api/parties"), true);
   assert.equal(d1ReplicaEligibleRequest("GET", "/api/roles"), true);
+  assert.equal(d1ReplicaEligibleRequest("GET", "/api/public-contacts/search"), true);
   assert.equal(d1ReplicaEligibleRequest("GET", "/api/politicians/search"), true);
   assert.equal(d1ReplicaEligibleRequest("POST", "/api/recipients/count"), true);
 });
