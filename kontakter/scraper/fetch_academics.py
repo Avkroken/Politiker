@@ -135,26 +135,22 @@ def sql_literal(value: str | int | None) -> str:
 
 
 def academic_upsert_statement(contact: AcademicContact, now_ms: int) -> str:
-    values = [
-        contact.name,
-        contact.email,
-        contact.organisation,
-        contact.title,
-        now_ms,
-        contact.organisation,
-        contact.unit,
-        contact.title,
-        contact.academic_field,
-        contact.source_url,
-    ]
-    rendered = ", ".join(sql_literal(value) for value in values)
+    name = sql_literal(contact.name)
+    email = sql_literal(contact.email)
+    area_name = sql_literal(contact.organisation)
+    role = sql_literal(contact.title)
+    scraped_at = sql_literal(now_ms)
+    organisation = sql_literal(contact.organisation)
+    unit = sql_literal(contact.unit)
+    title = sql_literal(contact.title)
+    academic_field = sql_literal(contact.academic_field)
+    source_url = sql_literal(contact.source_url)
     return (
         "INSERT INTO public_contacts "
         "(id, name, email, area_name, area_type, party, role, last_scraped_at, "
         "organisation, unit, title, academic_field, source_url) VALUES "
-        f"(lower(hex(randomblob(11))), {rendered.split(', ', 3)[0]}, "
-        f"{rendered.split(', ', 3)[1]}, {rendered.split(', ', 3)[2]}, 'academia', NULL, "
-        f"{', '.join(rendered.split(', ')[3:])}) "
+        f"(lower(hex(randomblob(11))), {name}, {email}, {area_name}, 'academia', NULL, "
+        f"{role}, {scraped_at}, {organisation}, {unit}, {title}, {academic_field}, {source_url}) "
         "ON CONFLICT(email, area_name) DO UPDATE SET "
         "name=excluded.name, role=excluded.role, last_scraped_at=excluded.last_scraped_at, "
         "organisation=excluded.organisation, unit=excluded.unit, title=excluded.title, "
