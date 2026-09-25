@@ -69,7 +69,9 @@ test("closed pull requests are tombstoned before best-effort Preview deletion", 
   assert.ok(tombstone >= 0 && verify > tombstone && remove > verify);
   assert.match(workflow, /status: 410/);
   assert.match(workflow, /expected 410/);
-  assert.match(workflow, /deployment_url=.*\.deployment\.urls\[0\]/);
+  const tombstoneBlock = workflow.slice(tombstone, verify);
+  assert.match(tombstoneBlock, /deployment_url=.*\.deployment\.urls\[0\]/);
+  assert.match(tombstoneBlock, /echo "deployment_url=\$deployment_url" >> "\$GITHUB_OUTPUT"/);
   assert.match(workflow, /for attempt in \$\(seq 1 24\)/);
   assert.match(workflow, /closed=\$\{GITHUB_RUN_ID\}-\$\{attempt\}/);
   assert.match(workflow, /Cache-Control: no-cache/);
@@ -89,7 +91,9 @@ test("workers.dev is disabled for production but enabled for Preview URLs", () =
   assert.match(prep, /body: JSON\.stringify\(\{ enabled, previews_enabled: true \}\)/);
 });
 
-test("preview URL parsing ignores Wrangler banners before JSON", () => {
+test("preview URL parsing ignores Wrangler banners and keeps stable and deployment URLs distinct", () => {
   assert.match(workflow, /sed -n '\/\^\{\/,\$p'/);
-  assert.match(workflow, /\.preview\.urls\[0\] \/\/ \.deployment\.urls\[0\]/);
+  assert.match(workflow, /preview_url=.*\.preview\.urls\[0\]/);
+  assert.match(workflow, /deployment_url=.*\.deployment\.urls\[0\]/);
+  assert.doesNotMatch(workflow, /\.preview\.urls\[0\] \/\/ \.deployment\.urls\[0\]/);
 });
