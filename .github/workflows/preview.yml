@@ -157,8 +157,10 @@ jobs:
           output="$(npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview --name "pr-${{ github.event.pull_request.number }}" --ignore-base-config --json --config .wrangler-preview-tombstone.json)"
           printf '%s\n' "$output"
           json="$(printf '%s\n' "$output" | sed -n '/^{/,$p')"
-          preview_url="$(printf '%s' "$json" | jq -er '.preview.urls[0] // .deployment.urls[0]')"
+          preview_url="$(printf '%s' "$json" | jq -er '.preview.urls[0]')"
+          deployment_url="$(printf '%s' "$json" | jq -er '.deployment.urls[0]')"
           echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
 
       - name: Verify closed Preview is disabled
         shell: bash
