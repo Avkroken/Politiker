@@ -9,6 +9,7 @@ Navigationssida för Politiker.
 | förstå runtime, bindings och subsystem | [Projektkontext](project-context.md) |
 | förstå requestflöden, state ownership och utskick | [Arkitektur](architecture.md) |
 | utveckla, testa, migrera, deploya eller felsöka | [Drift](operations.md) |
+| versionera och skapa releases utan att implicit deploya | [Release- och versionsstandard](release-standard.md) |
 | rapportera säkerhetsproblem | [SECURITY.md](../SECURITY.md) |
 
 ## Systemkarta
@@ -50,6 +51,7 @@ En cron trigger kör varje minut för att fortsätta väntande arbete enligt app
 - R2/bilagor → architecture + storageverifiering
 - bindings/routes/cron → project-context
 - deploy/scripts → operations
+- PR-title/SemVer/release → release-standard + operations
 
 ## Wiki
 
