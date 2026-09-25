@@ -188,7 +188,7 @@ def find_result_rows(value: object) -> list[dict]:
 def load_politician_index() -> dict[tuple[str, str], str]:
     print("Läser befintliga politiker från D1 via Wrangler...", flush=True)
     payload = wrangler_json(
-        "SELECT id, lower(trim(email)) AS email, area_name FROM politicians "
+        "SELECT id, lower(trim(email)) AS email, area_name FROM public_contacts "
         "WHERE email IS NOT NULL AND trim(email) <> '';"
     )
     rows = find_result_rows(payload)
@@ -246,18 +246,18 @@ def write_batch(batch: list[tuple[str, tuple[str, set[str]]]], now_ms: int, numb
     # batch avbryts kan cachen köras om säkert; samma politiker byggs då om igen.
     statements: list[str] = []
     body_count = 0
-    for politician_id, (area_name, person_bodies) in batch:
+    for contact_id, (area_name, person_bodies) in batch:
         statements.append(
-            "DELETE FROM politician_assignments "
-            f"WHERE politician_id = {sql_quote(politician_id)} AND source = 'troman';"
+            "DELETE FROM public_contact_assignments "
+            f"WHERE contact_id = {sql_quote(contact_id)} AND source = 'troman';"
         )
         for body in sorted(person_bodies, key=str.casefold):
             # Schema 002 har role TEXT NOT NULL DEFAULT ''. Vi sparar ingen
             # detaljroll, men måste därför skriva tom sträng (inte NULL).
             statements.append(
-                "INSERT OR IGNORE INTO politician_assignments "
-                "(politician_id, area_name, body, role, source, last_scraped_at) VALUES ("
-                f"{sql_quote(politician_id)}, {sql_quote(area_name)}, {sql_quote(body)}, "
+                "INSERT OR IGNORE INTO public_contact_assignments "
+                "(contact_id, area_name, body, role, source, last_scraped_at) VALUES ("
+                f"{sql_quote(contact_id)}, {sql_quote(area_name)}, {sql_quote(body)}, "
                 f"'', 'troman', {now_ms});"
             )
             body_count += 1
@@ -289,8 +289,8 @@ def write_batch(batch: list[tuple[str, tuple[str, set[str]]]], now_ms: int, numb
 
 def verify_assignments(expected_people: int, expected_bodies: int, now_ms: int) -> None:
     payload = wrangler_json(
-        "SELECT COUNT(*) AS assignments, COUNT(DISTINCT politician_id) AS politicians "
-        "FROM politician_assignments "
+        "SELECT COUNT(*) AS assignments, COUNT(DISTINCT contact_id) AS public_contacts "
+        "FROM public_contact_assignments "
         f"WHERE source = 'troman' AND last_scraped_at = {now_ms};"
     )
     rows = find_result_rows(payload)
@@ -299,7 +299,7 @@ def verify_assignments(expected_people: int, expected_bodies: int, now_ms: int) 
             f"FEL: kunde inte verifiera D1 efter skrivningen. Cachen finns kvar i {CACHE_PATH}."
         )
     actual_bodies = int(rows[0].get("assignments") or 0)
-    actual_people = int(rows[0].get("politicians") or 0)
+    actual_people = int(rows[0].get("public_contacts") or 0)
     print(
         f"Efterkontroll D1: {actual_people} politiker, {actual_bodies} nämnd/organ-kopplingar.",
         flush=True,
@@ -359,20 +359,20 @@ def scrape_changes() -> tuple[dict[str, tuple[str, set[str]]], int, int, int, in
             if not person_bodies or not emails:
                 continue
 
-            politician_id = None
+            contact_id = None
             for email in emails:
-                politician_id = politician_index.get((area_name, email))
-                if politician_id:
+                contact_id = politician_index.get((area_name, email))
+                if contact_id:
                     break
-            if not politician_id:
+            if not contact_id:
                 area_missing += 1
                 continue
 
-            previous = changes.get(politician_id)
+            previous = changes.get(contact_id)
             body_set = set(person_bodies)
             if previous:
                 body_set.update(previous[1])
-            changes[politician_id] = (area_name, body_set)
+            changes[contact_id] = (area_name, body_set)
             area_bodies += len(person_bodies)
             total_people += 1
             time.sleep(0.05)

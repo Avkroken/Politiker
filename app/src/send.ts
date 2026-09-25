@@ -105,9 +105,10 @@ async function prioritizeRecipients(env: Env, sendJobId: string, recipients: Sta
                WHEN 'media' THEN 4
                WHEN 'region' THEN 5
                WHEN 'kommun' THEN 6
-               ELSE 7
+               WHEN 'academia' THEN 7
+               ELSE 8
              END) AS priority
-      FROM politicians
+      FROM public_contacts
       WHERE lower(trim(email)) IN (SELECT lower(trim(value)) FROM json_each(?))
       GROUP BY lower(trim(email))
     `).bind(JSON.stringify(emails)).all<{ email_key: string; priority: number }>();

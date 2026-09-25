@@ -9,7 +9,7 @@ import {
   addMailCredential, listMailCredentials, deleteMailCredential, addMicrosoftGraphMailCredential,
   updateMailCredentialCapPct, PROVIDER_PRESETS, getCeiling, MICROSOFT_GRAPH_DAILY_LIMIT,
 } from "./mail-credentials";
-import { listAreas, listParties, listRoles, searchPoliticiansInAreas, getRecipientsForAreas, deleteAccount } from "./db";
+import { listAreas, listParties, listRoles, searchPublicContactsInAreas, getRecipientsForAreas, deleteAccount } from "./db";
 import {
   deletePrivateContact, deletePrivateContactList, importPrivateContactList, listPrivateContacts, savePrivateContact,
   type PrivateContactInput,
@@ -106,7 +106,8 @@ const AUTHED_ROUTES: RouteDef[] = [
   { method: "GET", rx: /^\/api\/areas$/, h: async c => json(await listAreas(c.env.DB)) },
   { method: "GET", rx: /^\/api\/parties$/, h: async c => json(await listParties(c.env.DB)) },
   { method: "GET", rx: /^\/api\/roles$/, h: async c => json(await listRoles(c.env.DB)) },
-  { method: "GET", rx: /^\/api\/politicians\/search$/, h: async c => { const areaNames=c.url.searchParams.getAll("areaName"),q=c.url.searchParams.get("q")??""; if(q.length<2)return json([]); return json(await searchPoliticiansInAreas(c.env.DB,areaNames,q)); } },
+  { method: "GET", rx: /^\/api\/public-contacts\/search$/, h: async c => { const areaNames=c.url.searchParams.getAll("areaName"),q=c.url.searchParams.get("q")??""; if(q.length<2)return json([]); return json(await searchPublicContactsInAreas(c.env.DB,areaNames,q)); } },
+  { method: "GET", rx: /^\/api\/politicians\/search$/, h: async c => { const areaNames=c.url.searchParams.getAll("areaName"),q=c.url.searchParams.get("q")??""; if(q.length<2)return json([]); return json(await searchPublicContactsInAreas(c.env.DB,areaNames,q)); } },
   { method: "GET", rx: /^\/api\/private-contacts$/, h: async c => json(await listPrivateContacts(c.env,c.accountId)) },
   { method: "POST", rx: /^\/api\/private-contacts$/, h: async c => json(await savePrivateContact(c.env,c.accountId,await c.req.json<PrivateContactInput>())) },
   { method: "DELETE", rx: /^\/api\/private-contacts\/([^/]+)$/, h: async (c,m) => { await deletePrivateContact(c.env,c.accountId,m[1]); return json({ok:true}); } },
@@ -155,7 +156,7 @@ const ADMIN_ROUTES: RouteDef[] = [
   { method:"GET", rx:/^\/api\/admin\/send-jobs$/, h:async c=>{const{results}=await c.env.DB.prepare("SELECT sj.*, a.email FROM send_jobs sj JOIN accounts a ON a.id = sj.account_id ORDER BY sj.created_at DESC LIMIT 100").all();return json(results);} },
   { method:"GET", rx:/^\/api\/admin\/stats$/, h:async c=>json(await getAdminStats(c.env)) },
   { method:"GET", rx:/^\/api\/admin\/timeseries$/, h:async c=>json({series:await getTimeSeries(c.env,(c.url.searchParams.get("granularity")??"month") as Granularity)}) },
-  { method:"GET", rx:/^\/api\/admin\/export$/, h:async c=>{const section=(c.url.searchParams.get("section")??"all") as "accounts"|"feedback"|"stats"|"politicians"|"all",format=(c.url.searchParams.get("format")??"json") as "csv"|"json",{filename,content,contentType}=await exportAdminData(c.env,section,format);return new Response(content,{headers:{"Content-Type":contentType,"Content-Disposition":`attachment; filename="${filename}"`}});} },
+  { method:"GET", rx:/^\/api\/admin\/export$/, h:async c=>{const section=(c.url.searchParams.get("section")??"all") as "accounts"|"feedback"|"stats"|"public_contacts"|"politicians"|"all",format=(c.url.searchParams.get("format")??"json") as "csv"|"json",{filename,content,contentType}=await exportAdminData(c.env,section,format);return new Response(content,{headers:{"Content-Type":contentType,"Content-Disposition":`attachment; filename="${filename}"`}});} },
 ];
 
 async function handleRequest(req: Request, env: Env, url: URL): Promise<Response> {

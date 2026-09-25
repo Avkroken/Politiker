@@ -4,7 +4,7 @@
 
 Applikationsdata innehåller bara det som behövs för mottagarurvalet:
 namn, e-post, politisk nivå/område och parti. Detaljerade befattningar
-sparas inte i politicians; nämnd/organ hanteras separat.
+sparas inte i public_contacts; nämnd/organ hanteras separat.
 """
 
 import csv
@@ -25,7 +25,7 @@ RESULTAT_CSV = os.environ.get(
 MAX_WORKERS = 10
 
 UPSERT_SQL = (
-    "INSERT INTO politicians (id, name, email, area_name, area_type, party, role, last_scraped_at) "
+    "INSERT INTO public_contacts (id, name, email, area_name, area_type, party, role, last_scraped_at) "
     "VALUES (lower(hex(randomblob(11))), ?, ?, ?, ?, ?, NULL, ?) "
     "ON CONFLICT(email, area_name) DO UPDATE SET "
     "name = excluded.name, party = excluded.party, role = NULL, last_scraped_at = excluded.last_scraped_at"

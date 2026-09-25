@@ -28,9 +28,10 @@ test('legitimate municipal and regional roles are kept', () => {
   }
 });
 
-test('role filtering does not affect EU, media, or missing roles', () => {
+test('role filtering does not affect EU, media, academia, or missing roles', () => {
   assert.equal(isIrrelevantRecipientRole('eu', 'Revisor'), false);
   assert.equal(isIrrelevantRecipientRole('media', 'Nämndeman'), false);
+  assert.equal(isIrrelevantRecipientRole('academia', 'Professor'), false);
   assert.equal(isIrrelevantRecipientRole('kommun', null), false);
   assert.equal(isIrrelevantRecipientRole('region', '   '), false);
 });

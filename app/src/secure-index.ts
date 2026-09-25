@@ -44,7 +44,7 @@ function getCookie(req: Request, name: string): string | null {
 }
 function apiKeyRouteAllowed(method: string, pathname: string): boolean {
   if (method === "GET" && ["/api/me", "/api/areas", "/api/parties", "/api/roles", "/api/provider-ceilings", "/api/send-jobs"].includes(pathname)) return true;
-  if (method === "GET" && pathname === "/api/politicians/search") return true;
+  if (method === "GET" && ["/api/public-contacts/search", "/api/politicians/search"].includes(pathname)) return true;
   if (method === "POST" && ["/api/recipients/count", "/api/send"].includes(pathname)) return true;
   if (method === "PATCH" && /^\/api\/send-jobs\/[^/]+\/rate$/.test(pathname)) return true;
   return false;

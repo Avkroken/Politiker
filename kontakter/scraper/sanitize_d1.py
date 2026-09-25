@@ -52,17 +52,17 @@ RELEVANT_BODY_SQL = """
 KNOWN_PARTIES_SQL = "'S','M','SD','V','C','L','KD','MP','FI','MED','AFS','ÖP','PP'"
 
 APPLY_SQL = f"""
-DELETE FROM politicians
+DELETE FROM public_contacts
 WHERE area_type = 'eu'
   AND area_name <> '{SWEDISH_EU_AREA}';
 
-DELETE FROM politicians
+DELETE FROM public_contacts
 WHERE area_type IN ('kommun', 'region')
   AND role IS NOT NULL
   AND TRIM(role) <> ''
   AND {IRRELEVANT_ROLE_SQL};
 
-UPDATE politicians
+UPDATE public_contacts
 SET party = CASE LOWER(TRIM(party))
   WHEN 's' THEN 'S'
   WHEN 'socialdemokraterna' THEN 'S'
@@ -101,42 +101,42 @@ END
 WHERE party IS NOT NULL;
 
 -- Allt utanför den avsiktliga filterlistan tas bort i stället för att döljas.
-UPDATE politicians
+UPDATE public_contacts
 SET party = NULL
 WHERE party IS NOT NULL
   AND party NOT IN ({KNOWN_PARTIES_SQL});
 
-UPDATE politicians SET role = NULL WHERE role IS NOT NULL;
-UPDATE politician_assignments SET role = '' WHERE role <> '';
+UPDATE public_contacts SET role = NULL WHERE area_type NOT IN ('media', 'academia') AND role IS NOT NULL;
+UPDATE public_contact_assignments SET role = '' WHERE role <> '';
 
-DELETE FROM politician_assignments
+DELETE FROM public_contact_assignments
 WHERE NOT {RELEVANT_BODY_SQL};
 
-INSERT OR IGNORE INTO politician_assignments
-  (politician_id, area_name, body, role, source, last_scraped_at)
-SELECT politician_id, area_name, 'Kommunstyrelsen', role, source, last_scraped_at
-FROM politician_assignments
+INSERT OR IGNORE INTO public_contact_assignments
+  (contact_id, area_name, body, role, source, last_scraped_at)
+SELECT contact_id, area_name, 'Kommunstyrelsen', role, source, last_scraped_at
+FROM public_contact_assignments
 WHERE LOWER(TRIM(body)) IN ('kommunstyrelse', 'kommunstyrelsen');
-DELETE FROM politician_assignments
+DELETE FROM public_contact_assignments
 WHERE LOWER(TRIM(body)) IN ('kommunstyrelse', 'kommunstyrelsen')
   AND body <> 'Kommunstyrelsen';
 
-INSERT OR IGNORE INTO politician_assignments
-  (politician_id, area_name, body, role, source, last_scraped_at)
-SELECT politician_id, area_name, 'Regionstyrelsen', role, source, last_scraped_at
-FROM politician_assignments
+INSERT OR IGNORE INTO public_contact_assignments
+  (contact_id, area_name, body, role, source, last_scraped_at)
+SELECT contact_id, area_name, 'Regionstyrelsen', role, source, last_scraped_at
+FROM public_contact_assignments
 WHERE LOWER(TRIM(body)) IN ('regionstyrelse', 'regionstyrelsen');
-DELETE FROM politician_assignments
+DELETE FROM public_contact_assignments
 WHERE LOWER(TRIM(body)) IN ('regionstyrelse', 'regionstyrelsen')
   AND body <> 'Regionstyrelsen';
 
-INSERT OR IGNORE INTO politician_assignments
-  (politician_id, area_name, body, role, source, last_scraped_at)
-SELECT politician_id, area_name, TRIM(body) || 'en', role, source, last_scraped_at
-FROM politician_assignments
+INSERT OR IGNORE INTO public_contact_assignments
+  (contact_id, area_name, body, role, source, last_scraped_at)
+SELECT contact_id, area_name, TRIM(body) || 'en', role, source, last_scraped_at
+FROM public_contact_assignments
 WHERE LOWER(TRIM(body)) LIKE '%nämnd'
   AND LOWER(TRIM(body)) NOT LIKE '%nämnden';
-DELETE FROM politician_assignments
+DELETE FROM public_contact_assignments
 WHERE LOWER(TRIM(body)) LIKE '%nämnd'
   AND LOWER(TRIM(body)) NOT LIKE '%nämnden';
 """.strip()
@@ -158,23 +158,23 @@ def query(sql: str) -> None:
 def dry_run() -> None:
     print("=== D1 SANITERING: DRY-RUN ===")
     print("\nUtländska EU-rader som skulle tas bort:")
-    query(f"SELECT area_name, COUNT(*) AS rows FROM politicians WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}' GROUP BY area_name ORDER BY area_name;")
+    query(f"SELECT area_name, COUNT(*) AS rows FROM public_contacts WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}' GROUP BY area_name ORDER BY area_name;")
     print("\nIrrelevanta kommun-/regionuppdrag som skulle tas bort:")
-    query("SELECT area_type, role, COUNT(*) AS rows FROM politicians WHERE area_type IN ('kommun','region') AND role IS NOT NULL AND " + IRRELEVANT_ROLE_SQL + " GROUP BY area_type, role ORDER BY rows DESC, role;")
+    query("SELECT area_type, role, COUNT(*) AS rows FROM public_contacts WHERE area_type IN ('kommun','region') AND role IS NOT NULL AND " + IRRELEVANT_ROLE_SQL + " GROUP BY area_type, role ORDER BY rows DESC, role;")
     print("\nDetaljerade huvudroller som skulle rensas:")
-    query("SELECT COUNT(*) AS rows FROM politicians WHERE role IS NOT NULL AND TRIM(role) <> ''; ")
+    query("SELECT COUNT(*) AS rows FROM public_contacts WHERE area_type NOT IN ('media','academia') AND role IS NOT NULL AND TRIM(role) <> ''; ")
     print("\nDetaljerade nämndroller som skulle rensas:")
-    query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE role <> ''; ")
+    query("SELECT COUNT(*) AS rows FROM public_contact_assignments WHERE role <> ''; ")
     print("\nNämnd/organ-brus som skulle tas bort:")
-    query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE NOT " + RELEVANT_BODY_SQL + ";")
+    query("SELECT COUNT(*) AS rows FROM public_contact_assignments WHERE NOT " + RELEVANT_BODY_SQL + ";")
     print("\nVanligaste body-värden som skulle tas bort:")
-    query("SELECT body, COUNT(*) AS rows FROM politician_assignments WHERE NOT " + RELEVANT_BODY_SQL + " GROUP BY body ORDER BY rows DESC LIMIT 50;")
+    query("SELECT body, COUNT(*) AS rows FROM public_contact_assignments WHERE NOT " + RELEVANT_BODY_SQL + " GROUP BY body ORDER BY rows DESC LIMIT 50;")
     print("\nKvarvarande relevanta body-värden, vanligaste först:")
-    query("SELECT body, COUNT(*) AS rows FROM politician_assignments WHERE " + RELEVANT_BODY_SQL + " GROUP BY body ORDER BY rows DESC LIMIT 100;")
+    query("SELECT body, COUNT(*) AS rows FROM public_contact_assignments WHERE " + RELEVANT_BODY_SQL + " GROUP BY body ORDER BY rows DESC LIMIT 100;")
     print("\nPartivärden före normalisering:")
-    query("SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL GROUP BY party ORDER BY rows DESC, party LIMIT 200;")
+    query("SELECT party, COUNT(*) AS rows FROM public_contacts WHERE party IS NOT NULL GROUP BY party ORDER BY rows DESC, party LIMIT 200;")
     print("\nPartivärden som skulle tas bort efter normalisering:")
-    query("SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL AND UPPER(TRIM(party)) NOT IN (" + KNOWN_PARTIES_SQL + ") GROUP BY party ORDER BY rows DESC, party LIMIT 200;")
+    query("SELECT party, COUNT(*) AS rows FROM public_contacts WHERE party IS NOT NULL AND UPPER(TRIM(party)) NOT IN (" + KNOWN_PARTIES_SQL + ") GROUP BY party ORDER BY rows DESC, party LIMIT 200;")
     print("\nDRY-RUN: inga ändringar skrevs. Kör med --apply efter granskning.")
 
 
@@ -189,21 +189,21 @@ def apply() -> None:
         sql_path.unlink(missing_ok=True)
 
     print("\nEfterkontroll: utländska EU-rader (ska vara 0):")
-    query(f"SELECT COUNT(*) AS rows FROM politicians WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}';")
+    query(f"SELECT COUNT(*) AS rows FROM public_contacts WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}';")
     print("\nEfterkontroll: detaljerade huvudroller (ska vara 0):")
-    query("SELECT COUNT(*) AS rows FROM politicians WHERE role IS NOT NULL AND TRIM(role) <> ''; ")
+    query("SELECT COUNT(*) AS rows FROM public_contacts WHERE area_type NOT IN ('media','academia') AND role IS NOT NULL AND TRIM(role) <> ''; ")
     print("\nEfterkontroll: detaljerade nämndroller (ska vara 0):")
-    query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE role <> ''; ")
+    query("SELECT COUNT(*) AS rows FROM public_contact_assignments WHERE role <> ''; ")
     print("\nEfterkontroll: irrelevant nämnd/organ-brus (ska vara 0):")
-    query("SELECT COUNT(*) AS rows FROM politician_assignments WHERE NOT " + RELEVANT_BODY_SQL + ";")
+    query("SELECT COUNT(*) AS rows FROM public_contact_assignments WHERE NOT " + RELEVANT_BODY_SQL + ";")
     print("\nEfterkontroll: kvarvarande nämnd/organ-kopplingar:")
-    query("SELECT COUNT(*) AS assignments, COUNT(DISTINCT politician_id) AS politicians FROM politician_assignments;")
+    query("SELECT COUNT(*) AS assignments, COUNT(DISTINCT contact_id) AS public_contacts FROM public_contact_assignments;")
     print("\nEfterkontroll: kvarvarande EU-områden:")
-    query("SELECT area_name, COUNT(*) AS rows FROM politicians WHERE area_type='eu' GROUP BY area_name;")
+    query("SELECT area_name, COUNT(*) AS rows FROM public_contacts WHERE area_type='eu' GROUP BY area_name;")
     print("\nEfterkontroll: okända partivärden (ska vara 0):")
-    query("SELECT COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL AND party NOT IN (" + KNOWN_PARTIES_SQL + ");")
+    query("SELECT COUNT(*) AS rows FROM public_contacts WHERE party IS NOT NULL AND party NOT IN (" + KNOWN_PARTIES_SQL + ");")
     print("\nEfterkontroll: kvarvarande partivärden:")
-    query("SELECT party, COUNT(*) AS rows FROM politicians WHERE party IS NOT NULL GROUP BY party ORDER BY rows DESC, party;")
+    query("SELECT party, COUNT(*) AS rows FROM public_contacts WHERE party IS NOT NULL GROUP BY party ORDER BY rows DESC, party;")
 
 
 def main() -> None:

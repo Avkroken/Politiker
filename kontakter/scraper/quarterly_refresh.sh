@@ -1,6 +1,7 @@
 #!/bin/bash
-# Kvartalsvis uppdatering av hela kontaktlistan: politiker, kyrkovalda och
-# redaktionella mediekontakter. Synkar till D1 och uppdaterar parti där relevant.
+# Kvartalsvis uppdatering av hela kontaktlistan: politiker, kyrkovalda,
+# redaktionella mediekontakter och akademiska yrkeskontakter. Synkar till D1
+# och uppdaterar parti där relevant.
 #
 # Första körningen efter riksdagsvalet 2026 bör göras tidigast 2026-10-01,
 # när offentliga register hunnit börja spegla den nya mandatperioden. Därefter
@@ -44,6 +45,9 @@ python3 fetch_kyrka.py
 
 echo "--- Synkar fem stora nyhetsorganisationers redaktionella kontakter ---"
 python3 fetch_media.py
+
+echo "--- Synkar akademiska yrkeskontakter ---"
+python3 fetch_academics.py
 
 echo "--- Fyller i parti för kommun/region via Valmyndigheten ---"
 python3 sync_party_from_val.py
