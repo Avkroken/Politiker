@@ -6,7 +6,7 @@
 - [docs/architecture.md](docs/architecture.md) — Worker-, storage- och queuegränser.
 - [docs/operations.md](docs/operations.md) — verifiering och incidentmodell.
 - [`.github/copilot-instructions.md`](.github/copilot-instructions.md) — repositoryspecifika coding-agent-instruktioner.
-- [Avkrokens centrala engineering- och dokumentationsstandard](https://github.com/Avkroken/Avkroken/tree/main/docs/organization) — central CI/governance och dokumentationsmodell.
+- Repositoryts egna README, `docs/`, workflows och versionerade konfiguration är auktoritativa för Politiker. Extern GitHub-/Cloudflare-live-state verifieras i respektive provider.
 
 ## Invariants
 
