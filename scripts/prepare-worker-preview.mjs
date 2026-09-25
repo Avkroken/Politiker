@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -87,11 +87,7 @@ const kvId = ensureKv();
 ensureR2();
 ensureQueue();
 
-const production = JSON.parse(
-  (await import("node:fs/promises")).readFile
-    ? await (await import("node:fs/promises")).readFile(join(appDir, "wrangler.jsonc"), "utf8")
-    : "",
-);
+const production = JSON.parse(readFileSync(join(appDir, "wrangler.jsonc"), "utf8"));
 
 production.previews = {
   vars: {
