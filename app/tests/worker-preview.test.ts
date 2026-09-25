@@ -91,7 +91,9 @@ test("workers.dev is disabled for production but enabled for Preview URLs", () =
   assert.match(prep, /body: JSON\.stringify\(\{ enabled, previews_enabled: true \}\)/);
 });
 
-test("preview URL parsing ignores Wrangler banners before JSON", () => {
+test("preview URL parsing ignores Wrangler banners and keeps stable and deployment URLs distinct", () => {
   assert.match(workflow, /sed -n '\/\^\{\/,\$p'/);
-  assert.match(workflow, /\.preview\.urls\[0\] \/\/ \.deployment\.urls\[0\]/);
+  assert.match(workflow, /preview_url=.*\.preview\.urls\[0\]/);
+  assert.match(workflow, /deployment_url=.*\.deployment\.urls\[0\]/);
+  assert.doesNotMatch(workflow, /\.preview\.urls\[0\] \/\/ \.deployment\.urls\[0\]/);
 });
