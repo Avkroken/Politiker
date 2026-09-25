@@ -62,15 +62,27 @@ test("preview D1 is EU-jurisdictional and migrations run before preview deployme
   assert.ok(migration >= 0 && deploy > migration);
 });
 
-test("closed pull requests resolve Cloudflare account context and delete their Preview", () => {
+test("closed pull requests are tombstoned, resolve account context, and best-effort delete", () => {
+  const tombstone = workflow.indexOf("Disable closed Preview");
+  const verify = workflow.indexOf("Verify closed Preview is disabled");
   const resolve = workflow.indexOf("Resolve Cloudflare account");
-  const remove = workflow.indexOf("Delete Preview");
-  assert.ok(resolve >= 0 && remove > resolve);
+  const remove = workflow.indexOf("Delete Preview record when Cloudflare permits it");
+  assert.ok(tombstone >= 0 && verify > tombstone && resolve > verify && remove > resolve);
+  assert.match(workflow, /status: 410/);
+  assert.match(workflow, /expected 410/);
+  const tombstoneBlock = workflow.slice(tombstone, verify);
+  assert.match(tombstoneBlock, /deployment_url=.*\.deployment\.urls\[0\]/);
+  assert.match(tombstoneBlock, /echo "deployment_url=\$deployment_url" >> "\$GITHUB_OUTPUT"/);
+  assert.match(workflow, /for attempt in \$\(seq 1 24\)/);
+  assert.match(workflow, /closed=\$\{GITHUB_RUN_ID\}-\$\{attempt\}/);
+  assert.match(workflow, /Cache-Control: no-cache/);
+  assert.match(workflow, /curl --location --max-redirs 3/);
+  assert.match(workflow, /--ignore-base-config/);
+  assert.match(workflow, /"CredentialRateLimiter"[\s\S]*"state": "deleted"/);
   assert.match(workflow, /wrangler@\$\{PREVIEW_WRANGLER_VERSION\}" whoami --json/);
   assert.match(workflow, /CLOUDFLARE_ACCOUNT_ID=\$account_id/);
   assert.match(workflow, /preview delete --name "pr-\$\{\{ github\.event\.pull_request\.number \}\}" --skip-confirmation/);
-  assert.doesNotMatch(workflow, /Disable closed Preview/);
-  assert.doesNotMatch(workflow, /Preview cleanup deferred/);
+  assert.match(workflow, /Cloudflare Preview cleanup deferred/);
 });
 
 
