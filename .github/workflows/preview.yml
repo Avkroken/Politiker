@@ -114,6 +114,16 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Resolve Cloudflare account
+        working-directory: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" whoami --json)"
+          json="$(printf '%s\n' "$output" | sed -n '/^{/,$p')"
+          account_id="$(printf '%s' "$json" | jq -er '.accounts | if length == 1 then .[0].id else error("expected exactly one Cloudflare account") end')"
+          echo "CLOUDFLARE_ACCOUNT_ID=$account_id" >> "$GITHUB_ENV"
+
       - name: Delete Preview
         working-directory: app
         run: npx --yes "wrangler@${PREVIEW_WRANGLER_VERSION}" preview delete --name "pr-${{ github.event.pull_request.number }}" --skip-confirmation
