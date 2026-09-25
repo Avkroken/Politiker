@@ -84,6 +84,7 @@ details.details:has(#area-list) details.details[open]>summary{
 #area-list .check,
 #body-list .check,
 #media-list .check,
+#academic-list .check,
 #role-list .check,
 #party-list .check{
   min-height:44px;
@@ -94,6 +95,7 @@ details.details:has(#area-list) details.details[open]>summary{
 #area-list .check input,
 #body-list .check input,
 #media-list .check input,
+#academic-list .check input,
 #role-list .check input,
 #party-list .check input{
   flex:0 0 auto;
