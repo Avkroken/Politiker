@@ -88,6 +88,8 @@ Körordningen är:
 6. verifiera att minst det kurerade antalet akademikontakter finns över exakt tre kärnområden;
 7. verifiera den publika ingressen mot `https://politiker.denied.se/` med `npm run verify:production`.
 
+Akademisynkens SQL-fil innehåller avsiktligt inga explicita `BEGIN`/`COMMIT`/`SAVEPOINT`-satser. Wrangler D1 remote file execution avvisar sådana transaktionskontrollsatser. UPSERT-satserna är idempotenta, så en avbruten eller delvis applicerad synk kan köras om säkert.
+
 Ingresskontrollen är sist med avsikt. Ett Cloudflare-edge-svar får inte hindra redan validerad D1-synk eller göra en lyckad Worker-deploy otydlig. Verifieraren behandlar HTTP 200 som full ingressframgång. En identifierad Cloudflare HTML/challenge-403 från GitHub-runnern rapporteras som en Actions-varning och är inte fatal för deploymenten; andra 4xx/5xx och nätverksfel fortsätter att faila efter retry. Säkra edge-diagnostikheaders som `cf-ray`, `cf-mitigated`, `server` och `content-type` loggas vid blockering, men inga credentials eller privata payloads.
 
 Workflown använder `workflow_dispatch`; push och pull request deployar inte produktion automatiskt. `concurrency` tillåter inte parallella produktionsdeployments.
