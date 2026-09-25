@@ -122,7 +122,7 @@ Previewmiljön binder avsiktligt inte produktions- eller Preview-Durable Object 
 
 Previewläge sätter `PREVIEW_MODE=1`. Systemmail undertrycks, verkliga utskick returnerar 409 och previewkonton auto-verifieras lokalt utan Turnstile eller e-post. Detta beteende finns inte i produktionskonfigurationen. OAuth-secrets och produktionsmail-secrets kopieras inte till previews.
 
-När en PR stängs tas själva Worker Previewn bort. De gemensamma stagingresurserna behålls för nästa PR-preview. Preview-URL:n kommenteras på pull requesten.
+När en PR stängs härleder workflown Cloudflare account ID från den befintliga `CLOUDFLARE_API_TOKEN_W1`-credentialen med `wrangler whoami --json` och kör sedan Cloudflares dokumenterade `wrangler preview delete --name ... --skip-confirmation`. Ingen separat account-ID-secret eller ny API-token behövs. Raderingen tar bort Preview-recorden och dess deployments; de gemensamma stagingresurserna D1/KV/R2/Queue behålls för nästa PR-preview. Preview-URL:n kommenteras på pull requesten.
 
 ## Observability
 
