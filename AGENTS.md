@@ -5,6 +5,7 @@
 - [docs/project-context.md](docs/project-context.md) — canonical runtime/current-state.
 - [docs/architecture.md](docs/architecture.md) — Worker-, storage- och queuegränser.
 - [docs/operations.md](docs/operations.md) — verifiering och incidentmodell.
+- [docs/release-standard.md](docs/release-standard.md) — PR-title-, SemVer- och releasekontrakt; release och produktionsdeployment hålls separata.
 - [`.github/copilot-instructions.md`](.github/copilot-instructions.md) — repositoryspecifika coding-agent-instruktioner.
 - Repositoryts egna README, `docs/`, workflows och versionerade konfiguration är auktoritativa för Politiker. Extern GitHub-/Cloudflare-live-state verifieras i respektive provider.
 
