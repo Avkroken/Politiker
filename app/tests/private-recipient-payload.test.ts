@@ -17,6 +17,7 @@ test('send payload deduplicates public and private recipients case-insensitively
     includeRoles: new Set(),
     excludeBodies: new Set(),
     mediaCategories: new Set(),
+    academicFields: new Set(['public-law']),
     privateRecipientData: {
       contacts: [{ id: 'c1', email: 'mixed@example.se', name: 'Privat mottagare' }],
       lists: [],
@@ -28,10 +29,11 @@ test('send payload deduplicates public and private recipients case-insensitively
   const context: Record<string, unknown> = { state };
 
   runInNewContext(source, context);
-  const payload = (context.filterPayload as () => { includeEmails: string[] })();
+  const payload = (context.filterPayload as () => { includeEmails: string[]; includeRoles: string[] })();
 
   assert.equal(payload.includeEmails.length, 1);
   assert.equal(payload.includeEmails[0], 'Offentlig mottagare <mixed@example.se>');
+  assert.ok(payload.includeRoles.includes('academic-field:public-law'));
 });
 
 test('contact import parser ignores semicolons inside quoted fields', () => {
