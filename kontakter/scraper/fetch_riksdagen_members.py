@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Hämtar Sveriges riksdags 349 nuvarande ledamöter via riksdagens öppna API
-(data.riksdagen.se) och synkar till D1-tabellen `politicians`
+(data.riksdagen.se) och synkar till D1-tabellen `public_contacts`
 (area_type='riksdag', area_name='Sveriges riksdag', party ifylld).
 
 VIKTIGT om rdlstatus-parametern: tomt/utelämnat värde ger BARA nuvarande
@@ -31,7 +31,7 @@ RIKSDAGEN_API = "https://data.riksdagen.se/personlista/?utformat=json"
 AREA_NAME = "Sveriges riksdag"
 
 UPSERT_SQL = (
-    "INSERT INTO politicians (id, name, email, area_name, area_type, party, last_scraped_at) "
+    "INSERT INTO public_contacts (id, name, email, area_name, area_type, party, last_scraped_at) "
     "VALUES (lower(hex(randomblob(11))), ?, ?, ?, 'riksdag', ?, ?) "
     "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, party = excluded.party, last_scraped_at = excluded.last_scraped_at"
 )
@@ -105,7 +105,7 @@ def main():
     # vi att radera giltiga rader på grund av ett tillfälligt fetch-/synkfel.
     if fail == 0 and skipped == 0 and fetched_emails:
         placeholders = ",".join("?" for _ in fetched_emails)
-        cleanup_sql = f"DELETE FROM politicians WHERE area_type = 'riksdag' AND area_name = ? AND email NOT IN ({placeholders})"
+        cleanup_sql = f"DELETE FROM public_contacts WHERE area_type = 'riksdag' AND area_name = ? AND email NOT IN ({placeholders})"
         try:
             result = client.run(cleanup_sql, [AREA_NAME, *fetched_emails])
             print(f"Städade bort {result['meta']['changes']} ej längre aktuella ledamöter.", flush=True)
