@@ -159,8 +159,11 @@ def academic_upsert_statement(contact: AcademicContact, now_ms: int) -> str:
 
 
 def write_sql_file(path: Path, rows: list[AcademicContact], now_ms: int) -> None:
+    # Wrangler D1 remote file execution rejects explicit SQL transaction-control
+    # statements (BEGIN/COMMIT/SAVEPOINT). Each UPSERT is idempotent, so a
+    # partially applied file can safely be retried without a manual transaction.
     statements = [academic_upsert_statement(row, now_ms) + ";" for row in rows]
-    path.write_text("BEGIN;\n" + "\n".join(statements) + "\nCOMMIT;\n", encoding="utf-8")
+    path.write_text("\n".join(statements) + "\n", encoding="utf-8")
 
 
 def parser() -> argparse.ArgumentParser:
