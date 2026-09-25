@@ -92,7 +92,7 @@ export async function getSessionContext(env: Env, sessionToken: string | null): 
   return { account, authenticatedAt: session.authenticatedAt };
 }
 
-export async function signup(env: Env, email: string, password: string): Promise<{ accountId: string }> {
+export async function signup(env: Env, email: string, password: string): Promise<{ accountId: string; previewVerified?: boolean }> {
   const existing = await getAccountByEmail(env.DB, email);
   if (existing) throw new Error("E-postadressen är redan registrerad");
   if (password.length < 10) throw new Error("Lösenordet måste vara minst 10 tecken");
@@ -100,6 +100,11 @@ export async function signup(env: Env, email: string, password: string): Promise
   const { hash, salt } = await hashPassword(password);
   const code = randomVerificationCode();
   const accountId = await createAccount(env.DB, { email, passwordHash: hash, passwordSalt: salt, verificationCode: code });
+
+  if (env.PREVIEW_MODE === "1") {
+    await verifyAccountEmail(env.DB, accountId, code);
+    return { accountId, previewVerified: true };
+  }
 
   await sendSystemMail(env, email, "Bekräfta din e-postadress — politiker.denied.se", verificationEmailHtml(code));
 
@@ -298,6 +303,11 @@ export async function deleteOwnAccount(env: Env, accountId: string, password?: s
 // inte i kedjan än; nu när send_email-bindingen släpper samma noreply-adress
 // finns inget som hindrar den, men att lägga in ledet är ett eget beslut.
 export async function sendSystemMail(env: Env, to: string, subject: string, html: string): Promise<void> {
+  if (env.PREVIEW_MODE === "1") {
+    console.info("preview: system email suppressed");
+    return;
+  }
+
   if (env.RESEND_API_KEY) {
     try {
       await sendResendMail(env.RESEND_API_KEY, {
