@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Hämtar Svenska kyrkans kyrkovalda förtroendevalda till D1-tabellen
-`politicians` (area_type='kyrka').
+`public_contacts` (area_type='kyrka').
 
 Kyrkovalet är allmänna val (nomineringsgrupperna är ofta partilistor: S, C,
 SD-nära grupper, POSK m.fl.) men kyrkans folkvalda saknades i databasen.
@@ -53,7 +53,7 @@ ROLE_KEYWORDS = ("stiftsstyrelsen", "kyrkostyrelsen", "kyrkomötets ordförande"
                  "kyrkomötets förste vice", "kyrkomötets andre vice")
 
 UPSERT_SQL = (
-    "INSERT INTO politicians (id, name, email, area_name, area_type, party, role, last_scraped_at) "
+    "INSERT INTO public_contacts (id, name, email, area_name, area_type, party, role, last_scraped_at) "
     "VALUES (lower(hex(randomblob(11))), ?, ?, ?, 'kyrka', ?, ?, ?) "
     "ON CONFLICT(email, area_name) DO UPDATE SET name = excluded.name, "
     "party = excluded.party, role = excluded.role, last_scraped_at = excluded.last_scraped_at"
