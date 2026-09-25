@@ -69,7 +69,9 @@ test("closed pull requests are tombstoned before best-effort Preview deletion", 
   assert.ok(tombstone >= 0 && verify > tombstone && remove > verify);
   assert.match(workflow, /status: 410/);
   assert.match(workflow, /expected 410/);
-  assert.match(workflow, /deployment_url=.*\.deployment\.urls\[0\]/);
+  const tombstoneBlock = workflow.slice(tombstone, verify);
+  assert.match(tombstoneBlock, /deployment_url=.*\.deployment\.urls\[0\]/);
+  assert.match(tombstoneBlock, /echo "deployment_url=\$deployment_url" >> "\$GITHUB_OUTPUT"/);
   assert.match(workflow, /for attempt in \$\(seq 1 24\)/);
   assert.match(workflow, /closed=\$\{GITHUB_RUN_ID\}-\$\{attempt\}/);
   assert.match(workflow, /Cache-Control: no-cache/);
