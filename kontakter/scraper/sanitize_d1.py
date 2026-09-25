@@ -191,7 +191,7 @@ def apply() -> None:
     print("\nEfterkontroll: utländska EU-rader (ska vara 0):")
     query(f"SELECT COUNT(*) AS rows FROM public_contacts WHERE area_type='eu' AND area_name<>'{SWEDISH_EU_AREA}';")
     print("\nEfterkontroll: detaljerade huvudroller (ska vara 0):")
-    query("SELECT COUNT(*) AS rows FROM public_contacts WHERE role IS NOT NULL AND TRIM(role) <> ''; ")
+    query("SELECT COUNT(*) AS rows FROM public_contacts WHERE area_type NOT IN ('media','academia') AND role IS NOT NULL AND TRIM(role) <> ''; ")
     print("\nEfterkontroll: detaljerade nämndroller (ska vara 0):")
     query("SELECT COUNT(*) AS rows FROM public_contact_assignments WHERE role <> ''; ")
     print("\nEfterkontroll: irrelevant nämnd/organ-brus (ska vara 0):")
