@@ -72,6 +72,7 @@ test("server failures still fail after retries", async () => {
 
 test("edge-blocked ingress does not block completed control-plane deployment", async () => {
   let attempts = 0;
+  const warnings = [];
   const result = await checkProduction({
     fetchImpl: async () => {
       attempts += 1;
@@ -85,8 +86,11 @@ test("edge-blocked ingress does not block completed control-plane deployment", a
       });
     },
     sleep: async () => {},
+    warn: (message) => warnings.push(message),
   });
 
   assert.equal(attempts, 1);
   assert.equal(result.status, "edge_blocked");
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /Production ingress blocked by Cloudflare edge/);
 });
