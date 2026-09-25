@@ -74,6 +74,30 @@ Kontrollera:
 
 Lös inte authfel genom att göra privata routes publika.
 
+## Releasegräns
+
+Release- och versionskontraktet finns i [release-standard.md](release-standard.md).
+
+Politiker har ingen canonical lokal produktversionsfil på current `main`. `app/package.json` är privat och saknar `version`. Inför därför inte package-version eller `version.txt` enbart för releaseautomation.
+
+Versionerade releases förankras i SemVer-taggar och GitHub Releases. De är separata från produktionsdeployment:
+
+- tagg/GitHub Release deployar inte produktion;
+- `Deploy Politiker production` förblir explicit `workflow_dispatch` från `main`;
+- releaseautomation får inte implicit applicera D1-migrationer, deploya Worker eller köra akademisynk.
+
+Före en release ska normal CI vara grön. För appdelen ska minst:
+
+```bash
+cd app
+npm ci
+npm run validate
+```
+
+vara verifierat.
+
+Current `main` har ingen verifierad aktiv release-PR/taggautomation. Lägg inte till ny PAT eller bredare App-writebehörighet som genväg.
+
 ## Deployment
 
 Repositoryt deklarerar en manuell GitHub Actions-workflow `Deploy Politiker production` (`.github/workflows/deploy-production.yml`). Workflown kan endast köras från `main` och refererar till GitHub-secret-namnet `CLOUDFLARE_API_TOKEN_W1`; faktisk secret-provisionering är extern GitHub-state.
