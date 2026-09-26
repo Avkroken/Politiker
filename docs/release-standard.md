@@ -2,7 +2,7 @@
 
 **Senast verifierad:** 2026-09-25
 
-Det här dokumentet gäller **Avkroken/Politiker**. Repositoryts egna workflows och dokumentation äger release-, deploy- och versionskontraktet.
+Det här dokumentet gäller **Politiker-repositoryt**. Repositoryts egna workflows och dokumentation äger release-, deploy- och versionskontraktet.
 
 ## Nuvarande versionsmodell
 
