@@ -16,11 +16,11 @@
     "secret:set-mail-key": "wrangler secret put MAIL_CRED_KEY"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260918.1",
-    "@types/node": "^26.6.1",
+    "@cloudflare/workers-types": "^5.20260923.1",
+    "@types/node": "^26.6.2",
     "c8": "^12.0.0",
     "typescript": "^7.0.2",
-    "wrangler": "^4.134.0"
+    "wrangler": "^4.136.3"
   },
   "dependencies": {
     "mammoth": "^1.12.3",
