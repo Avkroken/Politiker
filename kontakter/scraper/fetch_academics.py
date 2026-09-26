@@ -35,6 +35,13 @@ GU_JENNY_DE_FINE_LICHT = "https://www.gu.se/om-universitetet/hitta-person/jennyd
 UPPSALA_LAW_PRESS = "https://www.uu.se/institution/juridiska/for-press"
 UPPSALA_LOTTA_LERWALL = "https://www.uu.se/kontakt-och-organisation/personal?query=N5-842"
 UPPSALA_TIM_HOLAPPA = "https://www.uu.se/kontakt-och-organisation/personal?query=N24-2071"
+LUND_POLITICAL_SCIENCE = "https://www.lu.se/lucat/group/v1000693"
+UMEA_POLITICAL_SCIENCE = "https://www.umu.se/statsvetenskapliga-institutionen/personal/"
+UMEA_VERONICA_STRANDH = "https://www.umu.se/personal/veronica-strandh/"
+UMEA_LAW_STAFF = "https://www.umu.se/juridiska-institutionen/personal/"
+UMEA_LENA_ENQVIST = "https://www.umu.se/personal/lena-enqvist/"
+LINKOPING_POLITICAL_SCIENCE = "https://liu.se/organisation/liu/iei/statsv"
+OREBRO_EXPERTS_2026 = "https://www.oru.se/om-universitetet/press-och-media/experter-sommaren-2026/"
 
 
 @dataclass(frozen=True)
@@ -71,6 +78,20 @@ CONTACTS = [
     AcademicContact("Lotta Lerwall", "lotta.lerwall@jur.uu.se", "Uppsala universitet", "Juridiska institutionen", "Professor i förvaltningsrätt", PUBLIC_LAW, UPPSALA_LOTTA_LERWALL),
     AcademicContact("Olle Lundin", "olle.lundin@jur.uu.se", "Uppsala universitet", "Juridiska institutionen", "Professor i förvaltningsrätt", PUBLIC_LAW, UPPSALA_LAW_PRESS),
     AcademicContact("Tim Holappa", "tim.holappa@jur.uu.se", "Uppsala universitet", "Juridiska institutionen", "Universitetslektor i förvaltningsrätt", PUBLIC_LAW, UPPSALA_TIM_HOLAPPA),
+    AcademicContact("Karin Aggestam", "karin.aggestam@svet.lu.se", "Lunds universitet", "Statsvetenskapliga institutionen", "Professor", POLITICAL_SCIENCE, LUND_POLITICAL_SCIENCE),
+    AcademicContact("Annika Björkdahl", "annika.bjorkdahl@svet.lu.se", "Lunds universitet", "Statsvetenskapliga institutionen", "Professor", POLITICAL_SCIENCE, LUND_POLITICAL_SCIENCE),
+    AcademicContact("Catarina Kinnvall", "catarina.kinnvall@svet.lu.se", "Lunds universitet", "Statsvetenskapliga institutionen", "Professor", POLITICAL_SCIENCE, LUND_POLITICAL_SCIENCE),
+    AcademicContact("Niklas Altermark", "niklas.altermark@svet.lu.se", "Lunds universitet", "Statsvetenskapliga institutionen", "Docent och universitetslektor", POLITICAL_SCIENCE, LUND_POLITICAL_SCIENCE),
+    AcademicContact("Niklas Eklund", "niklas.eklund@umu.se", "Umeå universitet", "Statsvetenskapliga institutionen", "Professor", POLITICAL_SCIENCE, UMEA_POLITICAL_SCIENCE),
+    AcademicContact("Camilla Sandström", "camilla.sandstrom@umu.se", "Umeå universitet", "Statsvetenskapliga institutionen", "Professor", POLITICAL_SCIENCE, UMEA_POLITICAL_SCIENCE),
+    AcademicContact("Johan Hellström", "johan.hellstrom@umu.se", "Umeå universitet", "Statsvetenskapliga institutionen", "Universitetslektor", POLITICAL_SCIENCE, UMEA_POLITICAL_SCIENCE),
+    AcademicContact("Bo Persson", "bo.persson@liu.se", "Linköpings universitet", "Statsvetenskap", "Biträdande professor", POLITICAL_SCIENCE, LINKOPING_POLITICAL_SCIENCE),
+    AcademicContact("Veronica Strandh", "veronica.strandh@umu.se", "Umeå universitet", "Statsvetenskapliga institutionen", "Universitetslektor i offentlig förvaltning", PUBLIC_ADMINISTRATION, UMEA_VERONICA_STRANDH),
+    AcademicContact("Mattias Derlén", "mattias.derlen@umu.se", "Umeå universitet", "Juridiska institutionen", "Professor i rättsvetenskap", PUBLIC_LAW, UMEA_LAW_STAFF),
+    AcademicContact("Johan Lindholm", "johan.lindholm@umu.se", "Umeå universitet", "Juridiska institutionen", "Professor i rättsvetenskap", PUBLIC_LAW, UMEA_LAW_STAFF),
+    AcademicContact("Lena Enqvist", "lena.enqvist@umu.se", "Umeå universitet", "Juridiska institutionen", "Universitetslektor i förvaltningsrätt", PUBLIC_LAW, UMEA_LENA_ENQVIST),
+    AcademicContact("Tom Madell", "tom.madell@umu.se", "Umeå universitet", "Juridiska institutionen", "Professor i rättsvetenskap", PUBLIC_LAW, UMEA_LAW_STAFF),
+    AcademicContact("Joakim Nergelius", "joakim.nergelius@oru.se", "Örebro universitet", "Juridicum", "Professor i juridik", PUBLIC_LAW, OREBRO_EXPERTS_2026),
 ]
 
 ALLOWED_EMAIL_DOMAINS = {
@@ -79,8 +100,12 @@ ALLOWED_EMAIL_DOMAINS = {
     "gu.se",
     "pol.gu.se",
     "spa.gu.se",
+    "svet.lu.se",
+    "umu.se",
+    "liu.se",
+    "oru.se",
 }
-ALLOWED_SOURCE_DOMAINS = {"www.uu.se", "www.gu.se"}
+ALLOWED_SOURCE_DOMAINS = {"www.uu.se", "www.gu.se", "www.lu.se", "www.umu.se", "liu.se", "www.oru.se"}
 
 
 UPSERT_SQL = (
