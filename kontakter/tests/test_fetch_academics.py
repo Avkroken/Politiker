@@ -23,12 +23,20 @@ academics = load_module()
 
 def test_academic_registry_covers_all_core_fields():
     rows = academics.validated_contacts()
-    assert len(rows) >= 20
+    assert len(rows) >= 35
     assert {row.academic_field for row in rows} == {
         academics.POLITICAL_SCIENCE,
         academics.PUBLIC_ADMINISTRATION,
         academics.PUBLIC_LAW,
     }
+    assert {
+        "Uppsala universitet",
+        "Göteborgs universitet",
+        "Lunds universitet",
+        "Umeå universitet",
+        "Linköpings universitet",
+        "Örebro universitet",
+    } <= {row.organisation for row in rows}
 
 
 def test_academic_registry_uses_only_public_university_work_addresses():
