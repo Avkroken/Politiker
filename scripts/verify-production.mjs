@@ -58,7 +58,7 @@ export async function checkProduction({
       if (result.status === "edge_blocked") {
         const details = result.diagnostics ? ` (${result.diagnostics})` : "";
         warn(
-          `::warning title=Production ingress blocked by Cloudflare edge::${PRODUCTION_URL} returned a Cloudflare edge 403 to the GitHub runner${details}. Deployment and control-plane checks remain authoritative.`,
+          `::warning title=Production ingress blocked by Cloudflare edge::${PRODUCTION_URL} returned a Cloudflare edge 403 to the build runner${details}. Deployment and control-plane checks remain authoritative.`,
         );
         return result;
       }
