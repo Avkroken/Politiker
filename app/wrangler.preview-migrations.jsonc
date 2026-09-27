@@ -1,0 +1,11 @@
+{
+  "d1_databases": [
+    {
+      "binding": "PREVIEW_DB",
+      "database_name": "politiker-preview-eu",
+      "database_id": "2f9d56ec-b0b4-491b-9f55-a01ba925b4a9",
+      "migrations_table": "d1_migrations",
+      "migrations_dir": "../infra/migrations"
+    }
+  ]
+}
