@@ -29,7 +29,7 @@ import requests
 
 from d1 import D1Client
 
-UA = {"User-Agent": "politiker-contact-refresh/1.0 (+https://github.com/blixten85/politiker)"}
+UA = {"User-Agent": "politiker-contact-refresh/1.0 (+https://github.com/Avkroken/Politiker)"}
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 HREF_RE = re.compile(r'href=["\']([^"\']+)["\']', re.I)
 NON_EDITORIAL_LOCALS = {"kundservice"}
