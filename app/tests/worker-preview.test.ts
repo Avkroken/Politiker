@@ -1,41 +1,60 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-const workflow = readFileSync(new URL("../../.github/workflows/preview.yml", import.meta.url), "utf8");
-const prep = readFileSync(new URL("../../scripts/prepare-worker-preview.mjs", import.meta.url), "utf8");
+const wrangler = JSON.parse(
+  readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+);
+const migrationConfig = JSON.parse(
+  readFileSync(new URL("../wrangler.preview-migrations.jsonc", import.meta.url), "utf8"),
+);
+const preview = readFileSync(
+  new URL("../../scripts/workers-build-preview.mjs", import.meta.url),
+  "utf8",
+);
+const packageJson = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+);
 const auth = readFileSync(new URL("../src/auth.ts", import.meta.url), "utf8");
 const index = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
 const secureIndex = readFileSync(new URL("../src/secure-index.ts", import.meta.url), "utf8");
+const githubPreviewWorkflow = new URL("../../.github/workflows/preview.yml", import.meta.url);
 
-test("preview workflow only exposes Cloudflare credentials to same-repository pull requests", () => {
-  assert.match(workflow, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
-  assert.match(workflow, /secrets\.CLOUDFLARE_API_TOKEN_W1/);
-  assert.doesNotMatch(workflow, /CLOUDFLARE_API_TOKEN:\s*\$\{\{\s*secrets\.CLOUDFLARE_API_TOKEN\s*\}\}/);
+test("preview deployment is owned by Cloudflare Workers Builds, not GitHub Actions", () => {
+  assert.equal(existsSync(githubPreviewWorkflow), false);
+  assert.equal(
+    packageJson.scripts["preview:workers-builds"],
+    "node ../scripts/workers-build-preview.mjs",
+  );
+  assert.match(preview, /WORKERS_CI !== "1"/);
+  assert.match(preview, /branch === "main"/);
+  assert.doesNotMatch(preview, /secrets\./);
+  assert.doesNotMatch(preview, /CLOUDFLARE_API_TOKEN_W1/);
 });
 
-test("preview resources are isolated from production resources", () => {
-  for (const name of [
-    "politiker-preview-eu",
-    "politiker-preview-sessions",
-    "politiker-preview-attachments",
-    "politiker-preview-send-jobs",
-  ]) {
-    assert.match(prep, new RegExp(name));
-  }
-  assert.doesNotMatch(prep, /78777055-bf37-4388-86ad-69bdf782e2cd/);
-  assert.doesNotMatch(prep, /23255cc6e67a4a19b19e5ea67a676b40/);
-  assert.doesNotMatch(prep, /politiker-send-jobs"/);
-  assert.doesNotMatch(prep, /politiker-attachments"/);
+test("preview resources are statically isolated from production resources", () => {
+  const config = wrangler.previews;
+  assert.ok(config);
+  assert.equal(config.vars.PREVIEW_MODE, "1");
+  assert.deepEqual(config.d1_databases.map((entry) => entry.database_name), ["politiker-preview-eu"]);
+  assert.deepEqual(config.kv_namespaces.map((entry) => entry.id), ["d8a178c3910547cf91ef52a08fdf30ad"]);
+  assert.deepEqual(config.r2_buckets.map((entry) => entry.bucket_name), ["politiker-preview-attachments"]);
+  assert.deepEqual(config.queues.producers.map((entry) => entry.queue), ["politiker-preview-send-jobs"]);
+
+  const serialized = JSON.stringify(config);
+  assert.doesNotMatch(serialized, /78777055-bf37-4388-86ad-69bdf782e2cd/);
+  assert.doesNotMatch(serialized, /23255cc6e67a4a19b19e5ea67a676b40/);
+  assert.doesNotMatch(serialized, /politiker-send-jobs"/);
+  assert.doesNotMatch(serialized, /politiker-attachments"/);
 });
 
-test("preview config omits production consumers, routes, cron and email bindings from previews block", () => {
-  assert.match(prep, /production\.previews = \{/);
-  assert.match(prep, /queues:\s*\{\s*producers:/s);
-  assert.doesNotMatch(prep, /production\.previews[\s\S]*consumers:/);
-  assert.doesNotMatch(prep, /production\.previews[\s\S]*send_email:/);
-  assert.doesNotMatch(prep, /production\.previews[\s\S]*triggers:/);
-  assert.doesNotMatch(prep, /production\.previews[\s\S]*routes:/);
+test("preview config omits production consumers, routes, cron, email and Durable Object bindings", () => {
+  const config = wrangler.previews;
+  assert.equal(config.queues.consumers, undefined);
+  assert.equal(config.send_email, undefined);
+  assert.equal(config.triggers, undefined);
+  assert.equal(config.routes, undefined);
+  assert.equal(config.durable_objects, undefined);
 });
 
 test("real email and sending are disabled in preview mode", () => {
@@ -44,70 +63,33 @@ test("real email and sending are disabled in preview mode", () => {
 });
 
 test("preview runtime does not require the production rate-limiter Durable Object", () => {
-  assert.doesNotMatch(prep, /durable_objects:/);
+  assert.equal(wrangler.previews.durable_objects, undefined);
   assert.match(secureIndex, /if \(env\.PREVIEW_MODE === "1"\) return true;/);
 });
 
 test("preview account creation avoids production Turnstile and email dependencies", () => {
   assert.match(index, /env\.PREVIEW_MODE!=="1"&&!\(await verifyTurnstile/);
   assert.match(auth, /previewVerified: true/);
-  assert.match(workflow, /separat D1, KV, R2 och Queue/);
 });
 
-test("preview D1 is EU-jurisdictional and migrations run before preview deployment", () => {
-  assert.match(prep, /"d1", "create", names\.d1, "--jurisdiction", "eu"/);
-  assert.match(prep, /"r2", "bucket", "create", names\.r2, "--jurisdiction", "eu"/);
-  const migration = workflow.indexOf("Apply preview D1 migrations");
-  const deploy = workflow.indexOf("Create or update Worker Preview");
-  assert.ok(migration >= 0 && deploy > migration);
+test("preview D1 migration target matches the preview D1 binding", () => {
+  const previewDb = wrangler.previews.d1_databases[0];
+  const migrationDb = migrationConfig.d1_databases[0];
+  assert.equal(previewDb.database_name, migrationDb.database_name);
+  assert.equal(previewDb.database_id, migrationDb.database_id);
+  assert.equal(migrationDb.binding, "PREVIEW_DB");
+  assert.equal(previewDb.database_id, "2f9d56ec-b0b4-491b-9f55-a01ba925b4a9");
 });
 
-test("closed pull requests are tombstoned, resolve account context, and best-effort delete", () => {
-  const tombstone = workflow.indexOf("Disable closed Preview");
-  const verify = workflow.indexOf("Verify closed Preview is disabled");
-  const resolve = workflow.indexOf("Resolve Cloudflare account");
-  const remove = workflow.indexOf("Delete Preview record when Cloudflare permits it");
-  assert.ok(tombstone >= 0 && verify > tombstone && resolve > verify && remove > resolve);
-  assert.match(workflow, /status: 410/);
-  assert.match(workflow, /expected 410/);
-  const tombstoneBlock = workflow.slice(tombstone, verify);
-  assert.match(tombstoneBlock, /deployment_url=.*\.deployment\.urls\[0\]/);
-  assert.match(tombstoneBlock, /echo "deployment_url=\$deployment_url" >> "\$GITHUB_OUTPUT"/);
-  const retries = workflow.match(/for attempt in \$\(seq 1 24\)/g) ?? [];
-  assert.equal(retries.length, 2);
-  assert.match(
-    workflow,
-    /--header 'Cache-Control: no-cache' "\$DEPLOYMENT_URL\/\?closed=\$\{GITHUB_RUN_ID\}-deployment-\$\{attempt\}"/
-  );
-  assert.match(
-    workflow,
-    /--header 'Cache-Control: no-cache' "\$PREVIEW_URL\/\?closed=\$\{GITHUB_RUN_ID\}-\$\{attempt\}"/
-  );
-  assert.match(workflow, /deployment_status="000"/);
-  assert.match(workflow, /status="000"/);
-  assert.match(workflow, /Tombstone deployment has not propagated yet/);
-  assert.match(workflow, /after propagation wait, expected 410/);
-  assert.match(workflow, /curl --location --max-redirs 3/);
-  assert.match(workflow, /--ignore-base-config/);
-  assert.match(workflow, /"CredentialRateLimiter"[\s\S]*"state": "deleted"/);
-  assert.match(workflow, /wrangler@\$\{PREVIEW_WRANGLER_VERSION\}" whoami --json/);
-  assert.match(workflow, /CLOUDFLARE_ACCOUNT_ID=\$account_id/);
-  assert.match(workflow, /preview delete --name "pr-\$\{\{ github\.event\.pull_request\.number \}\}" --skip-confirmation/);
-  assert.match(workflow, /Cloudflare Preview cleanup deferred/);
+test("Workers Builds preview migrates and seeds before wrangler preview", () => {
+  const migration = preview.indexOf('"wrangler", "d1", "migrations", "apply"');
+  const seed = preview.indexOf('academicScript, "--sql-file"');
+  const execute = preview.indexOf('"d1",\n    "execute"');
+  const deploy = preview.indexOf('"wrangler", "preview"');
+  assert.ok(migration >= 0 && seed > migration && execute > seed && deploy > execute);
 });
 
-
-test("workers.dev is disabled for production but enabled for Preview URLs", () => {
-  const wrangler = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8");
-  assert.match(wrangler, /"workers_dev": false/);
-  assert.match(wrangler, /"preview_urls": true/);
-  assert.match(prep, /previews_enabled: true/);
-  assert.match(prep, /body: JSON\.stringify\(\{ enabled, previews_enabled: true \}\)/);
-});
-
-test("preview URL parsing ignores Wrangler banners and keeps stable and deployment URLs distinct", () => {
-  assert.match(workflow, /sed -n '\/\^\{\/,\$p'/);
-  assert.match(workflow, /preview_url=.*\.preview\.urls\[0\]/);
-  assert.match(workflow, /deployment_url=.*\.deployment\.urls\[0\]/);
-  assert.doesNotMatch(workflow, /\.preview\.urls\[0\] \/\/ \.deployment\.urls\[0\]/);
+test("workers.dev is disabled for production while Worker Preview URLs remain enabled", () => {
+  assert.equal(wrangler.workers_dev, false);
+  assert.equal(wrangler.preview_urls, true);
 });

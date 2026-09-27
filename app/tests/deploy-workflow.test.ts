@@ -1,42 +1,54 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-const workflow = readFileSync(
-  new URL("../../.github/workflows/deploy-production.yml", import.meta.url),
+const production = readFileSync(
+  new URL("../../scripts/workers-build-production.mjs", import.meta.url),
   "utf8",
 );
+const packageJson = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+);
+const githubDeployWorkflow = new URL(
+  "../../.github/workflows/deploy-production.yml",
+  import.meta.url,
+);
 
-test("production deployment is manual and uses the standard W1 credential", () => {
-  assert.match(workflow, /workflow_dispatch:/);
-  assert.match(workflow, /secrets\.CLOUDFLARE_API_TOKEN_W1/);
-  assert.doesNotMatch(workflow, /^\s+push:/m);
-  assert.doesNotMatch(workflow, /^\s+pull_request:/m);
-  assert.match(workflow, /GITHUB_REF.*refs\/heads\/main/);
+test("production deployment is owned by Cloudflare Workers Builds, not GitHub Actions", () => {
+  assert.equal(existsSync(githubDeployWorkflow), false);
+  assert.equal(
+    packageJson.scripts["deploy:workers-builds"],
+    "node ../scripts/workers-build-production.mjs",
+  );
+  assert.match(production, /WORKERS_CI !== "1"/);
+  assert.match(production, /WORKERS_CI_BRANCH !== "main"/);
+  assert.doesNotMatch(production, /secrets\./);
+  assert.doesNotMatch(production, /CLOUDFLARE_API_TOKEN_W1/);
 });
 
-test("production deployment completes control-plane work before public ingress verification", () => {
+test("Workers Builds production deploy preserves the verified control-plane order", () => {
   const ordered = [
-    "npm run validate",
-    "npm run migrate:production",
-    "npm run deploy",
-    "fetch_academics.py --sql-file",
-    "wrangler d1 execute politiker-eu --remote --file",
-    "Verify academic contacts",
-    "npm run verify:production",
+    'run("npm", ["run", "validate"])',
+    'run("npm", ["run", "migrate:production"])',
+    'run("npm", ["run", "deploy"])',
+    'academicScript, "--sql-file"',
+    '"wrangler", "d1", "execute", "politiker-eu"',
+    "Academia after deploy:",
+    'run("npm", ["run", "verify:production"])',
   ];
 
   let previous = -1;
   for (const marker of ordered) {
-    const index = workflow.indexOf(marker);
+    const index = production.indexOf(marker);
     assert.ok(index > previous, `${marker} must occur after the previous production step`);
     previous = index;
   }
 });
 
-test("academic production sync goes through Wrangler instead of requiring a second Cloudflare credential contract", () => {
-  assert.doesNotMatch(workflow, /CLOUDFLARE_ACCOUNT_ID/);
-  assert.doesNotMatch(workflow, /D1_DATABASE_UUID/);
-  assert.match(workflow, /EXPECTED_ACADEMIC_CONTACTS/);
-  assert.match(workflow, /COUNT\(DISTINCT academic_field\)/);
+test("academic production sync uses Wrangler inside the Cloudflare build identity", () => {
+  assert.match(production, /fetch_academics\.py/);
+  assert.match(production, /COUNT\(DISTINCT academic_field\)/);
+  assert.match(production, /expected at least/);
+  assert.doesNotMatch(production, /CLOUDFLARE_ACCOUNT_ID/);
+  assert.doesNotMatch(production, /D1_DATABASE_UUID/);
 });
