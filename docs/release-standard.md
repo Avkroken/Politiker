@@ -1,6 +1,6 @@
 # Release- och versionsstandard
 
-**Senast verifierad:** 2026-09-25
+**Senast verifierad:** 2026-09-27
 
 Det här dokumentet gäller **Politiker-repositoryt**. Repositoryts egna workflows och dokumentation äger release-, deploy- och versionskontraktet.
 
@@ -20,20 +20,11 @@ GitHub Release ska referera samma tagg.
 
 ## Release är inte deployment
 
-Produktionsdeployment ägs av `.github/workflows/deploy-production.yml`.
+Produktionsdeployment ägs av Cloudflare Workers Builds, inte GitHub Actions. När `main` uppdateras kör Cloudflare repositoryts `npm run deploy:workers-builds`, som main-gatar körningen och bevarar ordningen validering → D1-migration → Worker-deploy → akademisynk → verifiering.
 
-Verifierat current-state:
+GitHub Actions är fortsatt CI-/repositoryautomation och innehåller ingen användarkonfigurerad Cloudflare deploy-secret.
 
-- workflowen är endast `workflow_dispatch`;
-- den får bara köras från `main`;
-- den kör applikationsvalidering;
-- applicerar väntande D1-migrationer;
-- deployar Worker;
-- synkar akademikontakter;
-- verifierar datasynk och publik ingress;
-- `concurrency` tillåter inte parallella produktionsdeployments.
-
-En GitHub tagg eller GitHub Release får **inte** automatiskt köra detta flöde utan ett separat, verifierat deploymentbeslut. Releaseversion och produktionsdeployment är två olika händelser.
+En GitHub tagg eller GitHub Release deployar **inte** produktion i sig. Releaseversion och produktionsdeployment är separata händelser även om en merge till `main` normalt utlöser Workers Builds. Releaseautomation får inte skapa en parallell produktionsväg.
 
 ## PR-titlar och squash commits
 
@@ -102,10 +93,11 @@ main changes
   -> merge
   -> vMAJOR.MINOR.PATCH tag
   -> GitHub Release
-  -> separat explicit production deployment när den faktiskt ska ske
+
+Produktionsdeployment sker separat genom den vanliga Workers Builds-triggern på `main`; releaseflödet ska inte skapa en extra deploytrigger.
 ```
 
-Release-PR får inte köra produktionsmigrationer eller produktionsdeploy implicit.
+Release-PR får inte skapa en separat produktionsmigration eller produktionsdeploy utanför den ordinarie Workers Builds-vägen.
 
 ## Verifiering vid release
 
