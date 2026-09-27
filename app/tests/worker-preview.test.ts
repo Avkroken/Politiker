@@ -84,7 +84,7 @@ test("preview D1 migration target matches the preview D1 binding", () => {
 test("Workers Builds preview migrates and seeds before wrangler preview", () => {
   const migration = preview.indexOf('"wrangler", "d1", "migrations", "apply"');
   const seed = preview.indexOf('academicScript, "--sql-file"');
-  const execute = preview.indexOf('"wrangler", "d1", "execute"');
+  const execute = preview.indexOf('"d1",\n    "execute"');
   const deploy = preview.indexOf('"wrangler", "preview"');
   assert.ok(migration >= 0 && seed > migration && execute > seed && deploy > execute);
 });
