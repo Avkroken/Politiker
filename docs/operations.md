@@ -96,7 +96,7 @@ npm run validate
 
 vara verifierat.
 
-Current `main` har ingen verifierad aktiv release-PR/taggautomation. Lägg inte till ny PAT eller bredare App-writebehörighet som genväg.
+Current releaseflöde är repo-lokalt i `.github/workflows/release.yml`: efter merge till `main` väntar releasen på de checks som anges i `.github/release-required-checks` och skapar därefter SemVer-tagg/GitHub Release när historiken innehåller en releasevärdig förändring. Ingen PAT eller bredare App-writebehörighet används.
 
 ## Deployment
 
