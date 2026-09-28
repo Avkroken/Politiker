@@ -15,7 +15,7 @@ test("stored SMTP accounts expose an authenticated connection test action", () =
 });
 
 test("stored SMTP retests require a fresh web session", () => {
-  assert.match(secureIndexSource, /mail-credentials\\\/\[\^\/\]\+\\\/test\$\/\.test\(pathname\)/);
+  assert.ok(secureIndexSource.includes('/^\\/api\\/mail-credentials\\/[^/]+\\/test$/.test(pathname)'));
 });
 
 test("stored SMTP test reuses the encrypted credential without exposing it", () => {
