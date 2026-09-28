@@ -21,7 +21,11 @@ interface CredentialFixture {
 }
 
 class FakeCredentialDb {
-  constructor(readonly rows: CredentialFixture[]) {}
+  readonly rows: CredentialFixture[];
+
+  constructor(rows: CredentialFixture[]) {
+    this.rows = rows;
+  }
 
   prepare(sql: string) {
     return {
