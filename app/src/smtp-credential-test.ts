@@ -46,8 +46,9 @@ export async function testStoredSmtpCredentialWithDeps(
   });
 
   const verifiedAt = (deps.now ?? Date.now)();
-  await db.prepare(
+  const update = await db.prepare(
     "UPDATE mail_credentials SET verified_at = ? WHERE id = ? AND account_id = ? AND revoked_at IS NULL",
   ).bind(verifiedAt, credentialId, accountId).run();
+  if ((update.meta.changes ?? 0) < 1) throw new Error("Mailkontot ändrades under anslutningstestet");
   return { verifiedAt };
 }
