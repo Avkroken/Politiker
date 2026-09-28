@@ -1,6 +1,7 @@
-import { encryptSecret, randomId } from "../../shared/crypto";
+import { decryptSecret, encryptSecret, randomId } from "../../shared/crypto";
 import { assertNoControlCharacters, validateMailboxAddress } from "../../shared/input-safety";
 import { testSmtpAuth } from "../../shared/smtp";
+import { testStoredSmtpCredentialWithDeps } from "./smtp-credential-test";
 import { exchangeMicrosoftMailCode } from "../../shared/graph-mail";
 import type { Env } from "./db";
 
@@ -110,6 +111,48 @@ export async function listMailCredentials(env: Env, accountId: string) {
      FROM mail_credentials WHERE account_id = ? AND revoked_at IS NULL ORDER BY created_at DESC`,
   ).bind(accountId).all();
   return results;
+}
+
+async function acquireStoredSmtpTestSlot(env: Env, credentialId: string): Promise<boolean> {
+  if (env.PREVIEW_MODE === "1") return true;
+  const id = env.RATE_LIMITER.idFromName(`smtp-test:${credentialId}`);
+  try {
+    const response = await env.RATE_LIMITER.get(id).fetch("https://rate-limiter/acquire", {
+      method: "POST",
+      body: JSON.stringify({ capacity: 1, refillPerMinute: 1 }),
+    });
+    const result = await response.json<{ granted?: boolean }>();
+    return result.granted === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Testar autentisering med ett sparat SMTP-konto utan att skicka e-post.
+ *
+ * Testet använder en separat serialiserad rate-limit-bucket per credential,
+ * dekrypterar lösenordet endast efter beviljad slot och uppdaterar
+ * `verified_at` först efter lyckad SMTP-autentisering.
+ *
+ * @param env - Worker-miljön med D1, Durable Object-rate-limiter och MAIL_CRED_KEY.
+ * @param accountId - Det autentiserade konto som måste äga credentialen.
+ * @param credentialId - Identifieraren för det lagrade SMTP-kontot.
+ * @returns Verifieringstidpunkten efter lyckad autentisering och D1-uppdatering.
+ * @throws Om credentialen saknas, är återkallad, använder Microsoft Graph,
+ * rate-limit nekas, dekryptering/SMTP-test misslyckas eller credentialen ändras under testet.
+ */
+export async function testStoredSmtpCredential(
+  env: Env,
+  accountId: string,
+  credentialId: string,
+): Promise<{ verifiedAt: number }> {
+  return testStoredSmtpCredentialWithDeps(env.DB, accountId, credentialId, {
+    acquireTestSlot: () => acquireStoredSmtpTestSlot(env, credentialId),
+    decryptSecret,
+    testSmtpAuth,
+    mailCredKey: env.MAIL_CRED_KEY,
+  });
 }
 
 export async function deleteMailCredential(env: Env, accountId: string, credentialId: string): Promise<void> {
