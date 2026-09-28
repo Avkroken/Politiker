@@ -32,6 +32,8 @@ class FakeCredentialDb {
       bind: (...args: unknown[]) => ({
         first: async <T>() => {
           if (!sql.includes("FROM mail_credentials")) throw new Error("Unexpected SELECT");
+          assert.match(sql, /WHERE id = \? AND account_id = \? AND revoked_at IS NULL/);
+          assert.equal(args.length, 2);
           const [credentialId, accountId] = args as [string, string];
           const row = this.rows.find((item) =>
             item.id === credentialId && item.account_id === accountId && item.revoked_at === null
@@ -48,6 +50,8 @@ class FakeCredentialDb {
         },
         run: async () => {
           if (!sql.startsWith("UPDATE mail_credentials SET verified_at = ?")) throw new Error("Unexpected UPDATE");
+          assert.match(sql, /WHERE id = \? AND account_id = \? AND revoked_at IS NULL/);
+          assert.equal(args.length, 3);
           const [verifiedAt, credentialId, accountId] = args as [number, string, string];
           const row = this.rows.find((item) =>
             item.id === credentialId && item.account_id === accountId && item.revoked_at === null
@@ -126,6 +130,22 @@ test("failed stored SMTP authentication leaves verified_at unchanged", async () 
       testSmtpAuth: async () => { throw new Error("535 5.7.8 authentication failed"); },
     }),
     /535 5\.7\.8 authentication failed/,
+  );
+  assert.equal(row.verified_at, 100);
+});
+
+test("stored SMTP test fails if the credential is revoked during authentication", async () => {
+  const row = credential({ verified_at: 100 });
+  const db = new FakeCredentialDb([row]);
+
+  await assert.rejects(
+    testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
+      mailCredKey: "mail-key",
+      now: () => 1234,
+      decryptSecret: async () => "plain-password",
+      testSmtpAuth: async () => { row.revoked_at = 999; },
+    }),
+    /Mailkontot ändrades under anslutningstestet/,
   );
   assert.equal(row.verified_at, 100);
 });
