@@ -23,6 +23,22 @@ interface StoredSmtpCredentialRow {
   from_address: string;
 }
 
+/**
+ * Testar en lagrad SMTP-credential som tillhör det autentiserade kontot.
+ *
+ * Rate-limit-slotten tas före secret-dekryptering och SMTP-anslutning.
+ * `verified_at` skrivs endast efter lyckad autentisering och endast om
+ * credentialen fortfarande är aktiv och ägs av samma konto.
+ *
+ * @param db - D1-databasen som används för läsning och verifieringsuppdatering.
+ * @param accountId - Det autentiserade konto som måste äga credentialen.
+ * @param credentialId - Identifieraren för credentialen som ska testas.
+ * @param deps - Injicerade rate-limit-, decrypt-, SMTP-auth- och clock-beroenden.
+ * @returns Verifieringstidpunkten efter lyckad autentisering och beständig uppdatering.
+ * @throws Om credentialen saknas, är återkallad, tillhör annat konto, använder
+ * Microsoft Graph, rate-limit nekas, decrypt/SMTP-auth misslyckas eller
+ * credentialen ändras innan `verified_at` kan sparas.
+ */
 export async function testStoredSmtpCredentialWithDeps(
   db: D1Database,
   accountId: string,
