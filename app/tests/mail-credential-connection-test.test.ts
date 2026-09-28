@@ -1,11 +1,76 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { testStoredSmtpCredentialWithDeps, type StoredSmtpCredentialAuthConfig } from "../src/smtp-credential-test.ts";
 
 const settingsSource = readFileSync(new URL("../public/app-settings.js", import.meta.url), "utf8");
-const credentialSource = readFileSync(new URL("../src/mail-credentials.ts", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
 const secureIndexSource = readFileSync(new URL("../src/secure-index.ts", import.meta.url), "utf8");
+
+interface CredentialFixture {
+  id: string;
+  account_id: string;
+  provider: string;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_user: string;
+  encrypted_password: string;
+  from_address: string;
+  revoked_at: number | null;
+  verified_at: number | null;
+}
+
+class FakeCredentialDb {
+  constructor(readonly rows: CredentialFixture[]) {}
+
+  prepare(sql: string) {
+    return {
+      bind: (...args: unknown[]) => ({
+        first: async <T>() => {
+          if (!sql.includes("FROM mail_credentials")) throw new Error("Unexpected SELECT");
+          const [credentialId, accountId] = args as [string, string];
+          const row = this.rows.find((item) =>
+            item.id === credentialId && item.account_id === accountId && item.revoked_at === null
+          );
+          if (!row) return null;
+          return {
+            provider: row.provider,
+            smtp_host: row.smtp_host,
+            smtp_port: row.smtp_port,
+            smtp_user: row.smtp_user,
+            encrypted_password: row.encrypted_password,
+            from_address: row.from_address,
+          } as T;
+        },
+        run: async () => {
+          if (!sql.startsWith("UPDATE mail_credentials SET verified_at = ?")) throw new Error("Unexpected UPDATE");
+          const [verifiedAt, credentialId, accountId] = args as [number, string, string];
+          const row = this.rows.find((item) =>
+            item.id === credentialId && item.account_id === accountId && item.revoked_at === null
+          );
+          if (row) row.verified_at = verifiedAt;
+          return { meta: { changes: row ? 1 : 0 } };
+        },
+      }),
+    };
+  }
+}
+
+function credential(overrides: Partial<CredentialFixture> = {}): CredentialFixture {
+  return {
+    id: "cred-1",
+    account_id: "account-a",
+    provider: "gmail",
+    smtp_host: "smtp.gmail.com",
+    smtp_port: 587,
+    smtp_user: "sender@example.test",
+    encrypted_password: "encrypted",
+    from_address: "sender@example.test",
+    revoked_at: null,
+    verified_at: 100,
+    ...overrides,
+  };
+}
 
 test("stored SMTP accounts expose an authenticated connection test action", () => {
   assert.match(settingsSource, /c\.provider!=='microsoft_graph'.*data-action="test">Testa anslutning<\/button>/s);
@@ -18,15 +83,93 @@ test("stored SMTP retests require a fresh web session", () => {
   assert.ok(secureIndexSource.includes('/^\\/api\\/mail-credentials\\/[^/]+\\/test$/.test(pathname)'));
 });
 
-test("stored SMTP test reuses the encrypted credential without exposing it", () => {
-  assert.match(credentialSource, /WHERE id = \? AND account_id = \? AND revoked_at IS NULL/);
-  assert.match(credentialSource, /decryptSecret\(credential\.encrypted_password, env\.MAIL_CRED_KEY\)/);
-  assert.match(credentialSource, /testSmtpAuth\(\{[\s\S]*password,[\s\S]*fromAddress: credential\.from_address/);
-  assert.match(credentialSource, /UPDATE mail_credentials SET verified_at = \?/);
-  assert.match(credentialSource, /return \{ verifiedAt \};/);
+test("successful stored SMTP authentication updates verified_at afterwards", async () => {
+  const row = credential();
+  const db = new FakeCredentialDb([row]);
+  let authConfig: StoredSmtpCredentialAuthConfig | null = null;
+
+  const result = await testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
+    mailCredKey: "mail-key",
+    now: () => 1234,
+    decryptSecret: async (encoded, key) => {
+      assert.equal(encoded, "encrypted");
+      assert.equal(key, "mail-key");
+      return "plain-password";
+    },
+    testSmtpAuth: async (config) => { authConfig = config; },
+  });
+
+  assert.equal(result.verifiedAt, 1234);
+  assert.equal(row.verified_at, 1234);
+  assert.deepEqual(authConfig, {
+    host: "smtp.gmail.com",
+    port: 587,
+    user: "sender@example.test",
+    password: "plain-password",
+    fromAddress: "sender@example.test",
+  });
 });
 
-test("Microsoft Graph credentials are not sent through the SMTP test path", () => {
-  assert.match(credentialSource, /credential\.provider === "microsoft_graph"/);
+test("failed stored SMTP authentication leaves verified_at unchanged", async () => {
+  const row = credential({ verified_at: 100 });
+  const db = new FakeCredentialDb([row]);
+
+  await assert.rejects(
+    testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
+      mailCredKey: "mail-key",
+      now: () => 1234,
+      decryptSecret: async () => "plain-password",
+      testSmtpAuth: async () => { throw new Error("535 5.7.8 authentication failed"); },
+    }),
+    /535 5\.7\.8 authentication failed/,
+  );
+  assert.equal(row.verified_at, 100);
+});
+
+test("stored SMTP test cannot use another account's credential", async () => {
+  const row = credential({ verified_at: 100 });
+  const db = new FakeCredentialDb([row]);
+  let authCalls = 0;
+
+  await assert.rejects(
+    testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-b", "cred-1", {
+      mailCredKey: "mail-key",
+      decryptSecret: async () => "plain-password",
+      testSmtpAuth: async () => { authCalls++; },
+    }),
+    /Mailkonto saknas eller är borttaget/,
+  );
+  assert.equal(authCalls, 0);
+  assert.equal(row.verified_at, 100);
+});
+
+test("stored SMTP test rejects revoked credentials without changing verified_at", async () => {
+  const row = credential({ revoked_at: 99, verified_at: 100 });
+  const db = new FakeCredentialDb([row]);
+  let authCalls = 0;
+
+  await assert.rejects(
+    testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
+      mailCredKey: "mail-key",
+      decryptSecret: async () => "plain-password",
+      testSmtpAuth: async () => { authCalls++; },
+    }),
+    /Mailkonto saknas eller är borttaget/,
+  );
+  assert.equal(authCalls, 0);
+  assert.equal(row.verified_at, 100);
+});
+
+test("Microsoft Graph credentials are not sent through the SMTP test path", async () => {
+  const row = credential({ provider: "microsoft_graph" });
+  const db = new FakeCredentialDb([row]);
+  await assert.rejects(
+    testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
+      mailCredKey: "mail-key",
+      decryptSecret: async () => "plain-password",
+      testSmtpAuth: async () => {},
+    }),
+    /endast SMTP-konton/,
+  );
   assert.match(settingsSource, /c\.provider!=='microsoft_graph'/);
 });
