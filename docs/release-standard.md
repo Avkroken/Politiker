@@ -1,32 +1,18 @@
 # Release- och versionsstandard
 
-**Senast verifierad:** 2026-09-27
+**Senast verifierad:** 2026-09-28
 
-Det här dokumentet gäller **Politiker-repositoryt**. Repositoryts egna workflows och dokumentation äger release-, deploy- och versionskontraktet.
+Det här dokumentet gäller **Politiker-repositoryt**. Repositoryts egna workflows, taggar och GitHub Releases äger release- och versionskontraktet.
 
-## Nuvarande versionsmodell
+## Versionsankare
 
-Politiker är en publik Cloudflare-applikation. `app/package.json` är `private: true` och saknar `version`; det är därför inte en produktversionskälla.
-
-Repositoryt har ingen verifierad canonical lokal appversionsfil på current `main`. Inför inte `version.txt` eller package-version enbart för releaseautomation.
-
-Versionerade releases förankras i SemVer-taggar:
-
-```text
-vMAJOR.MINOR.PATCH
-```
-
-GitHub Release ska referera samma tagg.
+Politiker använder immutable SemVer-taggar i formen `vMAJOR.MINOR.PATCH` som repositoryts canonical releaseversion. `app/package.json` är privat och är inte produktversionskälla.
 
 ## Release är inte deployment
 
-Produktionsdeployment ägs av Cloudflare Workers Builds, inte GitHub Actions. När `main` uppdateras kör Cloudflare repositoryts `npm run deploy:workers-builds`, som main-gatar körningen och bevarar ordningen validering → D1-migration → Worker-deploy → akademisynk → verifiering.
+Produktionsdeployment ägs fortsatt av Cloudflare Workers Builds. GitHub Release/tagg skapar ingen parallell Cloudflare-deployväg och releaseworkflown använder inga användarkonfigurerade Cloudflare-credentials.
 
-GitHub Actions är fortsatt CI-/repositoryautomation och innehåller ingen användarkonfigurerad Cloudflare deploy-secret.
-
-En GitHub tagg eller GitHub Release deployar **inte** produktion i sig. Releaseversion och produktionsdeployment är separata händelser även om en merge till `main` normalt utlöser Workers Builds. Releaseautomation får inte skapa en parallell produktionsväg.
-
-## PR-titlar och squash commits
+## PR-titlar och merge queue
 
 PR-titlar ska följa Conventional Commits:
 
@@ -34,128 +20,52 @@ PR-titlar ska följa Conventional Commits:
 <type>[optional scope][!]: <description>
 ```
 
-Tillåtna typer:
+Tillåtna typer är `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore` och `revert`.
 
-- `feat`
-- `fix`
-- `perf`
-- `refactor`
-- `docs`
-- `test`
-- `build`
-- `ci`
-- `chore`
-- `revert`
-
-Scope är valfri, exempelvis `auth`, `queue`, `contacts`, `preview`, `storage` eller `deps`.
-
-`!` markerar breaking change:
-
-```text
-feat(api)!: replace public request contract
-```
-
-`.github/workflows/pr-title.yml` validerar titeln på vanlig `pull_request`. Workflown använder inga secrets, checkar inte ut kod och har `permissions: {}`.
-
-Aktuell Dependabot-historik använder redan kompatibla titlar som `build(deps): ...`.
+`.github/workflows/pr-title.yml` validerar pull requests och rapporterar samma check-context på `merge_group`. Workflown använder inga secrets och har `permissions: {}`.
 
 ## SemVer
 
-Vid versionerad release:
+Automatisk versionsberäkning följer:
 
-- breaking change → **major**;
-- `feat` → normalt **minor**;
-- `fix` → normalt **patch**;
-- `docs`, `test`, `chore`, `ci` och `build` → normalt ingen release ensamma;
-- `perf` och `refactor` bedöms efter faktisk produkt-/API-effekt.
+- breaking change -> **major**;
+- `feat` -> **minor**;
+- `fix`, `perf` och `revert` -> **patch**;
+- `refactor`, `docs`, `test`, `build`, `ci` och `chore` skapar normalt ingen release ensamma;
+- `Release-As: major|minor|patch|none` kan uttryckligen klassificera en icke-breaking ändring;
+- breaking change kan aldrig sänkas under major.
 
-Releaseversionen är inte en Cloudflare Worker-version eller deploymenträknare.
+## Automatiskt releaseflöde
 
-## När release ska ske
-
-Release sker kuraterat, inte på varje merge eller deployment.
-
-En release är motiverad när:
-
-- användar-/operatörsfunktionalitet är färdig;
-- en fix behöver en officiell versionspunkt;
-- auth/API/data-/leveranskontrakt ändras på ett sätt konsumenter behöver kunna referera;
-- en breaking förändring kräver ny major-version.
-
-## Release-PR-målbild
+`.github/workflows/release.yml` äger releaseprocessen lokalt:
 
 ```text
-main changes
-  -> Conventional Commit-historik
-  -> release-PR
-  -> release notes + vald SemVer
-  -> ordinarie CI
-  -> merge
-  -> vMAJOR.MINOR.PATCH tag
-  -> GitHub Release
-
-Produktionsdeployment sker separat genom den vanliga Workers Builds-triggern på `main`; releaseflödet ska inte skapa en extra deploytrigger.
+PR
+  -> Conventional Commit-kompatibel PR-titel
+  -> normal CI/review
+  -> merge till main
+  -> Node and Cloudflare + Python + Docker verifierar samma main-SHA
+  -> semantic release beräknar SemVer
+  -> immutable tagg
+  -> GitHub Release med genererad changelog
 ```
 
-Release-PR får inte skapa en separat produktionsmigration eller produktionsdeploy utanför den ordinarie Workers Builds-vägen.
+Releasejobbet kör endast på `main`, använder full first-parent-historik, kräver checks i `.github/release-required-checks`, väntar på exakt release-target SHA och vägrar divergerande/stale releasehistorik.
 
-## Verifiering vid release
-
-Minst vanlig repository-CI ska vara grön.
-
-För appdelen:
-
-```bash
-cd app
-npm ci
-npm run validate
-```
-
-`validate` omfattar tester, produktionsverifieringstester, frontend-syntax, lokal D1-migration, Wrangler types, TypeScript och `wrangler deploy --dry-run`.
-
-Releasearbete som berör D1/deployment måste dessutom följa ordningen och säkerhetsgränserna i [operations.md](operations.md).
-
-## Releaseautomation — current state
-
-Targeted current-main-verifiering hittade ingen Release Please- eller `action-gh-release`-workflow.
-
-Release Please kan tekniskt skapa release-PR/tagg/GitHub Release från Conventional Commits men är inte aktiverat. Standardmodellen med repositoryts `GITHUB_TOKEN` triggar inte efterföljande Actions-workflows på bot-skapade PR:er/taggar, vilket skulle ge release-PR utan normal CI.
-
-Upstreamreferens: `https://github.com/googleapis/release-please-action#other-actions-on-release-please-prs`.
-
-Följande används inte som genväg:
-
-- ny PAT utan separat credentialbeslut;
-- bredare GitHub App-writebehörighet;
-- lättade CI-/review-/repositoryskydd;
-- koppling av releaseautomation direkt till produktionsdeployment.
-
-Full releaseautomation är blockerad tills ett least-privilege CI-kompatibelt write-identitetsflöde eller annan säker modell väljs.
-
-## CHANGELOG och release notes
-
-Det finns ingen root `CHANGELOG.md` på verifierad current `main`.
-
-GitHub Releases är den versionerade releasehistoriken för Portalens Changelog. En framtida versionsstyrd changelog får genereras i samma release-PR-process men ska inte bli en separat manuellt underhållen source of truth.
+En merge utan releasevärdig förändring skapar ingen release.
 
 ## Prerelease
 
-Prereleases används endast vid konkret behov, exempelvis `v2.0.0-rc.1`. En prerelease ska inte automatiskt deployas till produktion.
+Manuell `workflow_dispatch` kan skapa `vMAJOR.MINOR.PATCH-rc.N`. Promotion till stable använder den aktiva RC:ns commit och tar inte med senare `main`-commits implicit.
+
+## Changelog
+
+GitHub Releases är canonical versionerad changelog. Breaking changes markeras tydligt men behåller sin relevanta grundkategori.
+
+## Credentials
+
+Releasejobbet använder repositoryts `GITHUB_TOKEN` med least privilege: read för checks/status och `contents: write` endast för tagg/GitHub Release. Ingen PAT eller bredare GitHub App-writebehörighet behövs.
 
 ## Hotfix och rollback
 
-Hotfix utgår normalt från aktuell `main` och använder `fix:` när ändringen är bakåtkompatibel.
-
-Publicerade taggar flyttas inte. Vid felaktig release:
-
-1. korrigera/revert:a via vanlig PR;
-2. kör normal verifiering;
-3. skapa ny SemVer-version/tagg/GitHub Release;
-4. deploya endast om den korrigerade versionen faktiskt ska till produktion;
-5. följ D1-/deployment-/ingressverifiering enligt operations.
-
-Ingen force-push eller tag history rewrite används.
-
-## Kvarvarande blocker
-
-Full releaseautomation är separat arbete. Den får inte skapa nya onödiga credentials, bredda read-only integrationer eller koppla release direkt till produktionsmigrering/deploy utan separat arkitekturbeslut.
+Publicerade taggar flyttas inte. Korrigering går via vanlig PR, normal verifiering och en ny SemVer-release. Ingen force-push eller tag history rewrite används.
