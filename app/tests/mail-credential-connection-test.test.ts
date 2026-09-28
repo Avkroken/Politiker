@@ -9,7 +9,8 @@ const indexSource = readFileSync(new URL("../src/index.ts", import.meta.url), "u
 test("stored SMTP accounts expose an authenticated connection test action", () => {
   assert.match(settingsSource, /c\.provider!=='microsoft_graph'.*data-action="test">Testa anslutning<\/button>/s);
   assert.match(settingsSource, /\/api\/mail-credentials\/\$\{encodeURIComponent\(c\.id\)\}\/test/);
-  assert.match(indexSource, /POST".*\/api\\\/mail-credentials\\\/\(\[\^\/\]\+\)\\\/test.*testStoredSmtpCredential/s);
+  assert.ok(indexSource.includes('rx: /^\\/api\\/mail-credentials\\/([^/]+)\\/test$/'));
+  assert.match(indexSource, /testStoredSmtpCredential\(c\.env,c\.accountId,m\[1\]\)/);
 });
 
 test("stored SMTP test reuses the encrypted credential without exposing it", () => {
