@@ -1,4 +1,4 @@
-import { encryptSecret, randomId } from "../../shared/crypto";
+import { decryptSecret, encryptSecret, randomId } from "../../shared/crypto";
 import { assertNoControlCharacters, validateMailboxAddress } from "../../shared/input-safety";
 import { testSmtpAuth } from "../../shared/smtp";
 import { exchangeMicrosoftMailCode } from "../../shared/graph-mail";
@@ -110,6 +110,42 @@ export async function listMailCredentials(env: Env, accountId: string) {
      FROM mail_credentials WHERE account_id = ? AND revoked_at IS NULL ORDER BY created_at DESC`,
   ).bind(accountId).all();
   return results;
+}
+
+export async function testStoredSmtpCredential(
+  env: Env,
+  accountId: string,
+  credentialId: string,
+): Promise<{ verifiedAt: number }> {
+  const credential = await env.DB.prepare(
+    `SELECT provider, smtp_host, smtp_port, smtp_user, encrypted_password, from_address
+     FROM mail_credentials
+     WHERE id = ? AND account_id = ? AND revoked_at IS NULL`,
+  ).bind(credentialId, accountId).first<{
+    provider: string;
+    smtp_host: string;
+    smtp_port: number;
+    smtp_user: string;
+    encrypted_password: string;
+    from_address: string;
+  }>();
+  if (!credential) throw new Error("Mailkonto saknas eller är borttaget");
+  if (credential.provider === "microsoft_graph") throw new Error("Anslutningstestet gäller endast SMTP-konton");
+
+  const password = await decryptSecret(credential.encrypted_password, env.MAIL_CRED_KEY);
+  await testSmtpAuth({
+    host: credential.smtp_host,
+    port: credential.smtp_port,
+    user: credential.smtp_user,
+    password,
+    fromAddress: credential.from_address,
+  });
+
+  const verifiedAt = Date.now();
+  await env.DB.prepare(
+    "UPDATE mail_credentials SET verified_at = ? WHERE id = ? AND account_id = ? AND revoked_at IS NULL",
+  ).bind(verifiedAt, credentialId, accountId).run();
+  return { verifiedAt };
 }
 
 export async function deleteMailCredential(env: Env, accountId: string, credentialId: string): Promise<void> {
