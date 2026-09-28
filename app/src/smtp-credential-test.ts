@@ -7,6 +7,7 @@ export interface StoredSmtpCredentialAuthConfig {
 }
 
 export interface StoredSmtpCredentialTestDeps {
+  acquireTestSlot: () => Promise<boolean>;
   decryptSecret: (encoded: string, base64Key: string) => Promise<string>;
   testSmtpAuth: (config: StoredSmtpCredentialAuthConfig) => Promise<void>;
   mailCredKey: string;
@@ -35,6 +36,7 @@ export async function testStoredSmtpCredentialWithDeps(
   ).bind(credentialId, accountId).first<StoredSmtpCredentialRow>();
   if (!credential) throw new Error("Mailkonto saknas eller är borttaget");
   if (credential.provider === "microsoft_graph") throw new Error("Anslutningstestet gäller endast SMTP-konton");
+  if (!(await deps.acquireTestSlot())) throw new Error("För många anslutningstester — vänta en minut och försök igen");
 
   const password = await deps.decryptSecret(credential.encrypted_password, deps.mailCredKey);
   await deps.testSmtpAuth({
