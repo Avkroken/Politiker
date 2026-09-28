@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   isPermanentRecipientSmtpFailure,
   isSmtpAuthenticationFailure,
+  isTransientSmtpFailure,
   visibleSendJobError,
 } from "../../shared/smtp-failure.ts";
 
@@ -12,6 +13,14 @@ const queueSource = readFileSync(new URL("../src/send-queue.ts", import.meta.url
 test("SMTP authentication failures are account-scoped, not recipient bounces", () => {
   assert.equal(isSmtpAuthenticationFailure(new Error("Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed")), true);
   assert.equal(isSmtpAuthenticationFailure(new Error("RCPT TO nekades (550): 550 5.1.1 User unknown")), false);
+});
+
+test("explicit SMTP 4xx responses are transient", () => {
+  assert.equal(isTransientSmtpFailure(new Error("RCPT TO nekades (451): 451 4.2.0 Temporary failure")), true);
+  assert.equal(isTransientSmtpFailure(new Error("MAIL FROM nekades (fick 450: 450 4.2.0 Try again later)")), true);
+  assert.equal(isTransientSmtpFailure(new Error("Servern accepterade inte DATA (fick 421: 421 4.3.2 Service unavailable)")), true);
+  assert.equal(isTransientSmtpFailure(new Error("RCPT TO nekades (550): 550 5.1.1 User unknown")), false);
+  assert.equal(isTransientSmtpFailure(new Error("Inloggning misslyckades (454): 454 4.7.0 Temporary authentication failure")), false);
 });
 
 test("non-aborted jobs hide stale SMTP authentication diagnostics", () => {
@@ -42,6 +51,12 @@ test("queue aborts on SMTP auth failure without counting it as sent or poisoning
   assert.match(queueSource, /if\s*\(\s*isSmtpAuthenticationFailure\(err\)\s*\)\s*\{[\s\S]*?recordBlockingSendError\(env\s*,\s*m\s*,\s*errorMsg\)[\s\S]*?queueMsg\.ack\(\)[\s\S]*?aborted\s*=\s*true[\s\S]*?continue\s*;/);
   assert.match(queueSource, /\.bind\(\s*sentCount\s*,\s*bounceCount\s*,\s*aborted\s*\?\s*"aborted"\s*:\s*"sending"\s*,\s*sendJobId\s*\)/);
   assert.match(queueSource, /else\s+if\s*\(\s*markRecipientDead\s*\)\s*await\s+env\.DB\.prepare\(\s*"UPDATE public_contacts SET verification_status='dead_via_send'/);
+});
+
+test("queue retries transient SMTP failures before recording a bounce", () => {
+  assert.match(queueSource, /isTransientSmtpFailure\(err\)&&queueMsg\.attempts<TRANSIENT_SMTP_MAX_ATTEMPTS/);
+  assert.match(queueSource, /recordTransientSendError\(env,m,errorMsg\);queueMsg\.retry\(\{delaySeconds:transientSmtpRetryDelaySeconds\(queueMsg\.attempts\)\}\);continue;/);
+  assert.ok(queueSource.indexOf("if(isTransientSmtpFailure(err)") < queueSource.indexOf("bounceCount++;"));
 });
 
 test("remaining batch messages are acknowledged after a job aborts", () => {
