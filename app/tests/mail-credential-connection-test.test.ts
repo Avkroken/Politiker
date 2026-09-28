@@ -6,6 +6,7 @@ import { testStoredSmtpCredentialWithDeps, type StoredSmtpCredentialAuthConfig }
 const settingsSource = readFileSync(new URL("../public/app-settings.js", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
 const secureIndexSource = readFileSync(new URL("../src/secure-index.ts", import.meta.url), "utf8");
+const mailCredentialsSource = readFileSync(new URL("../src/mail-credentials.ts", import.meta.url), "utf8");
 
 interface CredentialFixture {
   id: string;
@@ -91,12 +92,38 @@ test("stored SMTP retests require a fresh web session", () => {
   assert.ok(secureIndexSource.includes('/^\\/api\\/mail-credentials\\/[^/]+\\/test$/.test(pathname)'));
 });
 
+test("stored SMTP retests use a separate per-credential Durable Object bucket", () => {
+  assert.match(mailCredentialsSource, /RATE_LIMITER\.idFromName\(`smtp-test:\$\{credentialId\}`\)/);
+  assert.match(mailCredentialsSource, /JSON\.stringify\(\{ capacity: 1, refillPerMinute: 1 \}\)/);
+});
+
+test("rate-limited stored SMTP authentication stops before secret decryption", async () => {
+  const row = credential({ verified_at: 100 });
+  const db = new FakeCredentialDb([row]);
+  let decryptCalls = 0;
+  let authCalls = 0;
+
+  await assert.rejects(
+    testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
+      acquireTestSlot: async () => false,
+      mailCredKey: "mail-key",
+      decryptSecret: async () => { decryptCalls++; return "unused"; },
+      testSmtpAuth: async () => { authCalls++; },
+    }),
+    /För många anslutningstester/,
+  );
+  assert.equal(decryptCalls, 0);
+  assert.equal(authCalls, 0);
+  assert.equal(row.verified_at, 100);
+});
+
 test("successful stored SMTP authentication updates verified_at afterwards", async () => {
   const row = credential();
   const db = new FakeCredentialDb([row]);
   let authConfig: StoredSmtpCredentialAuthConfig | null = null;
 
   const result = await testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
+    acquireTestSlot: async () => true,
     mailCredKey: "mail-key",
     now: () => 1234,
     decryptSecret: async (encoded, key) => {
@@ -124,7 +151,8 @@ test("failed stored SMTP authentication leaves verified_at unchanged", async () 
 
   await assert.rejects(
     testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
-      mailCredKey: "mail-key",
+      acquireTestSlot: async () => true,
+    mailCredKey: "mail-key",
       now: () => 1234,
       decryptSecret: async () => "plain-password",
       testSmtpAuth: async () => { throw new Error("535 5.7.8 authentication failed"); },
@@ -140,7 +168,8 @@ test("stored SMTP test fails if the credential is revoked during authentication"
 
   await assert.rejects(
     testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
-      mailCredKey: "mail-key",
+      acquireTestSlot: async () => true,
+    mailCredKey: "mail-key",
       now: () => 1234,
       decryptSecret: async () => "plain-password",
       testSmtpAuth: async () => { row.revoked_at = 999; },
@@ -157,7 +186,8 @@ test("stored SMTP test cannot use another account's credential", async () => {
 
   await assert.rejects(
     testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-b", "cred-1", {
-      mailCredKey: "mail-key",
+      acquireTestSlot: async () => true,
+    mailCredKey: "mail-key",
       decryptSecret: async () => "plain-password",
       testSmtpAuth: async () => { authCalls++; },
     }),
@@ -174,7 +204,8 @@ test("stored SMTP test rejects revoked credentials without changing verified_at"
 
   await assert.rejects(
     testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
-      mailCredKey: "mail-key",
+      acquireTestSlot: async () => true,
+    mailCredKey: "mail-key",
       decryptSecret: async () => "plain-password",
       testSmtpAuth: async () => { authCalls++; },
     }),
@@ -189,7 +220,8 @@ test("Microsoft Graph credentials are not sent through the SMTP test path", asyn
   const db = new FakeCredentialDb([row]);
   await assert.rejects(
     testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
-      mailCredKey: "mail-key",
+      acquireTestSlot: async () => true,
+    mailCredKey: "mail-key",
       decryptSecret: async () => "plain-password",
       testSmtpAuth: async () => {},
     }),
