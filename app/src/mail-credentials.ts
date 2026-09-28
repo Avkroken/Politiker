@@ -113,12 +113,28 @@ export async function listMailCredentials(env: Env, accountId: string) {
   return results;
 }
 
+async function acquireStoredSmtpTestSlot(env: Env, credentialId: string): Promise<boolean> {
+  if (env.PREVIEW_MODE === "1") return true;
+  const id = env.RATE_LIMITER.idFromName(`smtp-test:${credentialId}`);
+  try {
+    const response = await env.RATE_LIMITER.get(id).fetch("https://rate-limiter/acquire", {
+      method: "POST",
+      body: JSON.stringify({ capacity: 1, refillPerMinute: 1 }),
+    });
+    const result = await response.json<{ granted?: boolean }>();
+    return result.granted === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function testStoredSmtpCredential(
   env: Env,
   accountId: string,
   credentialId: string,
 ): Promise<{ verifiedAt: number }> {
   return testStoredSmtpCredentialWithDeps(env.DB, accountId, credentialId, {
+    acquireTestSlot: () => acquireStoredSmtpTestSlot(env, credentialId),
     decryptSecret,
     testSmtpAuth,
     mailCredKey: env.MAIL_CRED_KEY,
