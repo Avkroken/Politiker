@@ -24,3 +24,13 @@
 - Kör `cd app && npm run validate` före merge för apprelaterade ändringar.
 - Bevara query-string-redaction och central observability-policy.
 - Lägg aldrig SMTP-/OAuth-credentials, API-nycklar, krypteringsnycklar eller andra secrets i repository, logs eller publik dokumentation.
+## Agent skills
+
+### Issue tracker
+
+Use this repository's GitHub Issues for issues and specifications. Read `docs/agents/issue-tracker.md` before reading, creating, or publishing tickets.
+
+### Domain docs
+
+Use the single-context convention in `docs/agents/domain.md`; existing project-context, architecture, operations, and ADR documentation remain authoritative.
+
