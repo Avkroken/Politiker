@@ -128,6 +128,20 @@ async function acquireStoredSmtpTestSlot(env: Env, credentialId: string): Promis
   }
 }
 
+/**
+ * Testar autentisering med ett sparat SMTP-konto utan att skicka e-post.
+ *
+ * Testet använder en separat serialiserad rate-limit-bucket per credential,
+ * dekrypterar lösenordet endast efter beviljad slot och uppdaterar
+ * `verified_at` först efter lyckad SMTP-autentisering.
+ *
+ * @param env - Worker-miljön med D1, Durable Object-rate-limiter och MAIL_CRED_KEY.
+ * @param accountId - Det autentiserade konto som måste äga credentialen.
+ * @param credentialId - Identifieraren för det lagrade SMTP-kontot.
+ * @returns Verifieringstidpunkten efter lyckad autentisering och D1-uppdatering.
+ * @throws Om credentialen saknas, är återkallad, använder Microsoft Graph,
+ * rate-limit nekas, dekryptering/SMTP-test misslyckas eller credentialen ändras under testet.
+ */
 export async function testStoredSmtpCredential(
   env: Env,
   accountId: string,
