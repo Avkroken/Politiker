@@ -11,7 +11,10 @@
 
 ## Invariants
 
-- Arbeta i separat gren enligt `{agent}/{feature}/{YYYY-MM-DD}/{HH-mm}-{id}`.
+- Anta inte organization-scope eller andra org-funktioner utan live-verifiering.
+- Arbeta i separat gren enligt `{agent}/{feature}/{YYYY-MM-DD}`.
+- Commits ska använda Conventional Commits eller motsvarande tydlig typ, exempelvis `feat:`, `fix:`, `docs:`, `chore:`, `ci:` eller `test:`.
+- Läs hela PR-review-state före merge, inklusive kommentarer och trådar som GitHub markerar som `outdated`; verifiera att grundproblemet faktiskt är löst.
 - D1 är canonical application state; KV, R2, Queue och Durable Object har separata avgränsade roller.
 - `CredentialRateLimiter` är serialiserad koordinationspunkt för mailcredential-rate limiting; ersätt inte den med oserialiserad process-/KV-state.
 - D1-schemaändringar ska vara versionsstyrda migrationer i `infra/migrations/`.
