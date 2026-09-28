@@ -49,6 +49,12 @@ function apiKeyRouteAllowed(method: string, pathname: string): boolean {
   if (method === "PATCH" && /^\/api\/send-jobs\/[^/]+\/rate$/.test(pathname)) return true;
   return false;
 }
+/**
+ * Anger om routen kräver nylig webbinloggning, bland annat för SMTP-test.
+ * Anroparen kontrollerar sessionen och dess ålder.
+ * @param method - HTTP-metod med versaler.
+ * @param pathname - URL-sökväg utan frågesträng.
+ */
 function needsFreshSession(method: string, pathname: string): boolean {
   if (method === "POST" && (["/api/totp/setup", "/api/totp/confirm", "/api/totp/disable", "/api/set-password", "/api/api-keys", "/api/mail-credentials"].includes(pathname) || /^\/api\/mail-credentials\/[^/]+\/test$/.test(pathname))) return true;
   if (method === "DELETE" && (/^\/api\/api-keys\/[^/]+$/.test(pathname) || /^\/api\/oauth-identities\/[a-z]+$/.test(pathname) || /^\/api\/mail-credentials\/[^/]+$/.test(pathname))) return true;

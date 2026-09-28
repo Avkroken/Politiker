@@ -22,6 +22,17 @@ interface StoredSmtpCredentialRow {
   from_address: string;
 }
 
+/**
+ * Testar ett sparat SMTP-konto som tillhör accountId och inte är återkallat.
+ * Efter lyckad autentisering uppdateras verified_at om kontot fortfarande är aktivt.
+ *
+ * @param deps - Dekryptering, SMTP-test och nyckel; now anger millisekunder sedan
+ * Unix-epoken och använder Date.now om den utelämnas.
+ * @returns Testets verifiedAt i millisekunder sedan Unix-epoken, även om kontot
+ * har återkallats eller tagits bort före uppdateringen.
+ * @throws Om kontot saknas, tillhör någon annan, är återkallat eller använder
+ * Microsoft Graph. Fel från databasen och de injicerade funktionerna förs vidare.
+ */
 export async function testStoredSmtpCredentialWithDeps(
   db: D1Database,
   accountId: string,

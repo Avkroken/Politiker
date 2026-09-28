@@ -113,6 +113,15 @@ export async function listMailCredentials(env: Env, accountId: string) {
   return results;
 }
 
+/**
+ * Testar autentisering med det sparade SMTP-kontot utan att skicka e-post.
+ * Dekrypterar lösenordet i Workern och uppdaterar verified_at efter lyckat test
+ * om kontot fortfarande är aktivt.
+ *
+ * @returns Testets verifiedAt i millisekunder sedan Unix-epoken.
+ * @throws Om kontot inte är aktivt för accountId eller använder Microsoft Graph.
+ * Fel vid databasåtkomst, dekryptering, adressvalidering och SMTP-test förs vidare.
+ */
 export async function testStoredSmtpCredential(
   env: Env,
   accountId: string,
