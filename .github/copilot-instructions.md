@@ -48,7 +48,11 @@ Run the narrowest relevant tests while iterating, then run the complete command 
 
 ## Agent workflow
 
-- Never make implementation commits directly on `main`. Use a dedicated branch named `{agent}/{feature}/{YYYY-MM-DD}/{HH-mm}-{id}` for new work, keep it focused, and open a pull request to `main` when it is ready.
+- Never make implementation commits directly on `main`. Use a dedicated branch named `{agent}/{feature}/{date}`, where `date` is `YYYY-MM-DD`, keep the branch focused, and open a pull request to `main` when it is ready.
+- Work serially and semantically within this repository. One branch/PR represents one coherent feature or task, and the `feature` segment must describe that work meaningfully.
+- Before starting the next task in this repository, finish the existing open work branch, draft, or PR through the relevant checks, reviews, and merge, or explicitly close/block it.
+- If `{agent}/{feature}/{date}` already exists for the task, continue that work line instead of creating another branch.
+- Do not add timestamp/ID suffixes or create parallel branch variants merely to bypass an occupied branch name.
 - Do not force-push unless the user explicitly requests it.
 - Before implementation, read repository documentation, nearby code, existing tests, and CI workflows. Prefer established repository architecture, naming, tooling, and conventions over generic defaults.
 - For non-trivial work, state the expected behavior and testing seam before editing production code. If the task is broad or ambiguous, record scope, constraints, acceptance checks, and split multi-part work into independently verifiable steps.
@@ -58,4 +62,5 @@ Run the narrowest relevant tests while iterating, then run the complete command 
 - Run the narrowest relevant tests while iterating, then run the required validation above before declaring work complete.
 - Treat failing CI, tests, type checks, linters, and security checks as unresolved unless the failure is demonstrably unrelated and reported.
 - Review the completed diff for correctness, scope, security, and missing tests. Resolve merge or rebase conflicts by preserving the intent of both sides rather than choosing changes mechanically.
+- Read the complete pull-request review state before merge, including comments and threads GitHub marks as `outdated`; verify that the underlying issue is actually resolved.
 - Keep progress and handoff notes concise: current state, evidence, verification performed, remaining work, and risks. Never expose secrets, tokens, credentials, private keys, or sensitive environment values.
