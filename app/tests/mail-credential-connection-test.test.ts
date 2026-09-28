@@ -5,12 +5,17 @@ import { test } from "node:test";
 const settingsSource = readFileSync(new URL("../public/app-settings.js", import.meta.url), "utf8");
 const credentialSource = readFileSync(new URL("../src/mail-credentials.ts", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
+const secureIndexSource = readFileSync(new URL("../src/secure-index.ts", import.meta.url), "utf8");
 
 test("stored SMTP accounts expose an authenticated connection test action", () => {
   assert.match(settingsSource, /c\.provider!=='microsoft_graph'.*data-action="test">Testa anslutning<\/button>/s);
   assert.match(settingsSource, /\/api\/mail-credentials\/\$\{encodeURIComponent\(c\.id\)\}\/test/);
   assert.ok(indexSource.includes('rx: /^\\/api\\/mail-credentials\\/([^/]+)\\/test$/'));
   assert.match(indexSource, /testStoredSmtpCredential\(c\.env,c\.accountId,m\[1\]\)/);
+});
+
+test("stored SMTP retests require a fresh web session", () => {
+  assert.match(secureIndexSource, /mail-credentials\\\/\[\^\/\]\+\\\/test\$\/\.test\(pathname\)/);
 });
 
 test("stored SMTP test reuses the encrypted credential without exposing it", () => {
