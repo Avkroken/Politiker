@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { testStoredSmtpCredentialWithDeps, type StoredSmtpCredentialAuthConfig } from "../src/smtp-credential-test.ts";
+import { testStoredSmtpCredentialWithDeps, updateStoredSmtpCredentialPasswordWithDeps, type StoredSmtpCredentialAuthConfig } from "../src/smtp-credential-test.ts";
 
 const settingsSource = readFileSync(new URL("../public/app-settings.js", import.meta.url), "utf8");
 const indexSource = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
@@ -50,15 +50,26 @@ class FakeCredentialDb {
           } as T;
         },
         run: async () => {
-          if (!sql.startsWith("UPDATE mail_credentials SET verified_at = ?")) throw new Error("Unexpected UPDATE");
           assert.match(sql, /WHERE id = \? AND account_id = \? AND revoked_at IS NULL/);
-          assert.equal(args.length, 3);
-          const [verifiedAt, credentialId, accountId] = args as [number, string, string];
-          const row = this.rows.find((item) =>
-            item.id === credentialId && item.account_id === accountId && item.revoked_at === null
-          );
-          if (row) row.verified_at = verifiedAt;
-          return { meta: { changes: row ? 1 : 0 } };
+          if (sql.startsWith("UPDATE mail_credentials SET verified_at = ?")) {
+            assert.equal(args.length, 3);
+            const [verifiedAt, credentialId, accountId] = args as [number, string, string];
+            const row = this.rows.find((item) =>
+              item.id === credentialId && item.account_id === accountId && item.revoked_at === null
+            );
+            if (row) row.verified_at = verifiedAt;
+            return { meta: { changes: row ? 1 : 0 } };
+          }
+          if (sql.startsWith("UPDATE mail_credentials SET encrypted_password = ?, verified_at = ?")) {
+            assert.equal(args.length, 4);
+            const [encryptedPassword, verifiedAt, credentialId, accountId] = args as [string, number, string, string];
+            const row = this.rows.find((item) =>
+              item.id === credentialId && item.account_id === accountId && item.revoked_at === null
+            );
+            if (row) { row.encrypted_password = encryptedPassword; row.verified_at = verifiedAt; }
+            return { meta: { changes: row ? 1 : 0 } };
+          }
+          throw new Error("Unexpected UPDATE");
         },
       }),
     };
@@ -86,14 +97,18 @@ test("stored SMTP accounts expose an authenticated connection test action", () =
   assert.match(settingsSource, /\/api\/mail-credentials\/\$\{encodeURIComponent\(c\.id\)\}\/test/);
   assert.ok(indexSource.includes('rx: /^\\/api\\/mail-credentials\\/([^/]+)\\/test$/'));
   assert.match(indexSource, /testStoredSmtpCredential\(c\.env,c\.accountId,m\[1\]\)/);
+  assert.match(settingsSource, /data-action="password">Uppdatera lösenord<\/button>/);
+  assert.match(settingsSource, /\/api\/mail-credentials\/\$\{encodeURIComponent\(c\.id\)\}\/password/);
+  assert.ok(indexSource.includes('rx: /^\\/api\\/mail-credentials\\/([^/]+)\\/password$/'));
 });
 
-test("stored SMTP retests require a fresh web session", () => {
-  assert.ok(secureIndexSource.includes('/^\\/api\\/mail-credentials\\/[^/]+\\/test$/.test(pathname)'));
+test("stored SMTP retests and password updates require a fresh web session", () => {
+  assert.ok(secureIndexSource.includes('/^\\/api\\/mail-credentials\\/[^/]+\\/(?:test|password)$/.test(pathname)'));
 });
 
-test("stored SMTP retests use a separate per-credential Durable Object bucket", () => {
-  assert.match(mailCredentialsSource, /RATE_LIMITER\.idFromName\(`smtp-test:\$\{credentialId\}`\)/);
+test("stored SMTP tests and updates use separate per-credential Durable Object buckets", () => {
+  assert.match(mailCredentialsSource, /RATE_LIMITER\.idFromName\(`smtp-\$\{purpose\}:\$\{credentialId\}`\)/);
+  assert.match(mailCredentialsSource, /acquireStoredSmtpTestSlot\(env, credentialId, "update"\)/);
   assert.match(mailCredentialsSource, /JSON\.stringify\(\{ capacity: 1, refillPerMinute: 1 \}\)/);
 });
 
@@ -159,6 +174,70 @@ test("failed stored SMTP authentication leaves verified_at unchanged", async () 
     }),
     /535 5\.7\.8 authentication failed/,
   );
+  assert.equal(row.verified_at, 100);
+});
+
+test("stored SMTP decryption failures are actionable account errors", async () => {
+  const row = credential({ verified_at: 100 });
+  const db = new FakeCredentialDb([row]);
+  let authCalls = 0;
+  await assert.rejects(
+    testStoredSmtpCredentialWithDeps(db as unknown as D1Database, "account-a", "cred-1", {
+      acquireTestSlot: async () => true,
+      mailCredKey: "mail-key",
+      decryptSecret: async () => { throw new Error("OperationError"); },
+      testSmtpAuth: async () => { authCalls++; },
+    }),
+    /kan inte dekrypteras.*Spara app-lösenordet på nytt/,
+  );
+  assert.equal(authCalls, 0);
+  assert.equal(row.verified_at, 100);
+});
+
+test("stored SMTP password update authenticates before replacing encrypted state", async () => {
+  const row = credential({ encrypted_password: "old-encrypted", verified_at: 100 });
+  const db = new FakeCredentialDb([row]);
+  let authPassword = "";
+  let encryptedPlaintext = "";
+  const result = await updateStoredSmtpCredentialPasswordWithDeps(
+    db as unknown as D1Database,
+    "account-a",
+    "cred-1",
+    "same-app-password",
+    {
+      acquireTestSlot: async () => true,
+      mailCredKey: "mail-key",
+      now: () => 4321,
+      testSmtpAuth: async (config) => { authPassword = config.password; },
+      encryptSecret: async (plaintext, key) => {
+        encryptedPlaintext = plaintext;
+        assert.equal(key, "mail-key");
+        return "new-encrypted";
+      },
+    },
+  );
+  assert.equal(authPassword, "same-app-password");
+  assert.equal(encryptedPlaintext, "same-app-password");
+  assert.equal(row.encrypted_password, "new-encrypted");
+  assert.equal(row.verified_at, 4321);
+  assert.deepEqual(result, { verifiedAt: 4321 });
+});
+
+test("failed replacement password never overwrites the stored SMTP secret", async () => {
+  const row = credential({ encrypted_password: "old-encrypted", verified_at: 100 });
+  const db = new FakeCredentialDb([row]);
+  let encryptCalls = 0;
+  await assert.rejects(
+    updateStoredSmtpCredentialPasswordWithDeps(db as unknown as D1Database, "account-a", "cred-1", "bad-password", {
+      acquireTestSlot: async () => true,
+      mailCredKey: "mail-key",
+      testSmtpAuth: async () => { throw new Error("Inloggning misslyckades (535): authentication failed"); },
+      encryptSecret: async () => { encryptCalls++; return "must-not-be-written"; },
+    }),
+    /535/,
+  );
+  assert.equal(encryptCalls, 0);
+  assert.equal(row.encrypted_password, "old-encrypted");
   assert.equal(row.verified_at, 100);
 });
 

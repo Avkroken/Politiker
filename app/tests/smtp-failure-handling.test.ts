@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
+  isMailCredentialFailure,
   isPermanentRecipientSmtpFailure,
   isSmtpAuthenticationFailure,
   isTransientSmtpFailure,
@@ -13,6 +14,15 @@ const queueSource = readFileSync(new URL("../src/send-queue.ts", import.meta.url
 test("SMTP authentication failures are account-scoped, not recipient bounces", () => {
   assert.equal(isSmtpAuthenticationFailure(new Error("Inloggning misslyckades (535): 535 5.7.8 Error: authentication failed")), true);
   assert.equal(isSmtpAuthenticationFailure(new Error("RCPT TO nekades (550): 550 5.1.1 User unknown")), false);
+});
+
+
+test("stored SMTP decryption failures are account-scoped", () => {
+  const error = new Error("Det sparade SMTP-lösenordet kan inte dekrypteras. Spara app-lösenordet på nytt under Inställningar → Mail.");
+  assert.equal(isMailCredentialFailure(error), true);
+  assert.equal(visibleSendJobError("sending", error.message), null);
+  assert.equal(visibleSendJobError("aborted", error.message), error.message);
+  assert.match(queueSource, /decryptSecret\(c\.encrypted_password,env\.MAIL_CRED_KEY\)/);
 });
 
 test("explicit SMTP 4xx responses are transient", () => {
@@ -47,8 +57,8 @@ test("only permanent recipient rejections mark an address as dead", () => {
   assert.equal(isPermanentRecipientSmtpFailure(new Error("Inloggning misslyckades (535): authentication failed")), false);
 });
 
-test("queue aborts on SMTP auth failure without counting it as sent or poisoning the recipient", () => {
-  assert.match(queueSource, /if\s*\(\s*isSmtpAuthenticationFailure\(err\)\s*\)\s*\{[\s\S]*?recordBlockingSendError\(env\s*,\s*m\s*,\s*errorMsg\)[\s\S]*?queueMsg\.ack\(\)[\s\S]*?aborted\s*=\s*true[\s\S]*?continue\s*;/);
+test("queue aborts on credential failures without counting them as sent or poisoning the recipient", () => {
+  assert.match(queueSource, /if\s*\(\s*isMailCredentialFailure\(err\)\s*\)\s*\{[\s\S]*?recordBlockingSendError\(env\s*,\s*m\s*,\s*errorMsg\)[\s\S]*?queueMsg\.ack\(\)[\s\S]*?aborted\s*=\s*true[\s\S]*?continue\s*;/);
   assert.match(queueSource, /\.bind\(\s*sentCount\s*,\s*bounceCount\s*,\s*aborted\s*\?\s*"aborted"\s*:\s*"sending"\s*,\s*sendJobId\s*\)/);
   assert.match(queueSource, /else\s+if\s*\(\s*markRecipientDead\s*\)\s*await\s+env\.DB\.prepare\(\s*"UPDATE public_contacts SET verification_status='dead_via_send'/);
 });

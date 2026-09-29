@@ -7,7 +7,7 @@ import { getAdminStats, exportAdminData, getTimeSeries, type Granularity } from 
 import { recordVisit } from "./visits";
 import {
   addMailCredential, listMailCredentials, deleteMailCredential, addMicrosoftGraphMailCredential,
-  updateMailCredentialCapPct, testStoredSmtpCredential, PROVIDER_PRESETS, getCeiling, MICROSOFT_GRAPH_DAILY_LIMIT,
+  updateMailCredentialCapPct, testStoredSmtpCredential, updateStoredSmtpCredentialPassword, PROVIDER_PRESETS, getCeiling, MICROSOFT_GRAPH_DAILY_LIMIT,
 } from "./mail-credentials";
 import { listAreas, listParties, listRoles, searchPublicContactsInAreas, getRecipientsForAreas, deleteAccount } from "./db";
 import {
@@ -117,6 +117,7 @@ const AUTHED_ROUTES: RouteDef[] = [
   { method: "GET", rx: /^\/api\/provider-ceilings$/, h: async c => { const providers=[...Object.keys(PROVIDER_PRESETS),"microsoft_graph"]; const result:Record<string,{providerDailyLimit:number|null;ceiling:number|null}>={}; for(const p of providers)result[p]={providerDailyLimit:p==="microsoft_graph"?MICROSOFT_GRAPH_DAILY_LIMIT:PROVIDER_PRESETS[p].providerDailyLimit,ceiling:getCeiling(p)}; return json(result); } },
   { method: "POST", rx: /^\/api\/mail-credentials$/, h: async c => json(await addMailCredential(c.env,c.accountId,await c.req.json<Parameters<typeof addMailCredential>[2]>())) },
   { method: "POST", rx: /^\/api\/mail-credentials\/([^/]+)\/test$/, h: async (c,m) => json(await testStoredSmtpCredential(c.env,c.accountId,m[1])) },
+  { method: "POST", rx: /^\/api\/mail-credentials\/([^/]+)\/password$/, h: async (c,m) => { const {password}=await c.req.json<{password:string}>(); return json(await updateStoredSmtpCredentialPassword(c.env,c.accountId,m[1],password)); } },
   { method: "POST", rx: /^\/api\/mail-credentials\/([^/]+)\/cap-pct$/, h: async (c,m) => { const {userCapPct}=await c.req.json<{userCapPct:number}>(); return json(await updateMailCredentialCapPct(c.env,c.accountId,m[1],userCapPct)); } },
   { method: "DELETE", rx: /^\/api\/mail-credentials\/([^/]+)$/, h: async (c,m) => { await deleteMailCredential(c.env,c.accountId,m[1]); return json({ok:true}); } },
   { method: "POST", rx: /^\/api\/recipients\/count$/, h: async c => {
