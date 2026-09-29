@@ -1,7 +1,7 @@
 import { decryptSecret, encryptSecret, randomId } from "../../shared/crypto";
 import { assertNoControlCharacters, validateMailboxAddress } from "../../shared/input-safety";
 import { testSmtpAuth } from "../../shared/smtp";
-import { testStoredSmtpCredentialWithDeps } from "./smtp-credential-test";
+import { testStoredSmtpCredentialWithDeps, updateStoredSmtpCredentialPasswordWithDeps } from "./smtp-credential-test";
 import { exchangeMicrosoftMailCode } from "../../shared/graph-mail";
 import type { Env } from "./db";
 
@@ -113,9 +113,9 @@ export async function listMailCredentials(env: Env, accountId: string) {
   return results;
 }
 
-async function acquireStoredSmtpTestSlot(env: Env, credentialId: string): Promise<boolean> {
+async function acquireStoredSmtpTestSlot(env: Env, credentialId: string, purpose = "test"): Promise<boolean> {
   if (env.PREVIEW_MODE === "1") return true;
-  const id = env.RATE_LIMITER.idFromName(`smtp-test:${credentialId}`);
+  const id = env.RATE_LIMITER.idFromName(`smtp-${purpose}:${credentialId}`);
   try {
     const response = await env.RATE_LIMITER.get(id).fetch("https://rate-limiter/acquire", {
       method: "POST",
@@ -150,6 +150,20 @@ export async function testStoredSmtpCredential(
   return testStoredSmtpCredentialWithDeps(env.DB, accountId, credentialId, {
     acquireTestSlot: () => acquireStoredSmtpTestSlot(env, credentialId),
     decryptSecret,
+    testSmtpAuth,
+    mailCredKey: env.MAIL_CRED_KEY,
+  });
+}
+
+export async function updateStoredSmtpCredentialPassword(
+  env: Env,
+  accountId: string,
+  credentialId: string,
+  password: string,
+): Promise<{ verifiedAt: number }> {
+  return updateStoredSmtpCredentialPasswordWithDeps(env.DB, accountId, credentialId, password, {
+    acquireTestSlot: () => acquireStoredSmtpTestSlot(env, credentialId, "update"),
+    encryptSecret,
     testSmtpAuth,
     mailCredKey: env.MAIL_CRED_KEY,
   });

@@ -60,7 +60,7 @@ function apiKeyRouteAllowed(method: string, pathname: string): boolean {
  * @returns `true` när anroparen måste verifiera en fresh web session.
  */
 function needsFreshSession(method: string, pathname: string): boolean {
-  if (method === "POST" && (["/api/totp/setup", "/api/totp/confirm", "/api/totp/disable", "/api/set-password", "/api/api-keys", "/api/mail-credentials"].includes(pathname) || /^\/api\/mail-credentials\/[^/]+\/test$/.test(pathname))) return true;
+  if (method === "POST" && (["/api/totp/setup", "/api/totp/confirm", "/api/totp/disable", "/api/set-password", "/api/api-keys", "/api/mail-credentials"].includes(pathname) || /^\/api\/mail-credentials\/[^/]+\/(?:test|password)$/.test(pathname))) return true;
   if (method === "DELETE" && (/^\/api\/api-keys\/[^/]+$/.test(pathname) || /^\/api\/oauth-identities\/[a-z]+$/.test(pathname) || /^\/api\/mail-credentials\/[^/]+$/.test(pathname))) return true;
   if (method === "GET" && /^\/api\/(?:oauth-link\/[a-z]+|oauth-mail\/microsoft)\/start$/.test(pathname)) return true;
   return false;

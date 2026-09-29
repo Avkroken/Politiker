@@ -13,15 +13,20 @@ function smtpResponseCode(error: unknown): number | null {
   return Number.isInteger(code) ? code : null;
 }
 
+export function isMailCredentialFailure(error: unknown): boolean {
+  const message = errorMessage(error);
+  return isSmtpAuthenticationFailure(error) || /^Det sparade SMTP-lösenordet kan inte dekrypteras\b/.test(message);
+}
+
 export function isTransientSmtpFailure(error: unknown): boolean {
-  if (isSmtpAuthenticationFailure(error)) return false;
+  if (isMailCredentialFailure(error)) return false;
   const code = smtpResponseCode(error);
   return code !== null && code >= 400 && code < 500;
 }
 
 export function visibleSendJobError(status: string, error: string | null | undefined): string | null {
   if (!error) return null;
-  if (isSmtpAuthenticationFailure(error)) return status === "aborted" ? error : null;
+  if (isMailCredentialFailure(error)) return status === "aborted" ? error : null;
   return error;
 }
 

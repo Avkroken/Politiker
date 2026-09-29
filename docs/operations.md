@@ -59,6 +59,17 @@ Vid leveransproblem, kontrollera i ordning:
 
 Manuell återkörning ska inte vara första åtgärd eftersom persistent state och queue-state måste vara konsistenta.
 
+### SMTP-credential och autentiseringsfel
+
+Felsök ett lagrat SMTP-konto i den här ordningen:
+
+1. **Fresh session:** om UI säger att användaren måste logga ut och in igen har SMTP-testet inte nått leverantören. Logga in igen och kör testet på nytt.
+2. **Dekryptering:** `Det sparade SMTP-lösenordet kan inte dekrypteras` betyder att den lagrade credentialen inte kan läsas med aktuell `MAIL_CRED_KEY`. Rotera inte `MAIL_CRED_KEY` som felsökningsåtgärd; använd **Uppdatera lösenord** för att testa och kryptera credentialen på nytt.
+3. **SMTP-auth:** ett explicit providerfel som `535` betyder att SMTP-servern avvisade credentialen. För iCloud används `smtp.mail.me.com:587` med STARTTLS och ett appspecifikt lösenord.
+4. **Leverans:** först när credentialen autentiserar ska D1 send-job-state, Queue/DLQ och mottagarspecifika SMTP-svar felsökas.
+
+**Uppdatera lösenord** autentiserar det inmatade värdet mot den befintliga SMTP-host/user/from-konfigurationen innan `encrypted_password` och `verified_at` skrivs. Ett misslyckat test ändrar alltså inte den lagrade credentialen.
+
 ## R2/bilagor
 
 Verifiera binding, objektkey och metadatarelation innan objekt raderas eller skrivs om. Objektinnehåll ska inte användas som generell debugdump.
