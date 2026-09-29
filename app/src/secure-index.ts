@@ -155,7 +155,7 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
   if (needsFreshSession(req.method, url.pathname)) {
     const session = await getSessionContext(primaryEnv, getCookie(req, "session"));
     if (!session) return withSecurityHeaders(json({ error: "Den här säkerhetsändringen kräver en vanlig webbsession" }, 403), url.pathname);
-    if (Date.now() - session.authenticatedAt > FRESH_AUTH_MS) return withSecurityHeaders(json({ error: "Logga ut och in igen innan du ändrar kontots säkerhetsinställningar" }, 403), url.pathname);
+    if (Date.now() - session.authenticatedAt > FRESH_AUTH_MS) return withSecurityHeaders(json({ error: "Bekräfta att det är du för att fortsätta", code: "FRESH_AUTH_REQUIRED" }, 403), url.pathname);
   }
   if (req.method === "POST" && (url.pathname === "/api/feedback" || url.pathname === "/api/client-error")) {
     const maxBytes = url.pathname === "/api/feedback" ? 64 * 1024 : 32 * 1024;

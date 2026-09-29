@@ -9,12 +9,43 @@ const MEDIA_CATEGORIES=[['politik','Politik'],['opinion-debatt','Opinion & debat
 const ACADEMIC_FIELDS=[['political-science','Statsvetenskap'],['public-administration','Offentlig förvaltning'],['public-law','Offentlig rätt / förvaltningsrätt']];
 const PUBLIC_LEVELS=[['riksdag','Riksdagen','Ledamöter och partier','Nationell nivå','/icon-level-bank.svg'],['regering','Regeringen','Statsråd och departement','Nationell nivå','/icon-level-buildings.svg'],['region','Regioner','21 regionala församlingar','Regional nivå','/icon-level-map-pin.svg'],['kommun','Kommuner','290 kommuner i Sverige','Lokal nivå','/icon-level-house.svg'],['eu','EU-parlamentet','Sveriges folkvalda i EU','Europeisk nivå','/icon-level-globe.svg'],['media','Media','Redaktioner och opinionssidor','Offentlig debatt','/icon-level-newspaper.svg'],['academia','Akademi','Forskare och lärare inom politik, förvaltning och offentlig rätt','Kunskap & analys','/icon-level-bank.svg'],['kyrka','Svenska kyrkan','Valda organ och stift','Förtroendevalda','/icon-level-church.svg']];
 
-async function api(path,opts={}){const r=await fetch(path,{...opts,headers:{Accept:'application/json',...(opts.body?{'Content-Type':'application/json'}:{}),...(opts.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.error||`HTTP ${r.status}`);return d}
+async function rawApi(path,opts={}){const r=await fetch(path,{...opts,headers:{Accept:'application/json',...(opts.body?{'Content-Type':'application/json'}:{}),...(opts.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok){const err=new Error(d.error||`HTTP ${r.status}`);err.code=d.code;err.status=r.status;throw err}return d}
+let reauthPromise=null,modalCancel=null;
+async function api(path,opts={}){try{return await rawApi(path,opts)}catch(err){if(err.code!=='FRESH_AUTH_REQUIRED')throw err;await ensureFreshAuthentication();return rawApi(path,opts)}}
+async function ensureFreshAuthentication(){if(reauthPromise)return reauthPromise;reauthPromise=runReauthentication().finally(()=>{reauthPromise=null});return reauthPromise}
+async function runReauthentication(){
+  if(!state.me?.loggedIn)throw new Error('Logga in för att fortsätta.');
+  if(!state.me.passwordSetByUser&&!state.me.totpEnabled)return externalReauthentication();
+  return new Promise((resolve,reject)=>{
+    const passwordField=state.me.passwordSetByUser?'<div class="field"><label for="reauth-password">Lösenord</label><input class="input" id="reauth-password" name="password" type="password" autocomplete="current-password" required></div>':'';
+    const totpField=state.me.totpEnabled?'<div class="field"><label for="reauth-totp">2FA-kod</label><input class="input" id="reauth-totp" name="totpCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></div>':'';
+    showModal('Bekräfta att det är du',`<form id="reauth-form" class="stack"><p class="muted">Av säkerhetsskäl behöver du verifiera dig igen. Du stannar kvar på samma sida.</p>${passwordField}${totpField}<div id="reauth-error"></div><div class="row"><button class="button button--primary" type="submit">Fortsätt</button><button class="button button--quiet" id="reauth-cancel" type="button">Avbryt</button></div></form>`);
+    let settled=false;
+    const cancel=()=>{if(settled)return;settled=true;modalCancel=null;reject(new Error('Verifieringen avbröts.'))};
+    modalCancel=cancel;
+    $('#reauth-cancel').onclick=()=>closeModal();
+    $('#reauth-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget,submit=$('button[type="submit"]',form),data=Object.fromEntries(new FormData(form));submit.disabled=true;try{await rawApi('/api/reauth',{method:'POST',body:JSON.stringify(data)});settled=true;modalCancel=null;closeModal();resolve()}catch(err){submit.disabled=false;$('#reauth-error').innerHTML=`<div class="notice notice--error">${esc(err.message)}</div>`}};
+    setTimeout(()=>$('#reauth-password,#reauth-totp')?.focus(),0);
+  });
+}
+async function externalReauthentication(){
+  const identities=await rawApi('/api/oauth-identities');
+  const supported=identities.filter(x=>x.provider==='google'||x.provider==='microsoft');
+  if(!supported.length)throw new Error('Kontot saknar ett inloggningssätt som kan användas för återautentisering.');
+  return new Promise((resolve,reject)=>{
+    const links=supported.map(x=>`<a class="button button--secondary" data-reauth-provider="${esc(x.provider)}" href="/api/oauth/${encodeURIComponent(x.provider)}/start">${esc(providerName(x.provider))}</a>`).join('');
+    showModal('Bekräfta att det är du',`<div class="stack"><p class="muted">Verifiera dig igen med ditt vanliga inloggningssätt. Du behöver inte logga ut.</p><div class="row">${links}</div><button class="button button--quiet" id="reauth-cancel" type="button">Avbryt</button></div>`);
+    let settled=false;
+    modalCancel=()=>{if(settled)return;settled=true;modalCancel=null;reject(new Error('Verifieringen avbröts.'))};
+    $('#reauth-cancel').onclick=()=>closeModal();
+    $$('[data-reauth-provider]').forEach(link=>link.onclick=()=>{settled=true;modalCancel=null;sessionStorage.setItem('pending:route',location.hash.replace(/^#/,'')||'settings/mail')});
+  });
+}
 function button(label,kind='secondary',handler){const b=document.createElement('button');b.type='button';b.className=`button button--${kind}`;b.textContent=label;if(handler)b.onclick=handler;return b}
 function notice(text,type='info'){sessionStorage.setItem('ui:lastNotice',JSON.stringify({text,type,ts:Date.now()}));renderNotice()}
 function renderNotice(){const host=$('#global-notices');if(!host)return;host.innerHTML='';let x=null;try{x=JSON.parse(sessionStorage.getItem('ui:lastNotice')||'null')}catch{}if(!x||Date.now()-x.ts>86400000){sessionStorage.removeItem('ui:lastNotice');return}const n=document.createElement('div');n.className=`notice ${x.type==='error'?'notice--error':x.type==='success'?'notice--success':x.type==='warning'?'notice--warning':''}`;n.innerHTML=`<span>${esc(x.text)}</span>`;n.append(button('Stäng','quiet',()=>{sessionStorage.removeItem('ui:lastNotice');renderNotice()}));host.append(n)}
 function showModal(title,html){$('#modal-title').textContent=title;$('#modal-body').innerHTML=html;$('#modal').hidden=false;document.body.classList.add('is-locked')}
-function closeModal(){$('#modal').hidden=true;$('#modal-body').innerHTML='';document.body.classList.remove('is-locked')}
+function closeModal(){const cancel=modalCancel;modalCancel=null;$('#modal').hidden=true;$('#modal-body').innerHTML='';document.body.classList.remove('is-locked');if(cancel)cancel()}
 function openMenu(){$('#mobile-menu').hidden=false;$('#menu-button').setAttribute('aria-expanded','true');document.body.classList.add('is-locked')}
 function closeMenu(){$('#mobile-menu').hidden=true;$('#menu-button').setAttribute('aria-expanded','false');document.body.classList.remove('is-locked')}
 function route(){return location.hash.replace(/^#/,'').split('/').filter(Boolean)}
