@@ -30,8 +30,7 @@ async function renderMailSettings(){
         }catch(err){
           testButton.disabled=false;
           testButton.textContent='Testa anslutning';
-          const prefix=err.message==='Logga ut och in igen innan du ändrar kontots säkerhetsinställningar'?'SMTP-testet startades inte. ':'';
-          notice(prefix+err.message,'error');
+          notice(err.message,'error');
         }
       };
       const passwordButton=$('[data-action="password"]',d);
@@ -59,8 +58,7 @@ function openUpdateCredentialPassword(c){
       await renderMailSettings();
       notice('SMTP-lösenordet är verifierat och uppdaterat.','success');
     }catch(err){
-      const prefix=err.message==='Logga ut och in igen innan du ändrar kontots säkerhetsinställningar'?'Lösenordet ändrades inte. ':'';
-      notice(prefix+err.message,'error');
+      notice(err.message,'error');
     }
   };
 }

@@ -1,6 +1,7 @@
 import {
   signup, verifyEmail, login, getAccountFromSession, requestPasswordReset, resetPassword,
   startTotpSetup, confirmTotpSetup, disableTotp, setPassword, adminResetPassword,
+  reauthenticateAccount, writeSession,
   setAccountDisabled, deleteOwnAccount,
 } from "./auth";
 import { getAdminStats, exportAdminData, getTimeSeries, type Granularity } from "./admin-stats";
@@ -75,7 +76,7 @@ export default {
   },
 } satisfies ExportedHandler<Env, SendJobMessage>;
 
-interface RouteCtx { env: Env; req: Request; url: URL; accountId: string; isAdmin: boolean; }
+interface RouteCtx { env: Env; req: Request; url: URL; accountId: string; isAdmin: boolean; sessionToken: string | null; }
 type RouteHandler = (c: RouteCtx, m: RegExpMatchArray) => Promise<Response> | Response;
 interface RouteDef { method: string; rx: RegExp; h: RouteHandler; }
 async function runRoutes(routes: RouteDef[], c: RouteCtx): Promise<Response | null> {
@@ -88,6 +89,13 @@ async function runRoutes(routes: RouteDef[], c: RouteCtx): Promise<Response | nu
 }
 
 const AUTHED_ROUTES: RouteDef[] = [
+  { method: "POST", rx: /^\/api\/reauth$/, h: async c => {
+    if (!c.sessionToken) return json({ error: "Återautentisering kräver en vanlig webbsession" }, 403);
+    const { password, totpCode } = await c.req.json<{ password?: string; totpCode?: string }>();
+    await reauthenticateAccount(c.env, c.accountId, password, totpCode);
+    await writeSession(c.env, c.sessionToken, c.accountId);
+    return json({ ok: true });
+  } },
   { method: "POST", rx: /^\/api\/totp\/setup$/, h: async c => json(await startTotpSetup(c.env, c.accountId)) },
   { method: "POST", rx: /^\/api\/totp\/confirm$/, h: async c => { const { code } = await c.req.json<{ code: string }>(); await confirmTotpSetup(c.env, c.accountId, code); return json({ ok: true }); } },
   { method: "POST", rx: /^\/api\/totp\/disable$/, h: async c => { await disableTotp(c.env, c.accountId); return json({ ok: true }); } },
@@ -182,11 +190,11 @@ async function handleRequest(req: Request, env: Env, url: URL): Promise<Response
     if(url.pathname==="/api/logout"&&req.method==="POST"){if(sessionToken)await env.SESSIONS.delete(`session:${sessionToken}`);const resp=json({ok:true});resp.headers.set("Set-Cookie","session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");return resp;}
     if(url.pathname==="/api/request-password-reset"&&req.method==="POST"){const{email,turnstileToken}=await req.json<{email:string;turnstileToken?:string}>();if(!(await verifyTurnstile(env.TURNSTILE_SECRET,turnstileToken,req.headers.get("CF-Connecting-IP"),"turnstile-spin-v1",env.TURNSTILE_HOSTNAMES)))return json({error:"Bekräfta att du inte är en robot och försök igen."},400);await requestPasswordReset(env,email);return json({ok:true});}
     if(url.pathname==="/api/reset-password"&&req.method==="POST"){const{token,newPassword}=await req.json<{token:string;newPassword:string}>();await resetPassword(env,token,newPassword);return json({ok:true});}
-    if(url.pathname==="/api/me"&&req.method==="GET"){if(!account)return json({loggedIn:false});return json({loggedIn:true,email:account.email,dailySendCap:account.daily_send_cap,isAdmin:!!account.is_admin,totpEnabled:!!account.totp_enabled});}
+    if(url.pathname==="/api/me"&&req.method==="GET"){if(!account)return json({loggedIn:false});return json({loggedIn:true,email:account.email,dailySendCap:account.daily_send_cap,isAdmin:!!account.is_admin,totpEnabled:!!account.totp_enabled,passwordSetByUser:!!account.password_set_by_user});}
     if(url.pathname==="/api/feedback"&&req.method==="POST"){const{message,context,type,replyTo}=await req.json<{message:string;context?:Record<string,unknown>;type?:"bug"|"contact";replyTo?:string}>();return json(await submitFeedback(env,{accountId:account?(account.id as string):null,message,context,type,replyTo}));}
     if(url.pathname==="/api/client-error"&&req.method==="POST"){const{message,stack,url:pageUrl}=await req.json<{message?:string;stack?:string;url?:string}>();if(message)await reportClientError(env,{message,stack,url:pageUrl});return json({ok:true});}
     if(!account)return json({error:"Inte inloggad"},401);
-    const ctx:RouteCtx={env,req,url,accountId:account.id as string,isAdmin:!!account.is_admin};
+    const ctx:RouteCtx={env,req,url,accountId:account.id as string,isAdmin:!!account.is_admin,sessionToken};
     const authedResp=await runRoutes(AUTHED_ROUTES,ctx);if(authedResp)return authedResp;
     if(url.pathname.startsWith("/api/admin/")){if(!ctx.isAdmin)return json({error:"Kräver admin-behörighet"},403);return (await runRoutes(ADMIN_ROUTES,ctx))??json({error:"Not found"},404);}
     return json({error:"Not found"},404);

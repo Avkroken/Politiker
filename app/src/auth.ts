@@ -174,6 +174,41 @@ export async function getAccountFromSession(env: Env, sessionToken: string | nul
   return (await getSessionContext(env, sessionToken))?.account ?? null;
 }
 
+export async function reauthenticateAccount(
+  env: Env,
+  accountId: string,
+  password?: string,
+  totpCode?: string,
+): Promise<void> {
+  const account = await getAccountById(env.DB, accountId);
+  if (!account || account.disabled) throw new Error("Konto saknas eller är inaktiverat");
+
+  await enforceAttemptLimit(env, "reauth", accountId, { max: LOGIN_MAX_ATTEMPTS, windowSeconds: LOGIN_WINDOW_SECONDS });
+
+  let verifiedFactor = false;
+  if (account.password_set_by_user) {
+    const passwordOk = await verifyPassword(password ?? "", account.password_hash as string, account.password_salt as string);
+    if (!passwordOk) {
+      await recordFailedAttempt(env, "reauth", accountId, LOGIN_WINDOW_SECONDS);
+      throw new Error("Fel lösenord");
+    }
+    verifiedFactor = true;
+  }
+
+  if (account.totp_enabled) {
+    if (!totpCode) throw new Error("TOTP_REQUIRED");
+    const validTotp = await verifyTotpCode(account.totp_secret as string, totpCode);
+    if (!validTotp) {
+      await recordFailedAttempt(env, "reauth", accountId, LOGIN_WINDOW_SECONDS);
+      throw new Error("Fel TOTP-kod");
+    }
+    verifiedFactor = true;
+  }
+
+  if (!verifiedFactor) throw new Error("Bekräfta kontot med ditt externa inloggningssätt");
+  await clearAttempts(env, "reauth", accountId);
+}
+
 export async function requestPasswordReset(env: Env, email: string): Promise<void> {
   const account = await getAccountByEmail(env.DB, email);
   if (!account) return; // avslöja inte om e-posten finns eller inte
