@@ -6,6 +6,8 @@ const MAX_PRESETS = 50;
 const MAX_TITLE_LENGTH = 80;
 const MAX_BODY_LENGTH = 4000;
 const MAX_SELECTED_INTRO_LENGTH = 20_000;
+const INVALID_BODY_CONTROLS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
+const PRESET_FIELDS = "id, title, body_text AS body, created_at, updated_at";
 
 export interface LetterIntroPresetInput {
   title: string;
@@ -25,7 +27,7 @@ export function normalizeSelectedLetterIntroText(value: unknown): string {
   if (typeof value !== "string") throw new Error("Ogiltig inledningstext");
   const body = value.replace(/\r\n?/g, "\n").trim();
   if (body.length > MAX_SELECTED_INTRO_LENGTH) throw new Error(`Valda inledningar får tillsammans vara högst ${MAX_SELECTED_INTRO_LENGTH} tecken`);
-  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(body)) throw new Error("Inledningstexten innehåller ogiltiga kontrolltecken");
+  if (INVALID_BODY_CONTROLS.test(body)) throw new Error("Inledningstexten innehåller ogiltiga kontrolltecken");
   return body;
 }
 
@@ -36,15 +38,19 @@ export function normalizeLetterIntroPresetInput(input: LetterIntroPresetInput): 
   if (title.length > MAX_TITLE_LENGTH) throw new Error(`Rubriken får vara högst ${MAX_TITLE_LENGTH} tecken`);
   if (!body) throw new Error("Inledningstext krävs");
   if (body.length > MAX_BODY_LENGTH) throw new Error(`Inledningstexten får vara högst ${MAX_BODY_LENGTH} tecken`);
-  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(body)) throw new Error("Inledningstexten innehåller ogiltiga kontrolltecken");
+  if (INVALID_BODY_CONTROLS.test(body)) throw new Error("Inledningstexten innehåller ogiltiga kontrolltecken");
   return { title, body };
+}
+
+async function decryptPreset(env: Env, row: LetterIntroPreset): Promise<LetterIntroPreset> {
+  return { ...row, body: await decryptLetterData(env, row.body) };
 }
 
 export async function listLetterIntroPresets(env: Env, accountId: string): Promise<LetterIntroPreset[]> {
   const { results } = await env.DB.prepare(
-    "SELECT id, title, body_text AS body, created_at, updated_at FROM letter_intro_presets WHERE account_id = ? ORDER BY created_at, id",
+    `SELECT ${PRESET_FIELDS} FROM letter_intro_presets WHERE account_id = ? ORDER BY created_at, id`,
   ).bind(accountId).all<LetterIntroPreset>();
-  return Promise.all(results.map(async (row) => ({ ...row, body: await decryptLetterData(env, row.body) })));
+  return Promise.all(results.map(row => decryptPreset(env, row)));
 }
 
 export async function createLetterIntroPreset(env: Env, accountId: string, input: LetterIntroPresetInput): Promise<LetterIntroPreset> {
@@ -67,10 +73,10 @@ export async function updateLetterIntroPreset(env: Env, accountId: string, id: s
   ).bind(preset.title, await encryptLetterData(env, preset.body), updatedAt, id, accountId).run();
   if ((result.meta.changes ?? 0) !== 1) throw new Error("Inledningen finns inte");
   const row = await env.DB.prepare(
-    "SELECT id, title, body_text AS body, created_at, updated_at FROM letter_intro_presets WHERE id = ? AND account_id = ?",
+    `SELECT ${PRESET_FIELDS} FROM letter_intro_presets WHERE id = ? AND account_id = ?`,
   ).bind(id, accountId).first<LetterIntroPreset>();
   if (!row) throw new Error("Inledningen finns inte");
-  return { ...row, body: await decryptLetterData(env, row.body) };
+  return decryptPreset(env, row);
 }
 
 export async function deleteLetterIntroPreset(env: Env, accountId: string, id: string): Promise<void> {

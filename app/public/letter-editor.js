@@ -102,69 +102,9 @@
     if(use)use.disabled=!state.files.length;
   }
 
-  const BROAD_AUDIENCE_INTRO='Detta brev skickas till politiker, journalister och akademiker. Det är inte anpassat efter någon särskild grupp mer än riksdagen, justitiedepartementet eller konstitutionsutskottet.';
-  let introSelectionRestored=false;
-
-  function restoreIntroSelection(){
-    if(introSelectionRestored)return;
-    introSelectionRestored=true;
-    state.useBroadAudienceIntro=sessionStorage.getItem('draft:broadAudienceIntro')==='1';
-    try{state.selectedIntroIds=new Set(JSON.parse(sessionStorage.getItem('draft:introPresetIds')||'[]'))}catch{state.selectedIntroIds=new Set()}
-  }
-
-  function persistIntroSelection(){
-    sessionStorage.setItem('draft:broadAudienceIntro',state.useBroadAudienceIntro?'1':'0');
-    sessionStorage.setItem('draft:introPresetIds',JSON.stringify([...state.selectedIntroIds]));
-  }
-
-  function clearIntroSelection(){
-    state.useBroadAudienceIntro=false;
-    state.selectedIntroIds.clear();
-    sessionStorage.removeItem('draft:broadAudienceIntro');
-    sessionStorage.removeItem('draft:introPresetIds');
-  }
-
-  function selectedIntroText(){
-    const parts=[];
-    if(state.useBroadAudienceIntro)parts.push(BROAD_AUDIENCE_INTRO);
-    for(const preset of state.introPresets||[])if(state.selectedIntroIds.has(preset.id))parts.push(String(preset.body||'').trim());
-    return parts.filter(Boolean).join('\n\n');
-  }
-
-  function previewPersonalizedLetter(bodyHtml,introText){
-    const greeting='Hej {namn}!';
-    const intro=esc(introText).replace(/\n/g,'<br>');
-    const greetingWithIntro=intro?`${greeting}<br><br>${intro}`:greeting;
-    if(/\{GREETING\}/i.test(bodyHtml))return bodyHtml.replace(/\{GREETING\}/gi,greetingWithIntro);
-    if(/Hej\s+\[förnamn\]!/i.test(bodyHtml))return bodyHtml.replace(/Hej\s+\[förnamn\]!/gi,greetingWithIntro);
-    return `<p>${greeting}</p>${intro?`<p>${intro}</p>`:''}${bodyHtml}`;
-  }
-
-  function renderIntroOptions(){
-    const host=$('#intro-options');
-    if(!host)return;
-    host.innerHTML='';
-    const standard=document.createElement('label');
-    standard.className='check';
-    standard.innerHTML=`<input type="checkbox" ${state.useBroadAudienceIntro?'checked':''}><span><strong>Brett mottagarbrev</strong><br><span class="muted">${esc(BROAD_AUDIENCE_INTRO)}</span></span>`;
-    $('input',standard).onchange=e=>{state.useBroadAudienceIntro=e.target.checked;persistIntroSelection()};
-    host.append(standard);
-    for(const preset of state.introPresets||[]){
-      const label=document.createElement('label');
-      label.className='check';
-      label.innerHTML=`<input type="checkbox" ${state.selectedIntroIds.has(preset.id)?'checked':''}><span><strong>${esc(preset.title)}</strong><br><span class="muted">${esc(preset.body)}</span></span>`;
-      $('input',label).onchange=e=>{e.target.checked?state.selectedIntroIds.add(preset.id):state.selectedIntroIds.delete(preset.id);persistIntroSelection()};
-      host.append(label);
-    }
-  }
-
   renderCompose=async function(){
-    const el=$('#send-step'),t=tools();
-    restoreIntroSelection();
-    await ensureLetterIntroPresets();
-    const presetIds=new Set((state.introPresets||[]).map(p=>p.id));
-    for(const id of [...state.selectedIntroIds])if(!presetIds.has(id))state.selectedIntroIds.delete(id);
-    persistIntroSelection();
+    const el=$('#send-step'),t=tools(),intros=window.PolitikerLetterIntros;
+    await intros.prepare();
     const stored=sessionStorage.getItem('draft:body')||'';
     const bodyHtml=storedToEditorHtml(stored,t);
     if(stored!==bodyHtml)sessionStorage.setItem('draft:body',bodyHtml);
@@ -174,7 +114,7 @@
     const saveBody=()=>sessionStorage.setItem('draft:body',t.sanitizeHtml(body.innerHTML,{validate:false}));
     subject.oninput=()=>sessionStorage.setItem('draft:subject',subject.value);
     wireRichEditor(body,t,saveBody);
-    renderIntroOptions();
+    intros.renderOptions($('#intro-options'));
     $('#manage-intros').onclick=()=>{saveBody();state.settings='intros';location.hash='settings/intros'};
     files.onchange=e=>{
       for(const file of [...e.target.files])if(!state.files.some(existing=>sameFile(existing,file)))state.files.push(file);
@@ -198,15 +138,15 @@
     };
     $('#clear-draft').onclick=()=>{
       const hasBody=t.htmlToText(t.sanitizeHtml(body.innerHTML,{validate:false}),{validate:false}).trim();
-      if(!subject.value&&!hasBody&&!state.files.length&&!state.useBroadAudienceIntro&&!state.selectedIntroIds.size)return;
+      if(!subject.value&&!hasBody&&!state.files.length&&!intros.hasSelection())return;
       if(!confirm('Rensa ämne, brevtext, inledningsval och alla valda filer?'))return;
       subject.value='';
       body.innerHTML='';
       state.files=[];
       sessionStorage.removeItem('draft:subject');
       sessionStorage.removeItem('draft:body');
-      clearIntroSelection();
-      renderIntroOptions();
+      intros.clearSelection();
+      intros.renderOptions($('#intro-options'));
       files.value='';
       renderSelectedFiles();
       notice('Formuläret är rensat.','success');
@@ -224,12 +164,11 @@
   };
 
   renderReview=async function(){
-    const el=$('#send-step'),t=tools(),subject=sessionStorage.getItem('draft:subject')||'';
-    restoreIntroSelection();
-    await ensureLetterIntroPresets();
+    const el=$('#send-step'),t=tools(),intros=window.PolitikerLetterIntros,subject=sessionStorage.getItem('draft:subject')||'';
+    await intros.prepare();
     const bodyHtml=storedToEditorHtml(sessionStorage.getItem('draft:body')||'',t);
-    const introText=selectedIntroText();
-    const previewHtml=previewPersonalizedLetter(bodyHtml,introText);
+    const introText=intros.selectedText();
+    const previewHtml=intros.previewLetter(bodyHtml,introText);
     const bodyText=t.htmlToText(bodyHtml,{validate:false});
     let contentError='';
     try{t.validateText(bodyText);if(!bodyText.trim())contentError='Brevtext saknas.'}catch(error){contentError=error instanceof Error?error.message:'Kontrollera brevtexten.'}
@@ -252,7 +191,7 @@
         const data=await api('/api/send',{method:'POST',body:JSON.stringify({letterHtml,introText:introText||undefined,subject:subject||undefined,mailCredentialId:credential,...filterPayload(),attachments,dailyLimit:val('#limit-now'),switchAfterDays:val('#switch-days'),nextDailyLimit:val('#limit-after')})});
         sessionStorage.removeItem('draft:subject');
         sessionStorage.removeItem('draft:body');
-        clearIntroSelection();
+        intros.clearSelection();
         state.files=[];
         state.jobs=null;
         notice(`Utskicket startades för ${num(data.totalRecipients)} mottagare.`,'success');

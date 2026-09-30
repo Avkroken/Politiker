@@ -12,15 +12,12 @@ function firstName(fullName: string, email: string): string {
     .replace(/(^|-)(\p{L})/gu, (_match, prefix: string, letter: string) => `${prefix}${letter.toLocaleUpperCase("sv-SE")}`);
 }
 
-function introInlineHtml(introText: string): string {
-  return escapeHtml(introText.trim()).replace(/\n/g, "<br>");
-}
-
 export function personalizeLetter(bodyHtml: string, recipientName: string, recipientEmail: string, introText = ""): string {
   const name = firstName(recipientName, recipientEmail);
   const greeting = name ? `Hej ${name}!` : "Hej!";
   const safeGreeting = escapeHtml(greeting);
-  const safeIntro = introText.trim() ? introInlineHtml(introText) : "";
+  const normalizedIntro = introText.trim();
+  const safeIntro = normalizedIntro ? escapeHtml(normalizedIntro).replace(/\n/g, "<br>") : "";
   const greetingWithIntro = safeIntro ? `${safeGreeting}<br><br>${safeIntro}` : safeGreeting;
 
   if (/\{GREETING\}/i.test(bodyHtml)) {
