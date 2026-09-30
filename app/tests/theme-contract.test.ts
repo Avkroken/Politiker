@@ -33,5 +33,10 @@ test("all primary pages expose Legacy, Avkroken and Blackout", () => {
     assert.match(html, /value="legacy">Legacy/);
     assert.match(html, /value="forest">Avkroken/);
     assert.match(html, /value="blackout">Blackout/);
+    assert.equal((html.match(/id="theme-select"/g) ?? []).length, 1);
+    assert.ok(
+      html.indexOf('id="theme-select"') > html.indexOf("</main>"),
+      `${name}: theme control should be below main content`
+    );
   }
 });
