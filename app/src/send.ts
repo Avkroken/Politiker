@@ -4,6 +4,7 @@ import type { Env } from "./db";
 import type { SendJobMessage } from "../../shared/types";
 import { decryptLetterData, encryptLetterData } from "./letter-privacy";
 import { visibleSendJobError } from "../../shared/smtp-failure";
+import { normalizeSelectedLetterIntroText } from "./letter-intro-presets";
 
 const STAGE_CHUNK_SIZE = 500;
 const MAX_LETTER_HTML_BYTES = 1024 * 1024;
@@ -345,6 +346,7 @@ export async function createAndEnqueueSendJob(
   accountId: string,
   input: {
     letterId: string;
+    introText?: string;
     subject?: string;
     mailCredentialId: string;
     areaNames: string[];
@@ -378,11 +380,13 @@ export async function createAndEnqueueSendJob(
   const sendJobId = randomId();
   const orderedRecipients = await prioritizeRecipients(env, sendJobId, recipients);
   const rate = parseRateInput(input);
+  const introText = normalizeSelectedLetterIntroText(input.introText);
+  const storedIntroText = introText ? await encryptLetterData(env, introText) : null;
   await env.DB.prepare(
     `INSERT INTO send_jobs
        (id, account_id, letter_id, mail_credential_id, total_recipients, status,
-        daily_limit, next_daily_limit, limit_switch_at, created_at)
-     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+        daily_limit, next_daily_limit, limit_switch_at, intro_text, created_at)
+     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
   )
     .bind(
       sendJobId,
@@ -393,6 +397,7 @@ export async function createAndEnqueueSendJob(
       rate.dailyLimit,
       rate.nextDailyLimit,
       rate.limitSwitchAt,
+      storedIntroText,
       Date.now(),
     )
     .run();

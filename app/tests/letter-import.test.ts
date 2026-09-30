@@ -103,7 +103,8 @@ test("compose editor keeps sanitized rich text through paste, review, and send",
   assert.match(source, /contenteditable="true"[^>]+id="body"|id="body"[^>]+contenteditable="true"/);
   assert.match(source, /clipboardData\?\.getData\('text\/html'\)/);
   assert.match(source, /t\.sanitizeHtml\(bodyHtml\)/);
-  assert.match(source, /rich-text-preview">\$\{bodyHtml\}/);
+  assert.match(source, /const previewHtml=intros\.previewLetter\(bodyHtml,introText\)/);
+  assert.match(source, /rich-text-preview">\$\{previewHtml\}/);
   assert.doesNotMatch(source, /letterHtml=t\.textToHtml\(body\)/);
 });
 
