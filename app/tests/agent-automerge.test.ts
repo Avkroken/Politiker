@@ -4,21 +4,22 @@ import { readFile } from "node:fs/promises";
 
 const workflow = await readFile(new URL("../../.github/workflows/agent-automerge.yml", import.meta.url), "utf8");
 
-test("agent auto-merge is restricted to trusted same-repository codex PRs", () => {
+test("agent lifecycle caller reacts to PR, review, main and scheduled reconciliation events", () => {
   assert.match(workflow, /pull_request:/);
-  assert.match(workflow, /types: \[opened, reopened, synchronize, ready_for_review\]/);
-  assert.match(workflow, /user\.login == 'gamnacken\[bot\]'/);
-  assert.match(workflow, /head\.repo\.full_name == github\.repository/);
-  assert.match(workflow, /base\.ref == github\.event\.repository\.default_branch/);
-  assert.match(workflow, /startsWith\(github\.event\.pull_request\.head\.ref, 'codex\/'\)/);
-  assert.match(workflow, /pull_request\.draft == false/);
+  assert.match(workflow, /types: \[opened, edited, reopened, synchronize, ready_for_review\]/);
+  assert.match(workflow, /pull_request_review:/);
+  assert.match(workflow, /pull_request_review_comment:/);
+  assert.match(workflow, /push:\n\s+branches: \[main\]/);
+  assert.match(workflow, /schedule:/);
+  assert.match(workflow, /workflow_dispatch:/);
 });
 
-test("agent auto-merge has only the write permissions needed for native merge", () => {
+test("agent lifecycle caller delegates trust and merge gates to the central least-privilege policy", () => {
+  assert.match(workflow, /permissions:\s*\{\}/);
   assert.match(workflow, /contents: write/);
   assert.match(workflow, /pull-requests: write/);
-  assert.match(workflow, /gh pr merge --auto --merge/);
+  assert.match(workflow, /uses: Avkroken\/\.github\/\.github\/workflows\/agent-automerge-policy\.yml@main/);
   assert.doesNotMatch(workflow, /actions\/checkout/);
   assert.doesNotMatch(workflow, /pull_request_target/);
-  assert.doesNotMatch(workflow, /secrets\.(?!GITHUB_TOKEN)/);
+  assert.doesNotMatch(workflow, /secrets\./);
 });
