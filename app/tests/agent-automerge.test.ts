@@ -18,7 +18,7 @@ test("agent lifecycle caller delegates trust and merge gates to the central leas
   assert.match(workflow, /permissions:\s*\{\}/);
   assert.match(workflow, /contents: write/);
   assert.match(workflow, /pull-requests: write/);
-  assert.match(workflow, /uses: Avkroken\/\.github\/\.github\/workflows\/agent-automerge-policy\.yml@main/);
+  assert.match(workflow, /uses: Avkroken\/\.github\/\.github\/workflows\/agent-automerge-policy\.yml@afc4f0297d162a10afecd350df2c67c01315426b/);
   assert.doesNotMatch(workflow, /gh pr merge/);
   assert.doesNotMatch(workflow, /actions\/checkout/);
   assert.doesNotMatch(workflow, /pull_request_target/);
