@@ -20,6 +20,19 @@ const index = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
 const secureIndex = readFileSync(new URL("../src/secure-index.ts", import.meta.url), "utf8");
 const githubPreviewWorkflow = new URL("../../.github/workflows/preview.yml", import.meta.url);
 
+test("tracked production config cannot be sanitized into a preview-only config", () => {
+  assert.equal(wrangler.name, "politiker");
+  assert.equal(wrangler.observability?.enabled, true);
+  assert.ok(wrangler.d1_databases?.some((binding) => binding.binding === "DB"));
+  assert.ok(wrangler.kv_namespaces?.some((binding) => binding.binding === "SESSIONS"));
+  assert.ok(wrangler.queues?.producers?.some((binding) => binding.binding === "SEND_QUEUE"));
+  assert.ok(wrangler.queues?.consumers?.some((binding) => binding.queue === "politiker-send-jobs"));
+  assert.ok(wrangler.durable_objects?.bindings?.some((binding) => binding.name === "RATE_LIMITER"));
+  assert.ok(wrangler.r2_buckets?.some((binding) => binding.binding === "ATTACHMENTS"));
+  assert.ok(wrangler.routes?.some((route) => route.pattern === "politiker.denied.se"));
+  assert.ok(wrangler.triggers?.crons?.length > 0);
+});
+
 test("preview deployment is owned by Cloudflare Workers Builds, not GitHub Actions", () => {
   assert.equal(existsSync(githubPreviewWorkflow), false);
   assert.equal(
