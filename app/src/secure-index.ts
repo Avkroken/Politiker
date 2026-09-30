@@ -126,7 +126,7 @@ function withSecurityHeaders(response: Response, pathname: string): Response {
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
-async function baseAppEnvForRequest(req: Request, env: Env, primaryEnv: Env, bearer: boolean): Promise<Env> {
+async function baseAppEnvForRequest(req: Request, primaryEnv: Env, bearer: boolean): Promise<Env> {
   const pathname = new URL(req.url).pathname;
   if (!d1ReplicaEligibleRequest(req.method, pathname)) return primaryEnv;
 
@@ -169,7 +169,7 @@ async function secureFetch(req: Request, env: Env, ctx: ExecutionContext): Promi
       return withSecurityHeaders(json({ error: "Utskicket innehåller för mycket data" }, 413), url.pathname);
     }
   }
-  const appEnv = await baseAppEnvForRequest(req, env, primaryEnv, bearer);
+  const appEnv = await baseAppEnvForRequest(req, primaryEnv, bearer);
   const response = await baseApp.fetch(req, appEnv, ctx);
   try { await upgradeOAuthSession(req, primaryEnv, response); }
   catch { return withSecurityHeaders(json({ error: "Kontot kunde inte skapa en giltig session" }, 403), url.pathname); }

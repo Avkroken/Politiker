@@ -52,7 +52,7 @@ Canonical application state, inklusive data som måste överleva enskilda Worker
 
 Det gemensamma offentliga mottagarregistret ligger i `public_contacts`. `area_type` skiljer bland annat politiska nivåer, media och `academia`. Akademiska poster kan dessutom bära `organisation`, `unit`, `title`, `academic_field` och `source_url`. De tre aktuella akademiska fälten är statsvetenskap, offentlig förvaltning och offentlig rätt/förvaltningsrätt.
 
-Kommun-/regionkopplingar till nämnder och styrelser ligger i `public_contact_assignments`. Migration `0003_generalize_public_contacts.sql` behåller temporära legacy-vyer för de tidigare tabellnamnen så att den gamla Worker-versionen kan fortsätta läsa under en kontrollerad migration.
+Kommun-/regionkopplingar till nämnder och styrelser ligger i `public_contact_assignments`. Migration `0003_generalize_public_contacts.sql` skapade temporära legacy-vyer för de tidigare tabellnamnen under cutover. Efter att current Worker och kontaktverktygen flyttat helt till canonical `public_contacts` / `public_contact_assignments` tar migration `0005_drop_public_contact_legacy_views.sql` bort endast dessa två views och den begränsade compatibility-triggern. HTTP-aliaset `/api/politicians/search` påverkas inte.
 
 Kontobundna återanvändbara brevinledningar ligger i `letter_intro_presets`. Rubriken lagras som metadata medan inledningstexten krypteras med samma applikationsgräns som brevdata. Vid utskick snapshots den valda sammansatta inledningen krypterat på `send_jobs.intro_text`, så senare ändringar i en mall inte påverkar ett redan startat utskick. Retentionflödet raderar även denna snapshot tillsammans med brevets innehåll.
 

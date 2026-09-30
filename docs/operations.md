@@ -45,7 +45,7 @@ Före migration:
 2. verifiera att aktuell Worker-kod är kompatibel med både före- och efterstate där deploymentordningen kräver det;
 3. kör lokal migration genom `npm run validate`.
 
-För migration `0003_generalize_public_contacts.sql` är ordningen **migration först, därefter Worker-deploy**. Migrationen skapar legacy-vyer för `politicians` och `politician_assignments` samt en begränsad kompatibilitetstrigger för leveransverifiering, så den dåvarande Worker-versionen fortsätter fungera under övergången. Kör inte de gamla kontaktunderhållsskripten mellan migrationen och den nya Worker-deployen.
+För migration `0003_generalize_public_contacts.sql` var ordningen **migration först, därefter Worker-deploy**. Den skapade legacy-vyer för `politicians` och `politician_assignments` samt en begränsad compatibility-trigger för cutover. Current Worker och kontaktverktyg använder nu canonical `public_contacts` / `public_contact_assignments`. Migration `0005_drop_public_contact_legacy_views.sql` tar därför bort endast de tre temporära D1-objekten. Verifiera före production migration att current Worker-versionen är deployad och efter migration att canonical tabellerna finns kvar samt att legacyobjekten saknas.
 
 ## Queue/DLQ-felsökning
 
