@@ -86,7 +86,7 @@ Kod och docs får beskriva secret-namn och ansvar men aldrig värden. Credential
 
 `legacy` är det äldre Avkroken-uttrycket och fortsatt fallback: mörk bas, cyan/blå/violett/magenta glow och diskret 42 px-rutnät. `forest` (visas som **Avkroken**) och `blackout` är de övriga gemensamma yttemana. Politiker behåller samtidigt sin svenska gul/blå branding, funktionella statusfärger, typografi och informationsarkitektur som produktidentitet i alla tre teman.
 
-Temavalet följer Avkrokens presentationskontrakt `localStorage["avkroken.theme"]` och `avkroken_theme` på denied.se. Den preferensen är kosmetisk och får aldrig påverka konto-, sessions-, auth-, recipient- eller utskicksstate.
+Temavalet följer Avkrokens presentationskontrakt `localStorage["avkroken.theme"]` och `avkroken_theme` på denied.se. Temaväljaren ligger vid sidans nederkant på de primära publika ytorna så att den inte konkurrerar med huvudnavigation och sessionskontroller. Den preferensen är kosmetisk och får aldrig påverka konto-, sessions-, auth-, recipient- eller utskicksstate.
 
 ## Observability
 

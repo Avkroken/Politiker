@@ -549,6 +549,20 @@ summary:focus-visible{
 .site-footer nav{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:22px}
 .site-footer a,.site-footer button{padding:0;color:#fff;border:0;background:transparent;font:inherit;font-weight:750;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;cursor:pointer}
 
+.page-theme-footer{
+  padding:0 0 48px;
+  background:var(--bg);
+}
+
+.page-theme-footer__inner{
+  width:min(calc(100% - 48px),var(--max));
+  margin-inline:auto;
+  padding-top:28px;
+  border-top:1px solid var(--line);
+  display:flex;
+  justify-content:flex-end;
+}
+
 #root>.page,
 .auth-content,
 .reset-page{
@@ -757,6 +771,7 @@ summary:focus-visible{
   .site-header__inner,
   .content-shell,
   .site-footer__inner,
+  .page-theme-footer__inner,
   .hero__inner,
   .auth-scene__inner,
   #root>.page,
@@ -774,6 +789,8 @@ summary:focus-visible{
   }
 
   .service-band__inner span:last-child{font-size:.72rem;line-height:1.2}
+  .page-theme-footer__inner{justify-content:stretch}
+  .page-theme-footer .theme-control{width:100%}
   .site-header__inner{min-height:72px}
   .brand__logo{width:188px}
   .session-button{display:none}
