@@ -27,6 +27,10 @@ import type { Env } from "./db";
 import { handleSendQueue } from "./send-queue";
 import type { SendJobMessage } from "../../shared/types";
 import { encryptLetterData } from "./letter-privacy";
+import {
+  createLetterIntroPreset, deleteLetterIntroPreset, listLetterIntroPresets, normalizeSelectedLetterIntroText, updateLetterIntroPreset,
+  type LetterIntroPresetInput,
+} from "./letter-intro-presets";
 
 export { CredentialRateLimiter } from "./rate-limiter";
 
@@ -111,6 +115,10 @@ const AUTHED_ROUTES: RouteDef[] = [
   { method: "GET", rx: /^\/api\/api-keys$/, h: async c => json(await listApiKeys(c.env,c.accountId)) },
   { method: "POST", rx: /^\/api\/api-keys$/, h: async c => { const {name}=await c.req.json<{name:string}>(); return json(await createApiKey(c.env,c.accountId,name)); } },
   { method: "DELETE", rx: /^\/api\/api-keys\/([^/]+)$/, h: async (c,m) => { await revokeApiKey(c.env,c.accountId,m[1]); return json({ok:true}); } },
+  { method: "GET", rx: /^\/api\/letter-intro-presets$/, h: async c => { if(!c.sessionToken)return json({error:"Kräver webbsession"},403); return json(await listLetterIntroPresets(c.env,c.accountId)); } },
+  { method: "POST", rx: /^\/api\/letter-intro-presets$/, h: async c => { if(!c.sessionToken)return json({error:"Kräver webbsession"},403); return json(await createLetterIntroPreset(c.env,c.accountId,await c.req.json<LetterIntroPresetInput>())); } },
+  { method: "PATCH", rx: /^\/api\/letter-intro-presets\/([^/]+)$/, h: async (c,m) => { if(!c.sessionToken)return json({error:"Kräver webbsession"},403); return json(await updateLetterIntroPreset(c.env,c.accountId,m[1],await c.req.json<LetterIntroPresetInput>())); } },
+  { method: "DELETE", rx: /^\/api\/letter-intro-presets\/([^/]+)$/, h: async (c,m) => { if(!c.sessionToken)return json({error:"Kräver webbsession"},403); await deleteLetterIntroPreset(c.env,c.accountId,m[1]); return json({ok:true}); } },
   { method: "GET", rx: /^\/api\/areas$/, h: async c => json(await listAreas(c.env.DB)) },
   { method: "GET", rx: /^\/api\/parties$/, h: async c => json(await listParties(c.env.DB)) },
   { method: "GET", rx: /^\/api\/roles$/, h: async c => json(await listRoles(c.env.DB)) },
@@ -134,9 +142,10 @@ const AUTHED_ROUTES: RouteDef[] = [
   } },
   { method: "POST", rx: /^\/api\/send$/, h: async c => {
     if(c.env.PREVIEW_MODE==="1") return json({error:"Utskick är avstängt i previewmiljön."},409);
-    const input=await c.req.json<{letterHtml:string;subject?:string;mailCredentialId:string;areaNames:string[];excludeParties?:string[];excludeEmails?:string[];includeRoles?:string[];includeEmails?:string[];attachments?:AttachmentInput[];dailyLimit?:number|null;switchAfterDays?:number|null;nextDailyLimit?:number|null}>();
+    const input=await c.req.json<{letterHtml:string;introText?:string;subject?:string;mailCredentialId:string;areaNames:string[];excludeParties?:string[];excludeEmails?:string[];includeRoles?:string[];includeEmails?:string[];attachments?:AttachmentInput[];dailyLimit?:number|null;switchAfterDays?:number|null;nextDailyLimit?:number|null}>();
     if (typeof input.letterHtml !== "string" || !input.letterHtml.trim()) throw new Error("Brevtext krävs");
     if (new TextEncoder().encode(input.letterHtml).byteLength > MAX_LETTER_HTML_BYTES) throw new Error("Brevtexten är för stor");
+    const introText=normalizeSelectedLetterIntroText(input.introText);
     const letterId=randomId();
     let htmlBody=input.letterHtml;
     await c.env.DB.prepare("INSERT INTO letters (id, account_id, html_body, created_at) VALUES (?, ?, ?, ?)")
@@ -146,7 +155,7 @@ const AUTHED_ROUTES: RouteDef[] = [
       htmlBody+=extractedHtml;
       await c.env.DB.prepare("UPDATE letters SET html_body = ? WHERE id = ?").bind(await encryptLetterData(c.env,htmlBody),letterId).run();
     }
-    const result=await createAndEnqueueSendJob(c.env,c.accountId,{letterId,subject:input.subject,mailCredentialId:input.mailCredentialId,areaNames:input.areaNames,excludeParties:input.excludeParties,excludeEmails:input.excludeEmails,includeRoles:input.includeRoles,includeEmails:input.includeEmails,dailyLimit:input.dailyLimit,switchAfterDays:input.switchAfterDays,nextDailyLimit:input.nextDailyLimit});
+    const result=await createAndEnqueueSendJob(c.env,c.accountId,{letterId,introText,subject:input.subject,mailCredentialId:input.mailCredentialId,areaNames:input.areaNames,excludeParties:input.excludeParties,excludeEmails:input.excludeEmails,includeRoles:input.includeRoles,includeEmails:input.includeEmails,dailyLimit:input.dailyLimit,switchAfterDays:input.switchAfterDays,nextDailyLimit:input.nextDailyLimit});
     const retentionMs=requestedRetentionMs(c.req);
     await c.env.DB.prepare("UPDATE send_jobs SET content_retention_ms=?, content_delete_at=CASE WHEN finished_at IS NOT NULL AND status IN ('done','aborted','cancelled') THEN finished_at+? ELSE content_delete_at END WHERE id=? AND account_id=?")
       .bind(retentionMs,retentionMs,result.sendJobId,c.accountId).run();

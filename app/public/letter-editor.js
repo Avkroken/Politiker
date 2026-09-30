@@ -102,17 +102,20 @@
     if(use)use.disabled=!state.files.length;
   }
 
-  renderCompose=function(){
-    const el=$('#send-step'),t=tools();
+  renderCompose=async function(){
+    const el=$('#send-step'),t=tools(),intros=window.PolitikerLetterIntros;
+    await intros.prepare();
     const stored=sessionStorage.getItem('draft:body')||'';
     const bodyHtml=storedToEditorHtml(stored,t);
     if(stored!==bodyHtml)sessionStorage.setItem('draft:body',bodyHtml);
-    el.innerHTML=`<div class="stack"><div class="row row--between compose-head"><div><h2>Skriv brevet</h2><p class="muted">Texten sparas tillfälligt i den här webbläsarfliken tills utskicket startar.</p></div><button class="button button--danger" id="clear-draft" type="button">Rensa formulär</button></div><div class="field"><label>Ämne</label><input class="input" id="subject" value="${esc(sessionStorage.getItem('draft:subject')||'')}"></div><div class="field"><label for="body">Brev</label><div class="input rich-text-editor" id="body" contenteditable="true" style="min-height:220px;resize:vertical;overflow:auto" role="textbox" aria-multiline="true" spellcheck="true"></div><span class="field__hint">Fetstil, kursiv och understrykning från formaterad text behålls. Import kontrolleras för trasiga tecken innan brevet kan skickas.</span></div><details class="details"><summary>Bilagor och dokumentimport</summary><div class="stack"><input class="input" type="file" id="files" multiple accept=".pdf,.txt,.docx,.html,.htm"><div id="file-list" class="chips"></div><p id="file-info" class="muted"></p><button class="button button--secondary" id="use-file" type="button">Använd första filen som brev</button></div></details><div class="row"><button class="button button--secondary" id="back-rec">Tillbaka</button><button class="button button--primary" id="to-review">Nästa: Granska</button></div></div>`;
+    el.innerHTML=`<div class="stack"><div class="row row--between compose-head"><div><h2>Skriv brevet</h2><p class="muted">Texten sparas tillfälligt i den här webbläsarfliken tills utskicket startar.</p></div><button class="button button--danger" id="clear-draft" type="button">Rensa formulär</button></div><div class="field"><label>Ämne</label><input class="input" id="subject" value="${esc(sessionStorage.getItem('draft:subject')||'')}"></div><div class="field"><label for="body">Brev</label><div class="input rich-text-editor" id="body" contenteditable="true" style="min-height:220px;resize:vertical;overflow:auto" role="textbox" aria-multiline="true" spellcheck="true"></div><span class="field__hint">Fetstil, kursiv och understrykning från formaterad text behålls. Import kontrolleras för trasiga tecken innan brevet kan skickas.</span></div><section class="card"><div class="row row--between"><div><h3>Börja mejlet med</h3><p class="muted">Valfritt. Vald text läggs efter den automatiska hälsningen “Hej {namn}!” och före brevet.</p></div><button class="button button--quiet" id="manage-intros" type="button">Hantera inledningar</button></div><div id="intro-options" class="stack section"></div></section><details class="details"><summary>Bilagor och dokumentimport</summary><div class="stack"><input class="input" type="file" id="files" multiple accept=".pdf,.txt,.docx,.html,.htm"><div id="file-list" class="chips"></div><p id="file-info" class="muted"></p><button class="button button--secondary" id="use-file" type="button">Använd första filen som brev</button></div></details><div class="row"><button class="button button--secondary" id="back-rec">Tillbaka</button><button class="button button--primary" id="to-review">Nästa: Granska</button></div></div>`;
     const subject=$('#subject'),body=$('#body'),files=$('#files');
     body.innerHTML=bodyHtml;
     const saveBody=()=>sessionStorage.setItem('draft:body',t.sanitizeHtml(body.innerHTML,{validate:false}));
     subject.oninput=()=>sessionStorage.setItem('draft:subject',subject.value);
     wireRichEditor(body,t,saveBody);
+    intros.renderOptions($('#intro-options'));
+    $('#manage-intros').onclick=()=>{saveBody();state.settings='intros';location.hash='settings/intros'};
     files.onchange=e=>{
       for(const file of [...e.target.files])if(!state.files.some(existing=>sameFile(existing,file)))state.files.push(file);
       files.value='';
@@ -135,13 +138,15 @@
     };
     $('#clear-draft').onclick=()=>{
       const hasBody=t.htmlToText(t.sanitizeHtml(body.innerHTML,{validate:false}),{validate:false}).trim();
-      if(!subject.value&&!hasBody&&!state.files.length)return;
-      if(!confirm('Rensa ämne, brevtext och alla valda filer?'))return;
+      if(!subject.value&&!hasBody&&!state.files.length&&!intros.hasSelection())return;
+      if(!confirm('Rensa ämne, brevtext, inledningsval och alla valda filer?'))return;
       subject.value='';
       body.innerHTML='';
       state.files=[];
       sessionStorage.removeItem('draft:subject');
       sessionStorage.removeItem('draft:body');
+      intros.clearSelection();
+      intros.renderOptions($('#intro-options'));
       files.value='';
       renderSelectedFiles();
       notice('Formuläret är rensat.','success');
@@ -158,13 +163,16 @@
     };
   };
 
-  renderReview=function(){
-    const el=$('#send-step'),t=tools(),subject=sessionStorage.getItem('draft:subject')||'';
+  renderReview=async function(){
+    const el=$('#send-step'),t=tools(),intros=window.PolitikerLetterIntros,subject=sessionStorage.getItem('draft:subject')||'';
+    await intros.prepare();
     const bodyHtml=storedToEditorHtml(sessionStorage.getItem('draft:body')||'',t);
+    const introText=intros.selectedText();
+    const previewHtml=intros.previewLetter(bodyHtml,introText);
     const bodyText=t.htmlToText(bodyHtml,{validate:false});
     let contentError='';
     try{t.validateText(bodyText);if(!bodyText.trim())contentError='Brevtext saknas.'}catch(error){contentError=error instanceof Error?error.message:'Kontrollera brevtexten.'}
-    el.innerHTML=`<div class="stack"><h2>Granska och skicka</h2>${contentError?`<div class="notice notice--error">${esc(contentError)}</div>`:''}<div class="kpis"><div class="kpi"><strong id="review-count">…</strong><span>Mottagare</span></div><div class="kpi"><strong>${state.credentials?.length||0}</strong><span>Mailkonton</span></div><div class="kpi"><strong>${state.files.length}</strong><span>Bilagor</span></div></div><div class="field"><label>Skicka från</label><select class="input" id="credential"><option value="">Välj mailkonto…</option>${(state.credentials||[]).map(c=>`<option value="${esc(c.id)}">${esc(c.from_address)} · ${esc(c.provider)}</option>`).join('')}</select></div><div class="card"><div class="card__title">${esc(subject||'(utan ämne)')}</div><div class="muted letter-preview-text rich-text-preview">${bodyHtml}</div></div><details class="details"><summary>Avancerad utskickstakt</summary><div class="grid grid--3"><div class="field"><label>Högst per dag nu</label><input class="input" id="limit-now" type="number" min="1"></div><div class="field"><label>Växla efter dagar</label><input class="input" id="switch-days" type="number" min="1"></div><div class="field"><label>Högst per dag därefter</label><input class="input" id="limit-after" type="number" min="1"></div></div></details><div class="row"><button class="button button--secondary" id="back-compose">Tillbaka</button><button class="button button--primary" id="send-now" ${contentError?'disabled':''}>Starta utskick</button></div></div>`;
+    el.innerHTML=`<div class="stack"><h2>Granska och skicka</h2>${contentError?`<div class="notice notice--error">${esc(contentError)}</div>`:''}<div class="kpis"><div class="kpi"><strong id="review-count">…</strong><span>Mottagare</span></div><div class="kpi"><strong>${state.credentials?.length||0}</strong><span>Mailkonton</span></div><div class="kpi"><strong>${state.files.length}</strong><span>Bilagor</span></div></div><div class="field"><label>Skicka från</label><select class="input" id="credential"><option value="">Välj mailkonto…</option>${(state.credentials||[]).map(c=>`<option value="${esc(c.id)}">${esc(c.from_address)} · ${esc(c.provider)}</option>`).join('')}</select></div><div class="card"><div class="card__title">${esc(subject||'(utan ämne)')}</div><div class="muted letter-preview-text rich-text-preview">${previewHtml}</div></div><details class="details"><summary>Avancerad utskickstakt</summary><div class="grid grid--3"><div class="field"><label>Högst per dag nu</label><input class="input" id="limit-now" type="number" min="1"></div><div class="field"><label>Växla efter dagar</label><input class="input" id="switch-days" type="number" min="1"></div><div class="field"><label>Högst per dag därefter</label><input class="input" id="limit-after" type="number" min="1"></div></div></details><div class="row"><button class="button button--secondary" id="back-compose">Tillbaka</button><button class="button button--primary" id="send-now" ${contentError?'disabled':''}>Starta utskick</button></div></div>`;
     recipientCount();
     $('#back-compose').onclick=()=>{state.step=2;location.hash='send/2';renderSend($('#root'))};
     $('#send-now').onclick=async()=>{
@@ -180,9 +188,10 @@
       for(const file of state.files)attachments.push({filename:file.name,contentType:file.type||'application/octet-stream',mode:'attach',base64Data:await file64(file)});
       const val=id=>$(id).value.trim()?Number($(id).value):null;
       try{
-        const data=await api('/api/send',{method:'POST',body:JSON.stringify({letterHtml,subject:subject||undefined,mailCredentialId:credential,...filterPayload(),attachments,dailyLimit:val('#limit-now'),switchAfterDays:val('#switch-days'),nextDailyLimit:val('#limit-after')})});
+        const data=await api('/api/send',{method:'POST',body:JSON.stringify({letterHtml,introText:introText||undefined,subject:subject||undefined,mailCredentialId:credential,...filterPayload(),attachments,dailyLimit:val('#limit-now'),switchAfterDays:val('#switch-days'),nextDailyLimit:val('#limit-after')})});
         sessionStorage.removeItem('draft:subject');
         sessionStorage.removeItem('draft:body');
+        intros.clearSelection();
         state.files=[];
         state.jobs=null;
         notice(`Utskicket startades för ${num(data.totalRecipients)} mottagare.`,'success');

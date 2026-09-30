@@ -36,6 +36,7 @@ async function redactFinishedUserLetters(env: PrivacyEnv, now:number):Promise<vo
     await env.DB.batch([
       env.DB.prepare("DELETE FROM letter_attachments WHERE letter_id=?").bind(row.id),
       env.DB.prepare("UPDATE letters SET html_body=? WHERE id=?").bind(REDACTED,row.id),
+      env.DB.prepare("UPDATE send_jobs SET intro_text=? WHERE letter_id=? AND intro_text IS NOT NULL").bind(REDACTED,row.id),
     ]);
   }
 }

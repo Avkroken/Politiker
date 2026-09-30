@@ -32,6 +32,7 @@ export async function deleteAccount(env: Env, accountId: string): Promise<void> 
     env.DB.prepare("DELETE FROM account_contact_list_members WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM account_contact_lists WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM account_contacts WHERE account_id = ?").bind(accountId),
+    env.DB.prepare("DELETE FROM letter_intro_presets WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM oauth_identities WHERE account_id = ?").bind(accountId), env.DB.prepare("DELETE FROM api_keys WHERE account_id = ?").bind(accountId),
     env.DB.prepare("UPDATE feedback SET account_id = NULL WHERE account_id = ?").bind(accountId), env.DB.prepare("UPDATE worker_errors SET account_id = NULL WHERE account_id = ?").bind(accountId),
     env.DB.prepare("DELETE FROM accounts WHERE id = ?").bind(accountId),

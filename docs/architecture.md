@@ -65,7 +65,7 @@ R2 lagrar bilagor. D1 kan bära metadata/referenser medan objektbytes ligger i R
 
 ## Utskicksflöde
 
-Ett utskick skapas som persistent applikationsstate och köas för asynkron bearbetning.
+Ett utskick skapas som persistent applikationsstate och köas för asynkron bearbetning. Brevets originaltext hålls separat från valbara inledningar. Vid leverans använder `personalizeLetter` ordningen personlig hälsning → snapshot av valda inledningar → brevtext; samma personaliseringspunkt hanterar även `{GREETING}` och äldre `Hej [förnamn]!`-utkast.
 
 ```text
 persistent send state
