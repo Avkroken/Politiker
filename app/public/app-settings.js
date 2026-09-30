@@ -1,4 +1,4 @@
-function renderSettings(root){root.innerHTML=`<div class="page">${pageHead('Inställningar')}<div class="settings"><nav id="settings-nav" class="settings-nav" aria-label="Inställningar"></nav><section id="settings-panel"><div class="empty">Laddar…</div></section></div></div>`;for(const [id,label] of [['mail','Mail'],['account','Konto'],['security','Säkerhet'],['api','API']]){const b=button(label,state.settings===id?'primary':'quiet',()=>{state.settings=id;location.hash=`settings/${id}`;renderSettings(root)});$('#settings-nav').append(b)};({mail:renderMailSettings,account:renderAccountSettings,security:renderSecuritySettings,api:renderApiSettings}[state.settings])()}
+function renderSettings(root){root.innerHTML=`<div class="page">${pageHead('Inställningar')}<div class="settings"><nav id="settings-nav" class="settings-nav" aria-label="Inställningar"></nav><section id="settings-panel"><div class="empty">Laddar…</div></section></div></div>`;for(const [id,label] of [['mail','Mail'],['intros','Inledningar'],['account','Konto'],['security','Säkerhet'],['api','API']]){const b=button(label,state.settings===id?'primary':'quiet',()=>{state.settings=id;location.hash=`settings/${id}`;renderSettings(root)});$('#settings-nav').append(b)};({mail:renderMailSettings,intros:renderIntroSettings,account:renderAccountSettings,security:renderSecuritySettings,api:renderApiSettings}[state.settings])()}
 /**
  * Hämtar mailkontona på nytt och renderar inställningspanelen.
  *
@@ -69,3 +69,46 @@ function providerLogo(p){return p==='google'?googleLogo:p==='microsoft'?microsof
 async function renderSecuritySettings(){const p=$('#settings-panel');p.innerHTML=`<div class="stack"><section class="card"><div class="card__eyebrow">2FA</div><h2>${state.me.totpEnabled?'Aktiverad':'Avstängd'}</h2><button class="button ${state.me.totpEnabled?'button--danger':'button--primary'}" id="totp-action">${state.me.totpEnabled?'Inaktivera 2FA':'Aktivera 2FA'}</button></section><section class="card"><h3>Länkade inloggningssätt</h3><div id="oauth-list" class="list section"><div class="empty">Laddar…</div></div></section></div>`;$('#totp-action').onclick=state.me.totpEnabled?async()=>{if(!confirm('Inaktivera 2FA?'))return;try{await api('/api/totp/disable',{method:'POST'});state.me.totpEnabled=false;renderSecuritySettings()}catch(err){notice(err.message,'error')}}:startTotp;try{const ids=await api('/api/oauth-identities'),host=$('#oauth-list');host.innerHTML='';for(const x of ids){const d=document.createElement('div');d.className='admin-row';d.innerHTML=`<div class="row row--between"><div><div class="card__title row">${providerLogo(x.provider)}<span>${esc(providerName(x.provider))}</span></div><div class="card__meta">${x.provider_email?esc(x.provider_email):'Kopplad'}${x.created_at?' · '+fmtDate(x.created_at):''}</div></div><button class="button button--danger">Koppla bort</button></div>`;$('button',d).onclick=async()=>{if(!confirm(`Koppla bort ${providerName(x.provider)}?`))return;try{await api(`/api/oauth-identities/${encodeURIComponent(x.provider)}`,{method:'DELETE'});renderSecuritySettings()}catch(err){notice(err.message,'error')}};host.append(d)}if(!ids.length)host.innerHTML='<div class="empty">Inga externa inloggningar länkade.</div>'}catch(err){$('#oauth-list').innerHTML=`<div class="notice notice--error">${esc(err.message)}</div>`}}
 async function startTotp(){try{const d=await api('/api/totp/setup',{method:'POST'});showModal('Aktivera 2FA',`<form id="totp-form" class="stack"><p class="muted">Lägg in denna hemlighet i din autentiseringsapp:</p><code class="code">${esc(d.secret)}</code><div class="field"><label>Sexsiffrig kod</label><input class="input" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></div><button class="button button--primary" type="submit">Aktivera</button></form>`);$('#totp-form').onsubmit=async e=>{e.preventDefault();try{await api('/api/totp/confirm',{method:'POST',body:JSON.stringify({code:new FormData(e.currentTarget).get('code')})});state.me.totpEnabled=true;closeModal();renderSecuritySettings()}catch(err){notice(err.message,'error')}}}catch(err){notice(err.message,'error')}}
 async function renderApiSettings(){const p=$('#settings-panel');p.innerHTML='<section class="card"><div class="row row--between"><div><div class="card__eyebrow">Automation</div><h2>API-nycklar</h2></div><button class="button button--primary" id="api-new">Ny API-nyckel</button></div><div id="api-list" class="list section"><div class="empty">Laddar…</div></div></section>';try{const keys=await api('/api/api-keys'),host=$('#api-list');host.innerHTML='';for(const k of keys){const d=document.createElement('div');d.className='admin-row';d.innerHTML=`<div class="row row--between"><div><div class="card__title">${esc(k.name)}</div><div class="card__meta">${fmtDate(k.created_at)}</div></div><button class="button button--danger">Återkalla</button></div>`;$('button',d).onclick=async()=>{try{await api(`/api/api-keys/${k.id}`,{method:'DELETE'});renderApiSettings()}catch(err){notice(err.message,'error')}};host.append(d)}if(!keys.length)host.innerHTML='<div class="empty">Inga API-nycklar.</div>';$('#api-new').onclick=()=>{showModal('Ny API-nyckel',`<form id="api-form" class="stack"><div class="field"><label>Namn</label><input class="input" name="name" required></div><button class="button button--primary" type="submit">Skapa</button><div id="api-result"></div></form>`);$('#api-form').onsubmit=async e=>{e.preventDefault();try{const r=await api('/api/api-keys',{method:'POST',body:JSON.stringify({name:new FormData(e.currentTarget).get('name')})});$('#api-result').innerHTML=`<div class="notice notice--warning"><div><strong>Kopiera nyckeln nu.</strong><br><code class="code">${esc(r.key)}</code></div></div>`}catch(err){notice(err.message,'error')}}}}catch(err){$('#api-list').innerHTML=`<div class="notice notice--error">${esc(err.message)}</div>`}}
+async function ensureLetterIntroPresets(force=false){
+  if(state.introPresets&&!force)return state.introPresets;
+  state.introPresets=await api('/api/letter-intro-presets');
+  return state.introPresets;
+}
+
+function openIntroPresetForm(preset=null){
+  const editing=!!preset;
+  showModal(editing?'Redigera inledning':'Ny inledning',`<form id="intro-preset-form" class="stack"><div class="field"><label>Rubrik</label><input class="input" name="title" maxlength="80" value="${esc(preset?.title||'')}" required></div><div class="field"><label>Text</label><textarea class="input" name="body" rows="8" maxlength="4000" required>${esc(preset?.body||'')}</textarea><span class="field__hint">Texten läggs efter “Hej {namn}!” och före brevets egen text.</span></div><button class="button button--primary" type="submit">${editing?'Spara ändring':'Spara inledning'}</button></form>`);
+  $('#intro-preset-form').onsubmit=async event=>{
+    event.preventDefault();
+    const form=new FormData(event.currentTarget),payload={title:String(form.get('title')||''),body:String(form.get('body')||'')};
+    try{
+      await api(editing?`/api/letter-intro-presets/${encodeURIComponent(preset.id)}`:'/api/letter-intro-presets',{method:editing?'PATCH':'POST',body:JSON.stringify(payload)});
+      state.introPresets=null;
+      closeModal();
+      await renderIntroSettings();
+      notice(editing?'Inledningen uppdaterades.':'Inledningen sparades.','success');
+    }catch(err){notice(err.message,'error')}
+  };
+}
+
+async function renderIntroSettings(){
+  const p=$('#settings-panel');
+  p.innerHTML='<section class="card"><div class="row row--between"><div><div class="card__eyebrow">Brev</div><h2>Inledningar</h2><p class="muted">Spara återanvändbara alternativ som kan väljas när du skriver eller importerar ett brev. De placeras efter den personliga hälsningen och före själva brevet.</p></div><button class="button button--primary" id="intro-new" type="button">Ny inledning</button></div><div id="intro-preset-list" class="list section"><div class="empty">Laddar…</div></div></section>';
+  $('#intro-new').onclick=()=>openIntroPresetForm();
+  try{
+    const presets=await ensureLetterIntroPresets(true),host=$('#intro-preset-list');
+    host.innerHTML='';
+    if(!presets.length){host.innerHTML='<div class="empty">Inga egna inledningar sparade ännu.</div>';return}
+    for(const preset of presets){
+      const row=document.createElement('article');
+      row.className='card';
+      row.innerHTML=`<div class="row row--between"><div><div class="card__title">${esc(preset.title)}</div><div class="muted section">${esc(preset.body).replace(/\n/g,'<br>')}</div></div><div class="row"><button class="button button--secondary edit" type="button">Redigera</button><button class="button button--danger delete" type="button">Radera</button></div></div>`;
+      $('.edit',row).onclick=()=>openIntroPresetForm(preset);
+      $('.delete',row).onclick=async()=>{
+        if(!confirm(`Radera inledningen “${preset.title}”?`))return;
+        try{await api(`/api/letter-intro-presets/${encodeURIComponent(preset.id)}`,{method:'DELETE'});state.selectedIntroIds.delete(preset.id);sessionStorage.setItem('draft:introPresetIds',JSON.stringify([...state.selectedIntroIds]));state.introPresets=null;await renderIntroSettings();notice('Inledningen raderades.','success')}catch(err){notice(err.message,'error')}
+      };
+      host.append(row);
+    }
+  }catch(err){$('#intro-preset-list').innerHTML=`<div class="notice notice--error">${esc(err.message)}</div>`}
+}

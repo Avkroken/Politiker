@@ -12,19 +12,26 @@ function firstName(fullName: string, email: string): string {
     .replace(/(^|-)(\p{L})/gu, (_match, prefix: string, letter: string) => `${prefix}${letter.toLocaleUpperCase("sv-SE")}`);
 }
 
-export function personalizeLetter(bodyHtml: string, recipientName: string, recipientEmail: string): string {
+function introInlineHtml(introText: string): string {
+  return escapeHtml(introText.trim()).replace(/\n/g, "<br>");
+}
+
+export function personalizeLetter(bodyHtml: string, recipientName: string, recipientEmail: string, introText = ""): string {
   const name = firstName(recipientName, recipientEmail);
   const greeting = name ? `Hej ${name}!` : "Hej!";
   const safeGreeting = escapeHtml(greeting);
+  const safeIntro = introText.trim() ? introInlineHtml(introText) : "";
+  const greetingWithIntro = safeIntro ? `${safeGreeting}<br><br>${safeIntro}` : safeGreeting;
 
   if (/\{GREETING\}/i.test(bodyHtml)) {
-    return bodyHtml.replace(/\{GREETING\}/gi, safeGreeting);
+    return bodyHtml.replace(/\{GREETING\}/gi, greetingWithIntro);
   }
 
   // Bakåtkompatibilitet med äldre utkast från tidigare versioner.
   if (/Hej\s+\[förnamn\]!/i.test(bodyHtml)) {
-    return bodyHtml.replace(/Hej\s+\[förnamn\]!/gi, safeGreeting);
+    return bodyHtml.replace(/Hej\s+\[förnamn\]!/gi, greetingWithIntro);
   }
 
-  return `<p>${safeGreeting}</p>\n${bodyHtml}`;
+  const introBlock = safeIntro ? `\n<p>${safeIntro}</p>` : "";
+  return `<p>${safeGreeting}</p>${introBlock}\n${bodyHtml}`;
 }

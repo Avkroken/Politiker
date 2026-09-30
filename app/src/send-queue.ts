@@ -29,9 +29,10 @@ async function waitForSendSlot(env:Env,credentialId:string,provider:string):Prom
 export async function handleSendQueue(batch:MessageBatch<SendJobMessage>,env:Env):Promise<void>{const byJob=new Map<string,QueueMessage[]>();for(const message of batch.messages){const arr=byJob.get(message.body.sendJobId)??[];arr.push(message);byJob.set(message.body.sendJobId,arr);}for(const [sendJobId,messages] of byJob)await processJobMessages(env,sendJobId,messages);}
 
 async function processJobMessages(env:Env,sendJobId:string,messages:QueueMessage[]):Promise<void>{
-  const job=await env.DB.prepare(`SELECT sj.letter_id, sj.mail_credential_id FROM send_jobs sj WHERE sj.id=?`).bind(sendJobId).first<{letter_id:string;mail_credential_id:string}>();
+  const job=await env.DB.prepare(`SELECT sj.letter_id, sj.mail_credential_id, sj.intro_text FROM send_jobs sj WHERE sj.id=?`).bind(sendJobId).first<{letter_id:string;mail_credential_id:string;intro_text:string|null}>();
   if(!job){for(const message of messages)message.ack();return;}
   const credentialId=job.mail_credential_id;
+  const introText=job.intro_text?await decryptLetterData(env,job.intro_text):"";
   let credentialRow=await env.DB.prepare(`SELECT provider,smtp_host,smtp_port,smtp_user,encrypted_password,from_address,oauth_access_token,oauth_refresh_token,oauth_token_expires_at FROM mail_credentials WHERE id=? AND revoked_at IS NULL`).bind(credentialId).first<CredentialRow>();
   if(!credentialRow){for(const message of messages)message.ack();await markJobAborted(env,sendJobId,"Mailkontot finns inte längre");return;}
   if(credentialRow.provider==="microsoft_graph"&&(credentialRow.oauth_token_expires_at??0)<Date.now()+5*60*1000)credentialRow=await refreshAndPersistMicrosoftToken(env,credentialId,credentialRow);
@@ -44,7 +45,7 @@ async function processJobMessages(env:Env,sendJobId:string,messages:QueueMessage
     if(!current||current.status!=="queued"||current.queued_at!==m.queuedAt){queueMsg.ack();continue;}
     if(current.html_body!==cachedStoredBody){cachedStoredBody=current.html_body;cachedLetterBody=await decryptLetterData(env,current.html_body);}
     if(!cachedLetterBody){queueMsg.ack();await markJobAborted(env,sendJobId,"Brevets innehåll har raderats");aborted=true;continue;}
-    attempted++;try{const html=personalizeLetter(cachedLetterBody,m.recipientName,m.recipientEmail);await sendOneMail(env,credentialRow,m.recipientEmail,html,current.subject??undefined,attachments);await logSend(env,m,"ok",null);sentCount++;queueMsg.ack();}
+    attempted++;try{const html=personalizeLetter(cachedLetterBody,m.recipientName,m.recipientEmail,introText);await sendOneMail(env,credentialRow,m.recipientEmail,html,current.subject??undefined,attachments);await logSend(env,m,"ok",null);sentCount++;queueMsg.ack();}
     catch(err){const errorMsg=err instanceof Error?err.message:"Okänt fel";if(isMailCredentialFailure(err)){await recordBlockingSendError(env,m,errorMsg);queueMsg.ack();aborted=true;continue;}if(isTransientSmtpFailure(err)&&queueMsg.attempts<TRANSIENT_SMTP_MAX_ATTEMPTS){await recordTransientSendError(env,m,errorMsg);queueMsg.retry({delaySeconds:transientSmtpRetryDelaySeconds(queueMsg.attempts)});continue;}bounceCount++;await logSend(env,m,"bounce",errorMsg,isPermanentRecipientSmtpFailure(err));queueMsg.ack();if(bounceCount>=5&&attempted>=MIN_FOR_RATE_CHECK){const rate=bounceCount/attempted*100;if(rate>=BOUNCE_ABORT_RATE){aborted=true;await markJobAborted(env,sendJobId,`Hög bounce-andel (${rate.toFixed(0)}%) — stoppat för granskning`);}}}
   }
   if(attempted>0||aborted)await env.DB.prepare(`UPDATE send_jobs SET sent_count=sent_count+?,bounce_count=bounce_count+?,status=? WHERE id=?`).bind(sentCount,bounceCount,aborted?"aborted":"sending",sendJobId).run();
