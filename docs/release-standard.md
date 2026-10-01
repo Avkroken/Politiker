@@ -69,3 +69,11 @@ Releasejobbet använder repositoryts `GITHUB_TOKEN` med least privilege: read f�
 ## Hotfix och rollback
 
 Publicerade taggar flyttas inte. Korrigering går via vanlig PR, normal verifiering och en ny SemVer-release. Ingen force-push eller tag history rewrite används.
+
+### Copilot-sammanfattning
+
+Releaseflödet kan komplettera den deterministiska changelogen med en AI-genererad, användarorienterad sammanfattning via den SHA-pinnade `github/copilot-release-notes`-actionen. Sammanfattningen är **supplemental**: SemVer, release-target, required checks och den deterministiska changelogen ändras inte av Copilot.
+
+Copilot-steget använder endast repository-secret `COPILOT_GITHUB_TOKEN`, som ska vara en least-privilege fine-grained PAT med `Copilot Requests: Read` och en tokenägare med aktiv Copilot-licens. Om secreten saknas eller Copilot-steget misslyckas fortsätter releasen med enbart den deterministiska changelogen. Ingen credential skapas eller roteras av releaseworkflown.
+
+AI-texten blockciteras under `## Copilot summary` efter den deterministiska changelogen. Därmed fortsätter Portalens kategoriutvinning att baseras på de verifierade release-rubrikerna och AI-texten blir inte en alternativ source of truth.
