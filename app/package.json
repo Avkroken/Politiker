@@ -18,11 +18,11 @@
     "preview:workers-builds": "node ../scripts/workers-build-preview.mjs"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260925.1",
+    "@cloudflare/workers-types": "^5.20261001.1",
     "@types/node": "^26.6.2",
     "c8": "^12.0.0",
     "typescript": "^7.0.2",
-    "wrangler": "^4.140.0"
+    "wrangler": "^4.145.0"
   },
   "dependencies": {
     "mammoth": "^1.12.3",
