@@ -64,7 +64,7 @@ GitHub Releases är canonical versionerad changelog. Breaking changes markeras t
 
 ## Credentials
 
-Releasejobbet använder repositoryts `GITHUB_TOKEN` med least privilege: read för checks/status och `contents: write` endast för tagg/GitHub Release. Ingen PAT eller bredare GitHub App-writebehörighet behövs.
+Releasejobbet använder repositoryts `GITHUB_TOKEN` med least privilege: read för checks/status och `contents: write` endast för tagg/GitHub Release. Canonical releasepublication behöver ingen PAT eller bredare GitHub App-writebehörighet; den valfria rådgivande Copilot-sammanfattningen använder separat read-only `COPILOT_GITHUB_TOKEN`.
 
 ## Hotfix och rollback
 
