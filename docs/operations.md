@@ -107,7 +107,7 @@ npm run validate
 
 vara verifierat.
 
-Current releaseflöde är repo-lokalt i `.github/workflows/release.yml`: efter merge till `main` väntar releasen på de checks som anges i `.github/release-required-checks` och skapar därefter SemVer-tagg/GitHub Release när historiken innehåller en releasevärdig förändring. Ingen PAT eller bredare App-writebehörighet används.
+Current releaseflöde är repo-lokalt i `.github/workflows/release.yml`: efter merge till `main` väntar releasen på de checks som anges i `.github/release-required-checks` och skapar därefter SemVer-tagg/GitHub Release när historiken innehåller en releasevärdig förändring. Canonical releasepublication använder ingen PAT eller bredare App-writebehörighet; den valfria rådgivande Copilot-sammanfattningen använder separat read-only `COPILOT_GITHUB_TOKEN` och ändrar inte release-body:n.
 
 ## Deployment
 
