@@ -8,7 +8,11 @@ const manifest = JSON.parse(
   readFileSync(new URL("../public/site.webmanifest", import.meta.url), "utf8"),
 ) as {
   name: string;
-  icons: Array<{ src: string; sizes: string; type: string }>;
+  id: string;
+  start_url: string;
+  scope: string;
+  display: string;
+  icons: Array<{ src: string; sizes: string; type: string; purpose: string }>;
 };
 
 test("publishes broad link-preview metadata with an absolute cache-busted image URL", () => {
@@ -40,9 +44,13 @@ test("allows public preview images and favicons to load cross-origin", () => {
 
 test("publishes a manifest backed by the existing app icons", () => {
   assert.equal(manifest.name, "PolitikerKontakt");
+  assert.equal(manifest.id, "/");
+  assert.equal(manifest.start_url, "/");
+  assert.equal(manifest.scope, "/");
+  assert.equal(manifest.display, "standalone");
   assert.deepEqual(manifest.icons, [
-    { src: "/favicon-192.png", sizes: "192x192", type: "image/png" },
-    { src: "/favicon-512.png", sizes: "512x512", type: "image/png" },
+    { src: "/favicon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
+    { src: "/favicon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
   ]);
   assert.match(html, /<link rel="manifest" href="\/site\.webmanifest">/);
 });
