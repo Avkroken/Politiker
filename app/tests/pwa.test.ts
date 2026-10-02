@@ -11,6 +11,11 @@ test("all primary public pages expose PWA install metadata", () => {
     assert.match(html, /<link rel="manifest" href="\/site\.webmanifest">/);
     assert.match(html, /<link rel="apple-touch-icon"[^>]+favicon-192\.png/);
     assert.match(html, /<script src="\/pwa\.js" defer><\/script>/);
+    assert.doesNotMatch(
+      html,
+      />\\n\s*</,
+      `${name} must not contain escaped newlines between HTML tags`,
+    );
   }
 });
 
