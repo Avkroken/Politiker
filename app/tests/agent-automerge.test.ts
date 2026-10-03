@@ -4,11 +4,11 @@ import { readFile } from "node:fs/promises";
 
 const workflow = await readFile(new URL("../../.github/workflows/agent-automerge.yml", import.meta.url), "utf8");
 
-test("agent lifecycle caller reacts to PR, review, main and scheduled reconciliation events", () => {
+test("agent lifecycle caller reacts to PR, checks, main and scheduled reconciliation events", () => {
   assert.match(workflow, /pull_request:/);
   assert.match(workflow, /types: \[opened, edited, reopened, synchronize, ready_for_review\]/);
-  assert.match(workflow, /pull_request_review:/);
-  assert.match(workflow, /pull_request_review_comment:/);
+  assert.doesNotMatch(workflow, /pull_request_review:/);
+  assert.doesNotMatch(workflow, /pull_request_review_comment:/);
   assert.match(workflow, /check_run:\n\s+types: \[completed\]/);
   assert.match(workflow, /push:\n\s+branches: \[main\]/);
   assert.match(workflow, /schedule:/);
