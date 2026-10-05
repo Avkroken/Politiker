@@ -18,14 +18,14 @@
     "preview:workers-builds": "node ../scripts/workers-build-preview.mjs"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261001.1",
-    "@types/node": "^26.6.2",
+    "@cloudflare/workers-types": "^5.20261002.1",
+    "@types/node": "^26.6.4",
     "c8": "^12.0.0",
     "typescript": "^7.0.2",
-    "wrangler": "^4.145.0"
+    "wrangler": "^4.146.0"
   },
   "dependencies": {
-    "mammoth": "^1.12.3",
+    "mammoth": "^1.13.0",
     "unpdf": "^1.8.1"
   }
 }
