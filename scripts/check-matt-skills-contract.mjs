@@ -36,6 +36,17 @@ const routedSkills = [...routing.slice(catalogStart, catalogEnd).matchAll(/^- `(
 
 assert.deepEqual(routedSkills, skills, "routing catalog and snapshot must match exactly");
 
+const invariantsStart = routing.indexOf("## Routing invariants");
+const invariantsEnd = routing.indexOf("## Catalog drift gate", invariantsStart);
+assert.notEqual(invariantsStart, -1, "routing contract is missing Routing invariants");
+assert.notEqual(invariantsEnd, -1, "routing contract is missing Catalog drift gate after routing invariants");
+const invariantSkills = [...routing.slice(invariantsStart, invariantsEnd).matchAll(/`([a-z][a-z0-9-]*)`/g)]
+  .map((match) => match[1]);
+
+for (const skill of invariantSkills) {
+  assert.ok(skills.includes(skill), "routing invariant references unavailable skill: " + skill);
+}
+
 const lifecycleStart = routing.indexOf("## Canonical lifecycle routes");
 const lifecycleEnd = routing.indexOf("## Full packaged catalog", lifecycleStart);
 assert.notEqual(lifecycleStart, -1, "routing contract is missing Canonical lifecycle routes");
