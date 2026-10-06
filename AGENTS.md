@@ -28,6 +28,11 @@
 - Lägg aldrig SMTP-/OAuth-credentials, API-nycklar, krypteringsnycklar eller andra secrets i repository, logs eller publik dokumentation.
 ## Agent skills
 
+
+### Matt Skills Curated
+
+Use Matt Skills Curated as the preferred runtime engineering workflow catalog. Read `docs/agents/matt-skills.md` before routing non-trivial engineering work. If the user explicitly invokes `@Matt Skills Curated` or a packaged skill, honor that route unless a harder repository or safety constraint conflicts. Select the narrowest effective skill, keep one primary skill per lifecycle phase, and never vendor or invent missing skill bodies.
+
 ### Issue tracker
 
 Use this repository's GitHub Issues for issues and specifications. Read `docs/agents/issue-tracker.md` before reading, creating, or publishing tickets.
