@@ -64,3 +64,8 @@ Run the narrowest relevant tests while iterating, then run the complete command 
 - Review the completed diff for correctness, scope, security, and missing tests. Resolve merge or rebase conflicts by preserving the intent of both sides rather than choosing changes mechanically.
 - Read the complete pull-request review state before merge, including comments and threads GitHub marks as `outdated`; verify that the underlying issue is actually resolved.
 - Keep progress and handoff notes concise: current state, evidence, verification performed, remaining work, and risks. Never expose secrets, tokens, credentials, private keys, or sensitive environment values.
+
+
+## Matt Skills Curated
+
+Use the repository's Matt Skills Curated routing contract in `docs/agents/matt-skills.md` together with `AGENTS.md`. Route ambiguous or multi-phase work through `engineering-workflow-guide`; otherwise select the narrowest packaged specialist directly. Keep one primary skill per lifecycle phase. Repository invariants, security boundaries, and required validation remain authoritative over generic skill guidance.
