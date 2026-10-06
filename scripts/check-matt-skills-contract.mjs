@@ -36,6 +36,17 @@ const routedSkills = [...routing.slice(catalogStart, catalogEnd).matchAll(/^- `(
 
 assert.deepEqual(routedSkills, skills, "routing catalog and snapshot must match exactly");
 
+const lifecycleStart = routing.indexOf("## Canonical lifecycle routes");
+const lifecycleEnd = routing.indexOf("## Full packaged catalog", lifecycleStart);
+assert.notEqual(lifecycleStart, -1, "routing contract is missing Canonical lifecycle routes");
+assert.notEqual(lifecycleEnd, -1, "routing contract is missing Full packaged catalog after lifecycle routes");
+const lifecycleSkills = [...routing.slice(lifecycleStart, lifecycleEnd).matchAll(/`([^`]+)`/g)]
+  .map((match) => match[1]);
+
+for (const skill of lifecycleSkills) {
+  assert.ok(skills.includes(skill), "canonical lifecycle route references unavailable skill: " + skill);
+}
+
 const expectedRoles = ["needs-info", "needs-triage", "ready-for-agent", "ready-for-human", "wontfix"].sort();
 const triageRows = [...triage.matchAll(/^\|\s*`([^`]+)`\s*\|\s*`([^`]+)`\s*\|\s*(.+?)\s*\|\s*$/gm)]
   .map((match) => ({ role: match[1], label: match[2], meaning: match[3].trim() }));
