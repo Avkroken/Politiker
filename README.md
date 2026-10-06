@@ -32,8 +32,8 @@ Applikationen använder D1, KV, Queue + DLQ, Durable Object, R2, Cloudflare Emai
 
 Provider-/credentialförutsättningar verifieras utan att exportera eller skriva secretvärden:
 
-\`\`\`bash
+```bash
 bash scripts/setup-provider-credentials.sh
-\`\`\`
+```
 
 Wizarden är human-only och skapar eller roterar inga credentials.
