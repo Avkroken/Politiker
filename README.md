@@ -27,3 +27,13 @@ README hålls medvetet kort. Detaljerad teknisk dokumentation ligger under `docs
 ## Runtime i korthet
 
 Applikationen använder D1, KV, Queue + DLQ, Durable Object, R2, Cloudflare Email och schemalagd Worker-körning. Dessa lager har olika ansvar och ska inte behandlas som utbytbara state stores.
+
+## Operator-wizard
+
+Provider-/credentialförutsättningar verifieras utan att exportera eller skriva secretvärden:
+
+```bash
+bash scripts/setup-provider-credentials.sh
+```
+
+Wizarden är human-only och skapar eller roterar inga credentials.
