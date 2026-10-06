@@ -21,10 +21,22 @@ A skill may structure the work, but it may not override repository security boun
 - If the specialist is obvious, invoke it directly; do not add ceremony by routing through meta-skills first.
 - Use **one primary skill per lifecycle phase**. Chain skills only when the work crosses a real phase boundary.
 - Never invent or paraphrase a missing skill body. If a named skill is unavailable in the current runtime, say so and continue with repository-native rules rather than fabricating instructions.
-- Do not copy the 42 skill definitions into this repository. Keep this routing contract small and let the runtime package own the skill implementation.
+- Do not copy the packaged skill definitions into this repository. Keep this routing contract small and let the runtime package own the skill implementation.
 - Human-only dashboard, MFA, billing, or credential navigation belongs in `wizard`; agent-capable CLI/API work should be executed directly instead of pushed onto a human.
 - Material implementation must finish with repository-native validation and a `code-review` pass against a pinned merge base and the originating spec/issue.
 - Pull requests are not merge-ready while required checks, unresolved review threads, active change requests, merge conflicts, or declared external deployment checks remain unresolved.
+
+## Catalog drift gate
+
+The version-controlled catalog snapshot is `docs/agents/matt-skills-catalog.txt`.
+
+Before routing non-trivial work through Matt Skills Curated, an agent that can inspect the installed plugin catalog must compare the current `skills://plugins/matt-skills-curated/*` names against that snapshot.
+
+- **Exact match:** proceed normally.
+- **New, renamed, or removed runtime skills:** treat this routing contract as stale; read the changed packaged skill definitions and update the snapshot/routing contract before relying on the changed route.
+- **Runtime catalog cannot be inspected:** continue with repository-native rules and only use skill definitions that are actually available; do not assume the snapshot proves runtime availability.
+
+Repository CI cannot inspect the ChatGPT plugin runtime. It verifies internal consistency between the snapshot, routing document, and triage mapping. Runtime-vs-snapshot drift is an agent preflight responsibility.
 
 ## Canonical lifecycle routes
 
