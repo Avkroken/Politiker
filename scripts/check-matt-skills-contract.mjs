@@ -23,9 +23,15 @@ assert.ok(skills.length > 0, "skill snapshot is empty");
 assert.deepEqual([...skills].sort(), skills, "skill snapshot must be alphabetically sorted");
 assert.equal(new Set(skills).size, skills.length, "skill snapshot contains duplicates");
 
-for (const skill of skills) {
-  assert.ok(routing.includes("`" + skill + "`"), "routing contract missing " + skill);
-}
+const catalogStart = routing.indexOf("## Full packaged catalog");
+const catalogEnd = routing.indexOf("## Phase completion", catalogStart);
+assert.notEqual(catalogStart, -1, "routing contract is missing Full packaged catalog");
+assert.notEqual(catalogEnd, -1, "routing contract is missing Phase completion");
+const routedSkills = [...routing.slice(catalogStart, catalogEnd).matchAll(/^- `([^`]+)`/gm)]
+  .map((match) => match[1])
+  .sort();
+
+assert.deepEqual(routedSkills, skills, "routing catalog and snapshot must match exactly");
 
 for (const role of ["needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix"]) {
   assert.ok(triage.includes("`" + role + "`"), "triage mapping missing " + role);
