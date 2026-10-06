@@ -1,0 +1,36 @@
+name: Matt Skills contract
+
+on:
+  pull_request:
+    paths:
+      - 'docs/agents/matt-skills.md'
+      - 'docs/agents/matt-skills-catalog.txt'
+      - 'docs/agents/triage-labels.md'
+      - 'AGENTS.md'
+      - '.github/copilot-instructions.md'
+      - 'scripts/check-matt-skills-contract.mjs'
+      - '.github/workflows/matt-skills-contract.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/agents/matt-skills.md'
+      - 'docs/agents/matt-skills-catalog.txt'
+      - 'docs/agents/triage-labels.md'
+      - 'AGENTS.md'
+      - '.github/copilot-instructions.md'
+      - 'scripts/check-matt-skills-contract.mjs'
+      - '.github/workflows/matt-skills-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Matt Skills contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.2.0
+      - name: Verify routing snapshot
+        run: node scripts/check-matt-skills-contract.mjs --routing 'docs/agents/matt-skills.md' --catalog 'docs/agents/matt-skills-catalog.txt' --triage 'docs/agents/triage-labels.md'
