@@ -26,6 +26,18 @@ A skill may structure the work, but it may not override repository security boun
 - Material implementation must finish with repository-native validation and a `code-review` pass against a pinned merge base and the originating spec/issue.
 - Pull requests are not merge-ready while required checks, unresolved review threads, active change requests, merge conflicts, or declared external deployment checks remain unresolved.
 
+## Catalog drift gate
+
+The version-controlled catalog snapshot is `docs/agents/matt-skills-catalog.txt`.
+
+Before routing non-trivial work through Matt Skills Curated, an agent that can inspect the installed plugin catalog must compare the current `skills://plugins/matt-skills-curated/*` names against that snapshot.
+
+- **Exact match:** proceed normally.
+- **New, renamed, or removed runtime skills:** treat this routing contract as stale; read the changed packaged skill definitions and update the snapshot/routing contract before relying on the changed route.
+- **Runtime catalog cannot be inspected:** continue with repository-native rules and only use skill definitions that are actually available; do not assume the snapshot proves runtime availability.
+
+Repository CI cannot inspect the ChatGPT plugin runtime. It verifies internal consistency between the snapshot, routing document, and triage mapping. Runtime-vs-snapshot drift is an agent preflight responsibility.
+
 ## Canonical lifecycle routes
 
 | Situation | Preferred route |
