@@ -1,0 +1,45 @@
+# Matt Skills Curated catalog snapshot
+# One packaged skill per line. Keep alphabetically sorted.
+# Runtime agents compare the installed plugin catalog against this file before relying on the routing contract.
+ai-data-remediation
+ai-engineering
+code-review
+codebase-design
+diagnosing-bugs
+domain-modeling
+engineering-workflow-guide
+git-safety-guardrails
+goal
+grill-me
+grill-with-docs
+grilling
+handoff
+implement
+implement-spec
+improve-codebase-architecture
+j-space
+migrate-to-shoehorn
+ml-best-practices
+prototype
+research
+resolving-merge-conflicts
+retro
+scaffold-exercises
+setup-engineering-workflows
+setup-pre-commit
+setup-ts-deep-modules
+skill-conductor
+tdd
+teach
+to-questionnaire
+to-spec
+to-tickets
+triage
+wait-what
+wayfinder
+wizard
+workflow-designer
+writing-beats
+writing-for-agents
+writing-fragments
+writing-shape
