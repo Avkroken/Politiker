@@ -1,6 +1,8 @@
 name: Release
 
 on:
+  repository_dispatch:
+    types: [agent-pr-merged]
   pull_request:
     branches: [main]
     paths:
@@ -111,7 +113,7 @@ jobs:
               active = sorted(
                   int(run["id"])
                   for run in data.get("workflow_runs", [])
-                  if run.get("event") in {"push", "workflow_dispatch"}
+                  if run.get("event") in {"push", "workflow_dispatch", "repository_dispatch"}
                   and run.get("status") in {"queued", "in_progress"}
                   and run.get("head_branch") == "main"
               )
