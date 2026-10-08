@@ -1,0 +1,89 @@
+name: Reusable bot PR lifecycle
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  reconcile:
+    name: Update and auto-merge trusted bot PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Reconcile Dependabot and Copilot pull requests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          default_branch="$(gh api "repos/${REPOSITORY}" --jq '.default_branch')"
+
+          trusted_bot() {
+            case "$1" in
+              "dependabot[bot]"|"copilot-swe-agent[bot]") return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          reconcile_pr() {
+            local number="$1"
+            local pr author state draft base_ref head_repo head_sha mergeable_state
+            local repo_json method url auto_merge
+
+            pr="$(gh api "repos/${REPOSITORY}/pulls/${number}")"
+            author="$(jq -r '.user.login' <<<"$pr")"
+            state="$(jq -r '.state' <<<"$pr")"
+            draft="$(jq -r '.draft' <<<"$pr")"
+            base_ref="$(jq -r '.base.ref' <<<"$pr")"
+            head_repo="$(jq -r '.head.repo.full_name // ""' <<<"$pr")"
+            head_sha="$(jq -r '.head.sha' <<<"$pr")"
+            url="$(jq -r '.html_url' <<<"$pr")"
+
+            trusted_bot "$author" || return 0
+            [[ "$state" == "open" && "$draft" == "false" ]] || return 0
+            [[ "$base_ref" == "$default_branch" && "$head_repo" == "$REPOSITORY" ]] || return 0
+
+            mergeable_state="$(jq -r '.mergeable_state // "unknown"' <<<"$pr")"
+            if [[ "$mergeable_state" == "dirty" ]]; then
+              echo "PR #${number} has conflicts; leaving it for manual resolution."
+              return 0
+            fi
+
+            if [[ "$mergeable_state" == "behind" ]]; then
+              echo "Updating PR #${number} from ${default_branch}."
+              gh api --method PUT "repos/${REPOSITORY}/pulls/${number}/update-branch"                 -f expected_head_sha="$head_sha" >/dev/null || return 0
+              return 0
+            fi
+
+            auto_merge="$(jq -r 'if .auto_merge == null then "false" else "true" end' <<<"$pr")"
+            if [[ "$auto_merge" == "true" ]]; then
+              echo "Native auto-merge is already enabled for PR #${number}."
+              return 0
+            fi
+
+            repo_json="$(gh api "repos/${REPOSITORY}")"
+            if [[ "$(jq -r '.allow_merge_commit' <<<"$repo_json")" == "true" ]]; then
+              method="--merge"
+            elif [[ "$(jq -r '.allow_squash_merge' <<<"$repo_json")" == "true" ]]; then
+              method="--squash"
+            elif [[ "$(jq -r '.allow_rebase_merge' <<<"$repo_json")" == "true" ]]; then
+              method="--rebase"
+            else
+              echo "::error::No supported merge method is enabled."
+              return 1
+            fi
+
+            echo "Enabling native auto-merge for PR #${number} by ${author}."
+            gh pr merge --auto "$method" "$url"
+          }
+
+          gh api --paginate "repos/${REPOSITORY}/pulls?state=open&base=${default_branch}&per_page=100"             --jq '.[] | select(.user.login == "dependabot[bot]" or .user.login == "copilot-swe-agent[bot]") | .number' |
+          while read -r number; do
+            [[ -n "$number" ]] && reconcile_pr "$number"
+          done
