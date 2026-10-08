@@ -19,7 +19,7 @@
 - När kod ändå berörs: förenkla och sanitera det berörda området när det kan göras utan scope-expansion eller beteendeförändring. Ta bort död eller äldre kompatibilitetskod först när användningen är verifierat obefintlig; annars behåll och dokumentera gränsen.
 - Commits ska använda Conventional Commits eller motsvarande tydlig typ, exempelvis `feat:`, `fix:`, `docs:`, `chore:`, `ci:` eller `test:`.
 - Läs hela PR-review-state före merge, inklusive kommentarer och trådar som GitHub markerar som `outdated`; verifiera att grundproblemet faktiskt är löst.
-- `.github/workflows/agent-automerge.yml` ska anropa Avkrokens centrala policy i `Avkroken/.github`. Policyn får endast aktivera GitHubs native auto-merge för betrodda `gamnacken[bot]` same-repo `codex/*`-PR:er mot default branch och får aldrig kringgå ruleset, required checks eller reviewkrav.
+- `.github/workflows/agent-automerge.yml` ska anropa repositoryts lokala `.github/workflows/agent-automerge-policy.yml`. Policyn får endast aktivera GitHubs native auto-merge för betrodda `gamnacken[bot]` same-repo `codex/*`-PR:er mot default branch och får aldrig kringgå ruleset, required checks eller reviewkrav.
 - D1 är canonical application state; KV, R2, Queue och Durable Object har separata avgränsade roller.
 - `CredentialRateLimiter` är serialiserad koordinationspunkt för mailcredential-rate limiting; ersätt inte den med oserialiserad process-/KV-state.
 - D1-schemaändringar ska vara versionsstyrda migrationer i `infra/migrations/`.
