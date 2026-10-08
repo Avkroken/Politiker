@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   repository_dispatch:
     types: [agent-pr-merged]
   push:
@@ -24,8 +25,8 @@ jobs:
           persist-credentials: false
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
         with:
-          base-ref: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || '' }}
-          head-ref: ${{ github.event_name == 'merge_group' && github.event.merge_group.head_sha || '' }}
+          base-ref: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || '' }}
+          head-ref: ${{ github.event_name == 'merge_group' && github.event.merge_group.head_sha || github.event_name == 'workflow_dispatch' && github.sha || '' }}
           retry-on-snapshot-warnings: true
           retry-on-snapshot-warnings-timeout: 300
 
