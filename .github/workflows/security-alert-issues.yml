@@ -1,17 +1,56 @@
-name: Security alert issues
+name: Security alerts and issue remediation
 
 on:
   schedule:
-    - cron: "23 * * * *"
+    - cron: "37 * * * *"
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/scripts/security-reconcile.mjs"
+      - ".github/scripts/security-reconcile.test.mjs"
+      - ".github/workflows/security-alert-issues.yml"
+
+concurrency:
+  group: security-remediation-${{ github.repository }}
+  cancel-in-progress: false
 
 permissions: {}
 
 jobs:
+  tests:
+    name: Security reconcile unit tests
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run unit tests
+        run: node --test .github/scripts/security-reconcile.test.mjs
   reconcile:
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       issues: write
+      pull-requests: read
       security-events: read
       vulnerability-alerts: read
-    uses: ./.github/workflows/reusable-security-alert-issues.yml
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test reconciliation
+        run: node --test .github/scripts/security-reconcile.test.mjs
+      - name: Reconcile alerts, issues and agent assignments
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: node .github/scripts/security-reconcile.mjs
