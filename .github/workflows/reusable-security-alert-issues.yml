@@ -1,0 +1,72 @@
+name: Reusable security alert issues
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  reconcile:
+    name: Create sanitized tracking issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      security-events: read
+    steps:
+      - name: Reconcile open alerts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          issues_json="$(gh issue list --repo "$REPOSITORY" --state all --limit 500 --json number,title,body)"
+
+          ensure_issue() {
+            local kind="$1"
+            local number="$2"
+            local title="$3"
+            local area="$4"
+            local marker="<!-- avkroken-security-alert:${kind}:${number} -->"
+            local existing body
+
+            existing="$(
+              jq -r --arg marker "$marker"                 '.[] | select((.body // "") | contains($marker)) | .number'                 <<<"$issues_json" |
+              head -n 1
+            )"
+
+            if [[ -n "$existing" ]]; then
+              echo "Tracking issue #${existing} already exists for ${kind} alert ${number}."
+              return 0
+            fi
+
+            printf -v body '%s\n\n%s\n\n%s\n'               "GitHub detected an open ${area} alert in this repository."               "Alert details are intentionally omitted. Review the alert under the repository Security and quality tab and keep sensitive remediation details out of the issue."               "$marker"
+
+            gh issue create               --repo "$REPOSITORY"               --title "$title"               --body "$body" >/dev/null
+
+            issues_json="$(gh issue list --repo "$REPOSITORY" --state all --limit 500 --json number,title,body)"
+            echo "Created sanitized tracking issue for ${kind} alert ${number}."
+          }
+
+          if dependabot_numbers="$(
+            gh api "repos/${REPOSITORY}/dependabot/alerts?state=open&per_page=100"               --jq '.[].number' 2>/dev/null
+          )"; then
+            while read -r number; do
+              [[ -n "$number" ]] && ensure_issue                 "dependabot" "$number"                 "Security alert requires remediation"                 "Dependabot security"
+            done <<<"$dependabot_numbers"
+          else
+            echo "::notice::Dependabot alerts are unavailable or not enabled; skipping."
+          fi
+
+          if code_numbers="$(
+            gh api "repos/${REPOSITORY}/code-scanning/alerts?state=open&per_page=100"               --jq '.[].number' 2>/dev/null
+          )"; then
+            while read -r number; do
+              [[ -n "$number" ]] && ensure_issue                 "code-scanning" "$number"                 "Code scanning alert requires remediation"                 "code scanning"
+            done <<<"$code_numbers"
+          else
+            echo "::notice::Code scanning alerts are unavailable or not enabled; skipping."
+          fi
