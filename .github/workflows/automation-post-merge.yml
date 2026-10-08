@@ -18,4 +18,4 @@ jobs:
       actions: read
       contents: write
       pull-requests: read
-    uses: Avkroken/.github/.github/workflows/reusable-automation-post-merge.yml@b3c0c2f2192cbb1f352c796a749967b04f4c3d07
+    uses: ./.github/workflows/reusable-automation-post-merge.yml
