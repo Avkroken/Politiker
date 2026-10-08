@@ -4,11 +4,29 @@ on:
   issues:
     types: [opened, reopened]
 
+concurrency:
+  group: security-remediation-${{ github.repository }}
+  cancel-in-progress: false
+
 permissions: {}
 
 jobs:
   delegate:
+    name: Queue eligible issue for coding agent
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       issues: write
-    uses: ./.github/workflows/reusable-issue-copilot.yml
+      pull-requests: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Reconcile issue against existing work
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: node .github/scripts/security-reconcile.mjs
