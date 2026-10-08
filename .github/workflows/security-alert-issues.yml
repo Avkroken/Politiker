@@ -13,4 +13,5 @@ jobs:
       contents: read
       issues: write
       security-events: read
+      vulnerability-alerts: read
     uses: ./.github/workflows/reusable-security-alert-issues.yml
