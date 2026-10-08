@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  repository_dispatch:
+    types: [agent-pr-merged]
   push:
     branches: [main]
   pull_request:
@@ -14,7 +16,7 @@ permissions:
 jobs:
   dependency-review:
     name: Dependency review
-    if: ${{ github.event_name != 'push' }}
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
