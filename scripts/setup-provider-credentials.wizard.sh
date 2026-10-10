@@ -231,7 +231,7 @@ stage "Cloudflare Workers Builds"
 say "Verifiera buildidentiteten och hela productionkedjan."
 open_url "https://dash.cloudflare.com/"
 step "Öppna Workers & Pages → politiker → Builds/Settings."
-step "Verifiera repository Avkroken/Politiker, branch main, root directory /app och production command npm run deploy:workers-builds."
+step "Verifiera att Cloudflare Workers Builds är kopplad till det GitHub-repository som git remote get-url origin visar, till vald produktionsgren, root /app och production command npm run deploy:workers-builds."
 step "Kräv en aktuell lyckad main-build efter senaste relevanta credential-/permissionändring. Den ska ha kört validate, remote D1 migration, Worker deploy, akademisynk och verify:production."
 step "GitHub Actions ska inte bära Cloudflare deploycredentials."
 if ! confirm "Finns aktuell lyckad main-build som bevisar Workers Builds-identiteten?"; then
