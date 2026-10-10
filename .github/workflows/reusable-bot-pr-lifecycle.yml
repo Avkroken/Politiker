@@ -19,16 +19,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
+          TRUSTED_DEPENDABOT_LOGIN: ${{ vars.TRUSTED_DEPENDABOT_LOGIN }}
+          TRUSTED_COPILOT_BOT_LOGIN: ${{ vars.TRUSTED_COPILOT_BOT_LOGIN }}
         run: |
           set -euo pipefail
 
           default_branch="$(gh api "repos/${REPOSITORY}" --jq '.default_branch')"
 
           trusted_bot() {
-            case "$1" in
-              "dependabot[bot]"|"copilot-swe-agent[bot]") return 0 ;;
-              *) return 1 ;;
-            esac
+            [[ -n "$TRUSTED_DEPENDABOT_LOGIN" && "$1" == "$TRUSTED_DEPENDABOT_LOGIN" ]] ||
+              [[ -n "$TRUSTED_COPILOT_BOT_LOGIN" && "$1" == "$TRUSTED_COPILOT_BOT_LOGIN" ]]
           }
 
           reconcile_pr() {
@@ -45,6 +45,7 @@ jobs:
             head_sha="$(jq -r '.head.sha' <<<"$pr")"
             url="$(jq -r '.html_url' <<<"$pr")"
 
+            [[ "$(jq -r '.user.type // ""' <<<"$pr")" == "Bot" ]] || return 0
             trusted_bot "$author" || return 0
             [[ "$state" == "open" && "$draft" == "false" ]] || return 0
             [[ "$base_ref" == "$default_branch" && "$head_repo" == "$REPOSITORY" ]] || return 0
@@ -83,7 +84,7 @@ jobs:
             gh pr merge --auto "$method" "$url"
           }
 
-          gh api --paginate "repos/${REPOSITORY}/pulls?state=open&base=${default_branch}&per_page=100"             --jq '.[] | select(.user.login == "dependabot[bot]" or .user.login == "copilot-swe-agent[bot]") | .number' |
+          gh api --paginate "repos/${REPOSITORY}/pulls?state=open&base=${default_branch}&per_page=100"             --jq '.[] | select(.user.type == "Bot") | .number' |
           while read -r number; do
             [[ -n "$number" ]] && reconcile_pr "$number"
           done

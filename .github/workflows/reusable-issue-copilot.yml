@@ -8,7 +8,7 @@ permissions: {}
 jobs:
   delegate:
     name: Delegate owner issue to Copilot
-    if: ${{ github.event.issue.user.login == github.repository_owner }}
+    if: ${{ vars.TRUSTED_AGENT_USER_LOGIN != '' && github.event.issue.user.login == vars.TRUSTED_AGENT_USER_LOGIN }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -22,11 +22,16 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          COPILOT_AGENT_LOGIN: ${{ vars.TRUSTED_COPILOT_BOT_LOGIN }}
         run: |
           set -euo pipefail
+          if [[ -z "$COPILOT_AGENT_LOGIN" ]]; then
+            echo "::notice::TRUSTED_COPILOT_BOT_LOGIN is not configured; no cloud-agent assignment will be made."
+            exit 0
+          fi
 
-          payload="$(jq -cn             --arg repository "$REPOSITORY"             --arg base "$BASE_BRANCH"             '{
-              assignees: ["copilot-swe-agent[bot]"],
+          payload="$(jq -cn             --arg repository "$REPOSITORY"             --arg base "$BASE_BRANCH"             --arg agent "$COPILOT_AGENT_LOGIN"             '{
+              assignees: [$agent],
               agent_assignment: {
                 target_repo: $repository,
                 base_branch: $base,
