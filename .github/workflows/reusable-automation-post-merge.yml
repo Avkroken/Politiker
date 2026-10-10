@@ -21,6 +21,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           RUN_STARTED_AT: ${{ github.event.workflow_run.run_started_at }}
+          TRUSTED_AGENT_USER_LOGIN: ${{ vars.TRUSTED_AGENT_USER_LOGIN }}
+          TRUSTED_AGENT_BOT_LOGIN: ${{ vars.TRUSTED_AGENT_BOT_LOGIN }}
+          TRUSTED_DEPENDABOT_LOGIN: ${{ vars.TRUSTED_DEPENDABOT_LOGIN }}
+          TRUSTED_COPILOT_BOT_LOGIN: ${{ vars.TRUSTED_COPILOT_BOT_LOGIN }}
         run: |
           set -euo pipefail
 
@@ -30,7 +34,7 @@ jobs:
 
           trusted_merges() {
             gh api "repos/${REPOSITORY}/pulls?state=closed&sort=updated&direction=desc&per_page=100" |
-              jq -c                 --arg repository "${REPOSITORY}"                 --arg default_branch "${default_branch}"                 --arg started "${RUN_STARTED_AT}" '
+              jq -c                 --arg repository "${REPOSITORY}"                 --arg default_branch "${default_branch}"                 --arg started "${RUN_STARTED_AT}"                 --arg trusted_user "${TRUSTED_AGENT_USER_LOGIN}"                 --arg trusted_bot "${TRUSTED_AGENT_BOT_LOGIN}"                 --arg dependabot "${TRUSTED_DEPENDABOT_LOGIN}"                 --arg copilot "${TRUSTED_COPILOT_BOT_LOGIN}" '
                   .[]
                   | select(.merged_at != null and .merged_at >= $started)
                   | select(.head.repo.full_name == $repository)
@@ -39,13 +43,13 @@ jobs:
                       (
                         (.head.ref | startswith("codex/"))
                         and (
-                          (.user.login == "Avkroken" and .user.type == "User")
+                          ($trusted_user != "" and .user.login == $trusted_user and .user.type == "User")
                           or
-                          ((.user.login | split("[")[0]) == "gamnacken" and .user.type == "Bot")
+                          ($trusted_bot != "" and .user.login == $trusted_bot and .user.type == "Bot")
                         )
                       )
-                      or (.user.login == "dependabot[bot]" and .user.type == "Bot")
-                      or (.user.login == "copilot-swe-agent[bot]" and .user.type == "Bot")
+                      or ($dependabot != "" and .user.login == $dependabot and .user.type == "Bot")
+                      or ($copilot != "" and .user.login == $copilot and .user.type == "Bot")
                     )
                   | {
                       pr_number: .number,
