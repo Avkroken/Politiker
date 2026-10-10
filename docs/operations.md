@@ -174,3 +174,11 @@ Persistent logs/traces använder sampling och query-string-redaction. Lägg inte
 Scripts under `kontakter/scraper/` är operativa verktyg, inte alternativa sources of truth. Verifiera target/config före D1-relaterade operationer och dokumentera nya underhållsflöden här.
 
 `quarterly_refresh.sh` uppdaterar även akademiska yrkeskontakter via `fetch_academics.py`. Akademiregistret använder endast e-postadresser som lärosätena själva publicerar och sparar officiell `source_url` per post. `--dry-run` kan användas för att granska det kurerade akademiurvalet utan D1-skrivningar.
+
+## GitHub fork and transfer portability
+
+GitHub Actions API operations read `github.repository` dynamically, but individual issue assignments and trusted automation actors are intentionally **explicit**, not inferred from an organization name. For this repository, configure Actions variables `AUTO_ASSIGN_USER`, `TRUSTED_AGENT_USER_LOGIN`, `TRUSTED_AGENT_BOT_LOGIN`, `TRUSTED_DEPENDABOT_LOGIN`, and `TRUSTED_COPILOT_BOT_LOGIN` to the actual permitted user and bot login identities. A missing principal variable disables its privileged automation path rather than broadening permissions to arbitrary bots or silently using a former owner's account. Normal non-privileged tests can still run in a fork.
+
+Cloudflare Workers Builds must be checked against the *actual* source remote and default branch after transfer, not a memorized old account path.
+
+Validate the GitHub App installation, GHCR/Cloudflare resources, Secrets Store, rulesets, review approvals and deploy identity separately for the new owner. GitHub repository transfer does not confer source-owner credentials or external deployment access.
